@@ -99,11 +99,13 @@ function HeroStreamDiagram() {
 
         <div className={`relative mt-5 overflow-hidden border ${isComplete ? "border-[#69b88c] bg-[#d7f2e3]" : "border-[var(--line)] bg-[var(--surface-muted)]"}`}>
           {!isComplete && <div className="absolute left-8 right-8 top-1/2 hidden h-px bg-[var(--line)] sm:block" />}
-          <motion.div
-            className="absolute top-1/2 hidden h-px w-20 bg-[var(--river)] sm:block"
-            animate={{ left: ["8%", "78%", "8%"] }}
-            transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut" }}
-          />
+          {!isComplete && (
+            <motion.div
+              className="absolute top-1/2 hidden h-px w-20 bg-[var(--river)] sm:block"
+              animate={{ left: ["8%", "78%", "8%"] }}
+              transition={{ duration: 6.5, repeat: Infinity, ease: "easeInOut" }}
+            />
+          )}
           {isComplete ? (
             <motion.div
               key="completed"
