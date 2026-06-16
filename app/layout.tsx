@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { AppProviders } from "./providers";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -9,9 +10,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Rubicon | Metered Infrastructure for Agents",
+  title: "Rubicon | Paid Article Streams for Agents",
   description:
-    "Rubicon connects agents to compute and other metered services through persistent x402 payment streams.",
+    "Rubicon lets buyer agents stream paid article words through x402 micropayments and stop once they have what they need.",
 };
 
 export default function RootLayout({
@@ -21,7 +22,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={inter.variable}>
-      <body>{children}</body>
+      <body>
+        <AppProviders>{children}</AppProviders>
+      </body>
     </html>
   );
 }
