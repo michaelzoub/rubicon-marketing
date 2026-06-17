@@ -13,14 +13,15 @@ export const USDC_DECIMALS = 6;
 /** Rubicon's platform fee during the current launch period. */
 export const PLATFORM_FEE_PERCENT = 0;
 
-/** Lifecycle states an article can be in. Shared with the gateway. */
-export type ArticleStatus = "draft" | "live" | "paused" | "archived";
+/** Lifecycle states an article can be in. Shared with the persistent schema. */
+export type ArticleState = "draft" | "live" | "paused" | "archived" | "deleted";
 
-export const ARTICLE_STATUS_LABELS: Record<ArticleStatus, string> = {
+export const ARTICLE_STATE_LABELS: Record<ArticleState, string> = {
   draft: "Draft",
   live: "Live",
   paused: "Paused",
   archived: "Archived",
+  deleted: "Deleted",
 };
 
 /**
@@ -30,12 +31,13 @@ export const ARTICLE_STATUS_LABELS: Record<ArticleStatus, string> = {
  */
 export interface ArticleSection {
   id: string;
-  title: string;
+  sectionId: string;
+  heading: string;
+  level: number;
+  wordStart: number;
   /** Word count as measured by the gateway tokenizer. */
   wordCount: number;
-  /** Excluded sections are not offered to buyer agents. */
-  excluded: boolean;
-  order: number;
+  ordinal: number;
 }
 
 /** Aggregate usage for an article, as recorded by the gateway. */
@@ -51,15 +53,16 @@ export interface ArticleUsage {
 export interface Article {
   id: string;
   title: string;
-  status: ArticleStatus;
-  /** Original source URL, when the creator provided one. */
-  originalSource: string | null;
+  author: string;
+  state: ArticleState;
   /** Price per single word, in atomic USDC units. */
-  pricePerWord: string;
+  pricePerWordAtomic: string;
   /** Optional cap on the total an agent can be charged for one article. */
-  maxArticlePrice: string | null;
+  maxArticlePriceAtomic: string | null;
   /** Total billable words, as measured by the gateway tokenizer. */
-  wordCount: number;
+  totalWords: number;
+  revision: number;
+  sellerAgentConfig: Record<string, unknown> | null;
   sections: ArticleSection[];
   usage: ArticleUsage;
   createdAt: string;
@@ -81,36 +84,30 @@ export interface SellerAgentSession {
 /** Per-section usage so creators can see what agents found useful. */
 export interface SectionUsage {
   sectionId: string;
-  title: string;
+  heading: string;
   wordsRead: number;
 }
 
 export interface ArticleDetail extends Article {
+  body: string;
   sessions: SellerAgentSession[];
   sectionUsage: SectionUsage[];
   paymentActivity: PaymentActivity[];
 }
 
-export interface ConnectedProfile {
-  type: "x";
-  handle: string;
-}
-
 export interface Creator {
   id: string;
-  name: string | null;
-  email: string | null;
-  connectedProfiles: ConnectedProfile[];
-  /** Default price per word (atomic USDC) applied to new articles, if set. */
-  defaultPricePerWord: string | null;
-  defaultMaxArticlePrice: string | null;
+  username: string;
+  displayName: string;
+  bio: string | null;
+  avatarUrl: string | null;
+  createdAt: string;
 }
-
-export type WalletVerificationState = "unverified" | "pending" | "verified";
 
 export interface Wallet {
   address: string | null;
-  verificationState: WalletVerificationState;
+  network: string | null;
+  verified: boolean;
 }
 
 export interface EarningsSummary {
@@ -145,35 +142,36 @@ export interface PaymentActivity {
 
 /** Section definition sent when creating or updating an article. */
 export interface ArticleSectionInput {
-  title: string;
-  order: number;
-  excluded: boolean;
+  heading: string;
+  ordinal: number;
 }
 
 export interface CreateArticleInput {
   title: string;
-  originalSource?: string | null;
+  author: string;
   /** Raw article body. The gateway parses sections and counts words. */
-  content: string;
+  body: string;
   /** Optional creator overrides for parsed section titles/order/exclusion. */
   sections?: ArticleSectionInput[];
   /** Price per word in atomic USDC units. */
-  pricePerWord: string;
-  maxArticlePrice?: string | null;
+  pricePerWordAtomic: string;
+  maxArticlePriceAtomic?: string | null;
+  sellerAgentConfig?: Record<string, unknown> | null;
 }
 
 export type UpdateArticleInput = Partial<
-  Pick<CreateArticleInput, "title" | "originalSource" | "content" | "sections" | "pricePerWord" | "maxArticlePrice">
+  Pick<CreateArticleInput, "title" | "author" | "body" | "sections" | "pricePerWordAtomic" | "maxArticlePriceAtomic" | "sellerAgentConfig">
 >;
 
 export interface UpdateCreatorInput {
-  name?: string | null;
-  defaultPricePerWord?: string | null;
-  defaultMaxArticlePrice?: string | null;
+  displayName?: string;
+  bio?: string | null;
+  avatarUrl?: string | null;
 }
 
 export interface UpdateWalletInput {
   address: string;
+  network: string;
 }
 
 /** Error envelope the gateway returns on non-2xx responses. */

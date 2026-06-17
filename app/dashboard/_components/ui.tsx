@@ -4,8 +4,8 @@ import Link from "next/link";
 import { AlertTriangle, Inbox, Loader2, LogIn, RefreshCw } from "lucide-react";
 import type { ReactNode } from "react";
 import { RubiconError } from "@/lib/rubicon/client";
-import type { ArticleStatus, PaymentStatus, WalletVerificationState } from "@/lib/rubicon/types";
-import { ARTICLE_STATUS_LABELS } from "@/lib/rubicon/types";
+import type { ArticleState, PaymentStatus } from "@/lib/rubicon/types";
+import { ARTICLE_STATE_LABELS } from "@/lib/rubicon/types";
 
 /* ---------- layout ---------- */
 
@@ -95,7 +95,7 @@ export function ErrorState({ error, onRetry }: { error: RubiconError; onRetry?: 
         {isAuth ? <LogIn size={22} aria-hidden="true" /> : <AlertTriangle size={22} aria-hidden="true" />}
       </span>
       <h3 className="mt-4 text-lg font-semibold text-[#7b4e12]">
-        {isAuth ? "Your session expired" : isConfig ? "Rubicon isn’t connected yet" : "We couldn’t load this"}
+        {isAuth ? "Your session expired" : isConfig ? "Supabase isn’t connected yet" : "We couldn’t load this"}
       </h3>
       <p className="mt-2 max-w-md text-sm leading-6 text-[#8a6326]">{error.message}</p>
       {onRetry && !isConfig && (
@@ -109,18 +109,19 @@ export function ErrorState({ error, onRetry }: { error: RubiconError; onRetry?: 
 
 /* ---------- pills ---------- */
 
-const statusStyles: Record<ArticleStatus, string> = {
+const stateStyles: Record<ArticleState, string> = {
   draft: "border-[var(--line)] bg-[var(--surface-muted)] text-[var(--muted)]",
   live: "border-[#69b88c] bg-[#e8f6ef] text-[#165c3e]",
   paused: "border-[#e0b15f] bg-[#fff8ed] text-[#7b4e12]",
   archived: "border-[var(--line)] bg-white text-[var(--muted)]",
+  deleted: "border-[#e3a2a0] bg-[#fff1f0] text-[#8d2f2d]",
 };
 
-export function ArticleStatusPill({ status }: { status: ArticleStatus }) {
+export function ArticleStatePill({ state }: { state: ArticleState }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusStyles[status]}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${stateStyles[state]}`}>
       <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
-      {ARTICLE_STATUS_LABELS[status]}
+      {ARTICLE_STATE_LABELS[state]}
     </span>
   );
 }
@@ -139,16 +140,16 @@ export function PaymentStatusPill({ status }: { status: PaymentStatus }) {
   );
 }
 
-const walletStyles: Record<WalletVerificationState, string> = {
-  verified: "border-[#69b88c] bg-[#e8f6ef] text-[#165c3e]",
-  pending: "border-[#e0b15f] bg-[#fff8ed] text-[#7b4e12]",
-  unverified: "border-[var(--line)] bg-[var(--surface-muted)] text-[var(--muted)]",
-};
-
-export function WalletStatePill({ state }: { state: WalletVerificationState }) {
+export function WalletStatePill({ verified }: { verified: boolean }) {
   return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize ${walletStyles[state]}`}>
-      {state}
+    <span
+      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+        verified
+          ? "border-[#69b88c] bg-[#e8f6ef] text-[#165c3e]"
+          : "border-[var(--line)] bg-[var(--surface-muted)] text-[var(--muted)]"
+      }`}
+    >
+      {verified ? "Verified" : "Unverified"}
     </span>
   );
 }

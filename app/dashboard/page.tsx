@@ -6,7 +6,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useRubiconQuery } from "@/lib/rubicon/hooks";
 import { formatUsd } from "@/lib/rubicon/pricing";
 import {
-  ArticleStatusPill,
+  ArticleStatePill,
   Card,
   CardHeader,
   EmptyState,
@@ -33,7 +33,7 @@ export default function OverviewPage() {
 
   const walletConnected = Boolean(wallet.data?.address);
   const hasArticles = (articles.data?.length ?? 0) > 0;
-  const hasLive = (articles.data ?? []).some((a) => a.status === "live");
+  const hasLive = (articles.data ?? []).some((a) => a.state === "live");
   const onboardingComplete = walletConnected && hasLive;
 
   return (
@@ -184,7 +184,7 @@ export default function OverviewPage() {
                       </div>
                       <div className="flex items-center gap-4">
                         <span className="text-sm font-semibold">{formatUsd(a.usage.earnings)}</span>
-                        <ArticleStatusPill status={a.status} />
+                        <ArticleStatePill state={a.state} />
                       </div>
                     </Link>
                   </li>

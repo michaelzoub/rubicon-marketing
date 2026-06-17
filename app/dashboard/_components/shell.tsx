@@ -176,9 +176,10 @@ function ConfigNotice() {
       </span>
       <h1 className="mt-5 text-2xl font-semibold">Connect creator login</h1>
       <p className="mt-2 max-w-md text-sm leading-6 text-[var(--muted)]">
-        Set <code className="mono rounded border border-[var(--line)] bg-white px-1.5 py-0.5">NEXT_PUBLIC_PRIVY_APP_ID</code> and{" "}
-        <code className="mono rounded border border-[var(--line)] bg-white px-1.5 py-0.5">NEXT_PUBLIC_RUBICON_API_URL</code> to enable
-        sign-in and load live data from Rubicon.
+        Set <code className="mono rounded border border-[var(--line)] bg-white px-1.5 py-0.5">NEXT_PUBLIC_PRIVY_APP_ID</code>,{" "}
+        <code className="mono rounded border border-[var(--line)] bg-white px-1.5 py-0.5">NEXT_PUBLIC_SUPABASE_URL</code>, and{" "}
+        <code className="mono rounded border border-[var(--line)] bg-white px-1.5 py-0.5">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> to enable
+        sign-in and load live data.
       </p>
       <Link href="/" className="mt-6 text-sm text-[var(--muted)] hover:text-[var(--ink)]">
         Back to home

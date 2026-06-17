@@ -7,14 +7,11 @@ import {
   ArrowRight,
   ChevronDown,
   ChevronUp,
-  Eye,
-  EyeOff,
   Upload,
 } from "lucide-react";
 import { useRubiconMutation, useRubiconQuery } from "@/lib/rubicon/hooks";
 import {
   atomicForWords,
-  atomicToUsd,
   formatUsd,
   per1000UsdToAtomicPerWord,
 } from "@/lib/rubicon/pricing";
@@ -25,7 +22,6 @@ import { Card, PageHeader, shortWallet, WalletStatePill } from "../../_component
 interface EditableSection {
   title: string;
   wordCount: number;
-  excluded: boolean;
 }
 
 const steps = ["Add your article", "Review sections", "Choose pricing", "Publish"] as const;
@@ -39,7 +35,7 @@ export default function NewArticlePage() {
 
   const [step, setStep] = useState(0);
   const [title, setTitle] = useState("");
-  const [originalSource, setOriginalSource] = useState("");
+  const [author, setAuthor] = useState("");
   const [content, setContent] = useState("");
   const [sections, setSections] = useState<EditableSection[]>([]);
   const lastParsed = useRef<string>("");
@@ -48,46 +44,42 @@ export default function NewArticlePage() {
   const [maxPrice, setMaxPrice] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Prefill default pricing once the creator loads (only if untouched).
-  const prefilled = useRef(false);
+  // Prefill the schema-required author from the creator display name once.
+  const prefilledAuthor = useRef(false);
   useEffect(() => {
-    if (prefilled.current) return;
-    const atomic = creator.data?.defaultPricePerWord;
-    if (!atomic) return;
-    const usdPer1000 = atomicToUsd(atomic) * 1000;
-    if (usdPer1000) {
-      setPricePer1000(usdPer1000.toString());
-      prefilled.current = true;
-    }
-  }, [creator.data?.defaultPricePerWord]);
+    if (prefilledAuthor.current) return;
+    const displayName = creator.data?.displayName;
+    if (!displayName) return;
+    setAuthor(displayName);
+    prefilledAuthor.current = true;
+  }, [creator.data?.displayName]);
 
   function enterReview() {
     if (content !== lastParsed.current) {
       const parsed = parseSections(content);
-      setSections(parsed.map((s) => ({ title: s.title, wordCount: s.wordCount, excluded: false })));
+      setSections(parsed.map((s) => ({ title: s.title, wordCount: s.wordCount })));
       lastParsed.current = content;
     }
     setStep(1);
   }
 
-  const includedWords = sections.filter((s) => !s.excluded).reduce((sum, s) => sum + s.wordCount, 0);
+  const includedWords = sections.reduce((sum, s) => sum + s.wordCount, 0);
   const atomicPerWord = pricePer1000 ? per1000UsdToAtomicPerWord(Number(pricePer1000)) : "0";
   const estFullPrice = atomicForWords(atomicPerWord, includedWords);
   const maxPriceAtomic = maxPrice ? per1000UsdToAtomicPerWord(Number(maxPrice) * 1000) : null;
 
   function buildInput() {
     const sectionInput: ArticleSectionInput[] = sections.map((s, i) => ({
-      title: s.title,
-      order: i,
-      excluded: s.excluded,
+      heading: s.title,
+      ordinal: i,
     }));
     return {
       title: title.trim(),
-      originalSource: originalSource.trim() || null,
-      content,
+      author: author.trim(),
+      body: content,
       sections: sectionInput,
-      pricePerWord: atomicPerWord,
-      maxArticlePrice: maxPriceAtomic,
+      pricePerWordAtomic: atomicPerWord,
+      maxArticlePriceAtomic: maxPriceAtomic,
     };
   }
 
@@ -113,10 +105,10 @@ export default function NewArticlePage() {
       {step === 0 && (
         <StepAddArticle
           title={title}
-          originalSource={originalSource}
+          author={author}
           content={content}
           onTitle={setTitle}
-          onSource={setOriginalSource}
+          onAuthor={setAuthor}
           onContent={setContent}
           onNext={enterReview}
         />
@@ -149,11 +141,11 @@ export default function NewArticlePage() {
         <StepPublish
           title={title}
           includedWords={includedWords}
-          sectionCount={sections.filter((s) => !s.excluded).length}
+          sectionCount={sections.length}
           atomicPerWord={atomicPerWord}
           estFullPrice={estFullPrice}
           walletAddress={wallet.data?.address ?? null}
-          walletState={wallet.data?.verificationState ?? "unverified"}
+          walletVerified={wallet.data?.verified ?? false}
           submitting={submitting}
           error={submitError}
           onBack={() => setStep(2)}
@@ -206,18 +198,18 @@ const inputClass =
 
 function StepAddArticle({
   title,
-  originalSource,
+  author,
   content,
   onTitle,
-  onSource,
+  onAuthor,
   onContent,
   onNext,
 }: {
   title: string;
-  originalSource: string;
+  author: string;
   content: string;
   onTitle: (v: string) => void;
-  onSource: (v: string) => void;
+  onAuthor: (v: string) => void;
   onContent: (v: string) => void;
   onNext: () => void;
 }) {
@@ -231,7 +223,7 @@ function StepAddArticle({
     if (!title) onTitle(file.name.replace(/\.(md|markdown|txt)$/i, ""));
   }
 
-  const ready = title.trim() && content.trim();
+  const ready = title.trim() && author.trim() && content.trim();
 
   return (
     <Card className="p-6">
@@ -239,8 +231,8 @@ function StepAddArticle({
         <Field label="Article title">
           <input value={title} onChange={(e) => onTitle(e.target.value)} placeholder="A clear, descriptive title" className={inputClass} />
         </Field>
-        <Field label="Original source" hint="Optional. A link to where this was first published.">
-          <input value={originalSource} onChange={(e) => onSource(e.target.value)} placeholder="https://example.com/your-article" className={inputClass} />
+        <Field label="Author">
+          <input value={author} onChange={(e) => onAuthor(e.target.value)} placeholder="Author name" className={inputClass} />
         </Field>
         <Field label="Article content" hint="Paste your article, or upload a Markdown file. Use # headings to define sections.">
           <textarea
@@ -255,7 +247,6 @@ function StepAddArticle({
           <button type="button" onClick={() => fileRef.current?.click()} className="button button-secondary text-sm">
             <Upload size={15} aria-hidden="true" /> Upload Markdown
           </button>
-          <span className="text-xs text-[var(--muted)]">Import from a URL is coming soon.</span>
         </div>
       </div>
       <div className="mt-6 flex justify-end border-t border-[var(--faint)] pt-5">
@@ -305,9 +296,7 @@ function StepReviewSections({
           {sections.map((section, index) => (
             <li
               key={index}
-              className={`grid gap-3 rounded-lg border p-4 sm:grid-cols-[auto_1fr_auto] sm:items-center ${
-                section.excluded ? "border-[var(--faint)] bg-[var(--surface-muted)] opacity-70" : "border-[var(--line)] bg-white"
-              }`}
+              className="grid gap-3 rounded-lg border border-[var(--line)] bg-white p-4 sm:grid-cols-[auto_1fr] sm:items-center"
             >
               <div className="flex flex-col">
                 <button type="button" onClick={() => move(index, -1)} disabled={index === 0} className="text-[var(--muted)] hover:text-[var(--ink)] disabled:opacity-30" aria-label="Move up">
@@ -325,14 +314,6 @@ function StepReviewSections({
                 />
                 <div className="mt-1 text-xs text-[var(--muted)]">{section.wordCount.toLocaleString()} words</div>
               </div>
-              <button
-                type="button"
-                onClick={() => update(index, { excluded: !section.excluded })}
-                className="button button-secondary justify-self-start text-sm sm:justify-self-end"
-              >
-                {section.excluded ? <Eye size={15} aria-hidden="true" /> : <EyeOff size={15} aria-hidden="true" />}
-                {section.excluded ? "Include" : "Exclude"}
-              </button>
             </li>
           ))}
         </ul>
@@ -439,7 +420,7 @@ function StepPublish({
   atomicPerWord,
   estFullPrice,
   walletAddress,
-  walletState,
+  walletVerified,
   submitting,
   error,
   onBack,
@@ -452,7 +433,7 @@ function StepPublish({
   atomicPerWord: string;
   estFullPrice: string;
   walletAddress: string | null;
-  walletState: import("@/lib/rubicon/types").WalletVerificationState;
+  walletVerified: boolean;
   submitting: boolean;
   error: string | null;
   onBack: () => void;
@@ -476,7 +457,7 @@ function StepPublish({
           value={
             <span className="flex items-center gap-2">
               <span className="mono">{shortWallet(walletAddress)}</span>
-              {walletAddress && <WalletStatePill state={walletState} />}
+              {walletAddress && <WalletStatePill verified={walletVerified} />}
             </span>
           }
         />

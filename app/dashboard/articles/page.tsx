@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { ExternalLink, FileText, Pause, Pencil, Play } from "lucide-react";
+import { FileText, Pause, Pencil, Play } from "lucide-react";
 import type { Article } from "@/lib/rubicon/types";
 import { useRubiconMutation, useRubiconQuery } from "@/lib/rubicon/hooks";
 import { formatUsd } from "@/lib/rubicon/pricing";
 import {
-  ArticleStatusPill,
+  ArticleStatePill,
   Card,
   EmptyState,
   ErrorState,
@@ -26,7 +26,7 @@ export default function ArticlesPage() {
   async function toggle(article: Article) {
     setBusyId(article.id);
     try {
-      if (article.status === "live") await pause.run(article.id);
+      if (article.state === "live") await pause.run(article.id);
       else await publish.run(article.id);
       articles.refetch();
     } catch {
@@ -72,39 +72,29 @@ export default function ArticlesPage() {
                     <Link href={`/dashboard/articles/${article.id}`} className="truncate text-lg font-semibold hover:underline">
                       {article.title}
                     </Link>
-                    <ArticleStatusPill status={article.status} />
+                    <ArticleStatePill state={article.state} />
                   </div>
                   <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-[var(--muted)]">
-                    <span>{formatUsd(article.pricePerWord)} / word</span>
+                    <span>{formatUsd(article.pricePerWordAtomic)} / word</span>
                     <span>{article.usage.wordsRead.toLocaleString()} words read</span>
                     <span>{article.usage.agentReads.toLocaleString()} agent reads</span>
                     <span className="font-medium text-[var(--ink)]">{formatUsd(article.usage.earnings)} earned</span>
                     <span>Last read {formatRelative(article.usage.lastReadAt)}</span>
                   </div>
-                  {article.originalSource && (
-                    <a
-                      href={article.originalSource}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-2 inline-flex items-center gap-1 text-xs text-[var(--river-deep)] hover:underline"
-                    >
-                      <ExternalLink size={12} aria-hidden="true" /> Original source
-                    </a>
-                  )}
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">
                   <Link href={`/dashboard/articles/${article.id}`} className="button button-secondary text-sm">
                     <Pencil size={15} aria-hidden="true" /> Edit
                   </Link>
-                  {article.status !== "archived" && (
+                  {article.state !== "archived" && article.state !== "deleted" && (
                     <button
                       type="button"
                       onClick={() => toggle(article)}
                       disabled={busyId === article.id}
                       className="button button-secondary text-sm disabled:opacity-50"
                     >
-                      {article.status === "live" ? (
+                      {article.state === "live" ? (
                         <>
                           <Pause size={15} aria-hidden="true" /> Pause
                         </>

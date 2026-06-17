@@ -51,7 +51,7 @@ export default function EarningsPage() {
                 <div className="mono text-sm">{shortWallet(wallet.data?.address)}</div>
                 <div className="mt-1 text-xs text-[var(--muted)]">Funds for paid words are settled here.</div>
               </div>
-              {wallet.data?.address && <WalletStatePill state={wallet.data.verificationState} />}
+              {wallet.data?.address && <WalletStatePill verified={wallet.data.verified} />}
             </>
           )}
         </div>

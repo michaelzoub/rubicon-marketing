@@ -22,7 +22,7 @@ const notConfiguredError = new RubiconError(
   "backend",
   0,
   "not_configured",
-  "Rubicon is not connected yet. Set NEXT_PUBLIC_RUBICON_API_URL to load live data.",
+  "Supabase is not connected yet. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to load live data.",
 );
 
 /**

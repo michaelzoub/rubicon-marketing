@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Archive, ArrowLeft, ExternalLink, Pause, Play } from "lucide-react";
+import { Archive, ArrowLeft, Pause, Play } from "lucide-react";
 import type { ArticleDetail } from "@/lib/rubicon/types";
 import { useRubiconMutation, useRubiconQuery } from "@/lib/rubicon/hooks";
 import {
@@ -13,7 +13,7 @@ import {
   per1000UsdToAtomicPerWord,
 } from "@/lib/rubicon/pricing";
 import {
-  ArticleStatusPill,
+  ArticleStatePill,
   Card,
   CardHeader,
   EmptyState,
@@ -54,33 +54,28 @@ export default function ArticleDetailPage() {
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl font-semibold tracking-[-0.01em] sm:text-3xl">{data.title}</h1>
-                <ArticleStatusPill status={data.status} />
+                <ArticleStatePill state={data.state} />
               </div>
-              {data.originalSource && (
-                <a href={data.originalSource} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-sm text-[var(--river-deep)] hover:underline">
-                  <ExternalLink size={13} aria-hidden="true" /> Original source
-                </a>
-              )}
             </div>
             <div className="flex shrink-0 flex-wrap gap-2">
               <button type="button" onClick={() => setEditing((v) => !v)} className="button button-secondary text-sm">
                 {editing ? "Close" : "Edit article"}
               </button>
-              {data.status !== "archived" && (
+              {data.state !== "archived" && data.state !== "deleted" && (
                 <button
                   type="button"
                   onClick={async () => {
-                    if (data.status === "live") await pause.run(data.id);
+                    if (data.state === "live") await pause.run(data.id);
                     else await publish.run(data.id);
                     article.refetch();
                   }}
                   disabled={publish.pending || pause.pending}
                   className="button button-secondary text-sm disabled:opacity-50"
                 >
-                  {data.status === "live" ? <><Pause size={15} aria-hidden="true" /> Pause</> : <><Play size={15} aria-hidden="true" /> Publish</>}
+                  {data.state === "live" ? <><Pause size={15} aria-hidden="true" /> Pause</> : <><Play size={15} aria-hidden="true" /> Publish</>}
                 </button>
               )}
-              {data.status !== "archived" && (
+              {data.state !== "archived" && data.state !== "deleted" && (
                 <button
                   type="button"
                   onClick={async () => {
@@ -119,7 +114,7 @@ export default function ArticleDetailPage() {
             <StatTile label="Words read" value={data.usage.wordsRead.toLocaleString()} />
             <StatTile label="Agent reads" value={data.usage.agentReads.toLocaleString()} />
             <StatTile label="Earnings" value={formatUsd(data.usage.earnings)} />
-            <StatTile label="Price per word" value={formatUsd(data.pricePerWord)} hint={`${data.wordCount.toLocaleString()} words total`} />
+            <StatTile label="Price per word" value={formatUsd(data.pricePerWordAtomic)} hint={`${data.totalWords.toLocaleString()} words total`} />
           </div>
 
           <div className="grid gap-4 lg:grid-cols-2">
@@ -136,7 +131,7 @@ export default function ArticleDetailPage() {
                     return (
                       <li key={s.sectionId} className="px-5 py-3">
                         <div className="flex items-center justify-between gap-3 text-sm">
-                          <span className="truncate font-medium">{s.title}</span>
+                          <span className="truncate font-medium">{s.heading}</span>
                           <span className="shrink-0 text-[var(--muted)]">{s.wordsRead.toLocaleString()} words</span>
                         </div>
                         <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-[var(--surface-muted)]">
@@ -219,18 +214,18 @@ function EditPanel({
   article: ArticleDetail;
   pending: boolean;
   error: string | null;
-  onSave: (input: { title: string; originalSource: string | null; pricePerWord: string; maxArticlePrice: string | null }) => void;
+  onSave: (input: { title: string; author: string; pricePerWordAtomic: string; maxArticlePriceAtomic: string | null }) => void;
 }) {
   const [title, setTitle] = useState(article.title);
-  const [source, setSource] = useState(article.originalSource ?? "");
-  const [per1000, setPer1000] = useState(atomicPerWordToPer1000Usd(article.pricePerWord).toString());
-  const [maxPrice, setMaxPrice] = useState(article.maxArticlePrice ? atomicToUsd(article.maxArticlePrice).toString() : "");
+  const [author, setAuthor] = useState(article.author);
+  const [per1000, setPer1000] = useState(atomicPerWordToPer1000Usd(article.pricePerWordAtomic).toString());
+  const [maxPrice, setMaxPrice] = useState(article.maxArticlePriceAtomic ? atomicToUsd(article.maxArticlePriceAtomic).toString() : "");
 
   useEffect(() => {
     setTitle(article.title);
-    setSource(article.originalSource ?? "");
-    setPer1000(atomicPerWordToPer1000Usd(article.pricePerWord).toString());
-    setMaxPrice(article.maxArticlePrice ? atomicToUsd(article.maxArticlePrice).toString() : "");
+    setAuthor(article.author);
+    setPer1000(atomicPerWordToPer1000Usd(article.pricePerWordAtomic).toString());
+    setMaxPrice(article.maxArticlePriceAtomic ? atomicToUsd(article.maxArticlePriceAtomic).toString() : "");
   }, [article]);
 
   return (
@@ -242,8 +237,8 @@ function EditPanel({
           <input value={title} onChange={(e) => setTitle(e.target.value)} className="h-11 rounded-lg border border-[var(--line)] px-3 outline-none focus:border-[var(--river)]" />
         </label>
         <label className="grid gap-2">
-          <span className="text-sm font-medium">Original source</span>
-          <input value={source} onChange={(e) => setSource(e.target.value)} placeholder="Optional" className="h-11 rounded-lg border border-[var(--line)] px-3 outline-none focus:border-[var(--river)]" />
+          <span className="text-sm font-medium">Author</span>
+          <input value={author} onChange={(e) => setAuthor(e.target.value)} className="h-11 rounded-lg border border-[var(--line)] px-3 outline-none focus:border-[var(--river)]" />
         </label>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="grid gap-2">
@@ -260,13 +255,13 @@ function EditPanel({
       <div className="mt-5 flex justify-end">
         <button
           type="button"
-          disabled={pending || !title.trim() || !(Number(per1000) > 0)}
+          disabled={pending || !title.trim() || !author.trim() || !(Number(per1000) > 0)}
           onClick={() =>
             onSave({
               title: title.trim(),
-              originalSource: source.trim() || null,
-              pricePerWord: per1000UsdToAtomicPerWord(Number(per1000)),
-              maxArticlePrice: maxPrice ? per1000UsdToAtomicPerWord(Number(maxPrice) * 1000) : null,
+              author: author.trim(),
+              pricePerWordAtomic: per1000UsdToAtomicPerWord(Number(per1000)),
+              maxArticlePriceAtomic: maxPrice ? per1000UsdToAtomicPerWord(Number(maxPrice) * 1000) : null,
             })
           }
           className="button button-primary disabled:opacity-50"
