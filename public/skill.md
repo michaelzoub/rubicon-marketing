@@ -1,7 +1,7 @@
 ---
 name: rubicon
 version: 1.0.0
-description: Set up Rubicon for AI agents - consume pay-per-word articles through the buyer SDK and local or hosted gateway
+description: Set up Rubicon for AI agents - consume pay-per-word articles through the buyer SDK and hosted gateway
 homepage: https://github.com/michaelzoub/rubicon
 ---
 
@@ -19,40 +19,31 @@ When a user asks you to test or integrate Rubicon:
 
 1. **Use the SDK first** — prefer `@rubicon-caliga/agent-sdk` and
    `rubicon.run(...)` for the full flow.
-2. **Use local SDK installs for local tests** — if the package is not published,
-   install it from the local repo path instead of npm.
-3. **Pass the gateway URL explicitly** — use the hosted Rubicon gateway
-   `https://rubicon-caligagateway-production.up.railway.app` unless the user is
-   deliberately running a local gateway.
-4. **Use lower-level SDK methods only for custom flows** — `startSession`,
+2. **Pass the gateway URL explicitly** — use the hosted Rubicon gateway
+   `https://rubicon-caligagateway-production.up.railway.app` unless the user
+   provides a different hosted gateway.
+3. **Use lower-level SDK methods only for custom flows** — `startSession`,
    `payForWord`, `abort`, and `streamEvents` exist, but the happy path is
    `run(...)`.
 
-## Quick Start: Local Gateway + Local SDK
+## Quick Start
 
-From the Rubicon repo:
-
-```bash
-pnpm install
-pnpm --filter @rubicon-caliga/agent-sdk build
-GATEWAY_PORT=8080 pnpm dev:gateway
-```
-
-Keep the gateway running.
-
-From the agent project that should consume Rubicon:
+Install the buyer SDK:
 
 ```bash
-pnpm add /Users/michaelzoubkoff/Documents/rubicon/packages/agent-sdk
+pnpm add @rubicon-caliga/agent-sdk
 ```
 
-Then run:
+Then use the hosted gateway URL provided by the user or environment:
 
 ```ts
 import Rubicon from "@rubicon-caliga/agent-sdk";
 
 const rubicon = new Rubicon({
-  baseUrl: "http://localhost:8080",
+  baseUrl: process.env.RUBICON_GATEWAY_URL ?? "https://rubicon-caligagateway-production.up.railway.app",
+  authorization: process.env.RUBICON_AGENT_API_KEY
+    ? `Bearer ${process.env.RUBICON_AGENT_API_KEY}`
+    : undefined,
 });
 
 const receipt = await rubicon.run({
@@ -79,11 +70,29 @@ USDC for the approved budget, and pass the wallet-backed payment engine into
 the SDK. Never use a user's personal key implicitly; use an agent-owned key or
 an agent wallet service the user has explicitly configured.
 
-Circle Agent Wallets are a recommended buyer setup path, but the person
-controlling the wallet/funds should create the Agent Wallet, fund it, and set
-spending policies such as transfer limits, recipient allowlists, and contract
-blocklists before the agent starts a paid read. See Circle's Agent Wallets
-guide: https://developers.circle.com/agent-stack/agent-wallets
+For the latest Circle Agent Stack docs, fetch the documentation index first and
+use it to discover the relevant setup, Agent Wallet, and Nanopayments pages:
+
+```bash
+curl -sL https://developers.circle.com/llms.txt
+```
+
+To set up the agent wallet, fetch Circle's agent setup guide and follow its
+instructions to set up Circle Agent Wallet:
+
+```bash
+curl -sL https://agents.circle.com/skills/setup.md
+```
+
+The person controlling the wallet/funds should create the Circle Agent Wallet,
+fund it, and set spending policies such as transfer limits, recipient
+allowlists, and contract blocklists before the agent starts a paid read.
+
+Circle Agent Nanopayments are the recommended Circle-native production path for
+x402-compatible services. In that flow, the agent uses Circle CLI to deposit
+USDC into a Gateway balance, discover services, and pay with gas-free batched
+USDC nanopayments. Use Circle's Agent Nanopayments quickstart when the user
+wants Circle CLI / Gateway Nanopayments rather than dry-run payments.
 
 The SDK should consume an already configured wallet-backed payment capability
 and keep enforcing the user's confirmed Rubicon budget. Do not create wallets,
@@ -137,33 +146,6 @@ conversation, x402 payment headers, streaming words, budget enforcement, abort,
 and receipt collection. Use `rubicon.read(...)` or lower-level methods only
 when the user asks to inspect or customize a specific part of the protocol.
 
-## Quick Start: Published SDK
-
-When `@rubicon-caliga/agent-sdk` is published, install it normally:
-
-```bash
-pnpm add @rubicon-caliga/agent-sdk
-```
-
-Use the hosted gateway URL provided by the user or environment:
-
-```ts
-import Rubicon from "@rubicon-caliga/agent-sdk";
-
-const rubicon = new Rubicon({
-  baseUrl: process.env.RUBICON_GATEWAY_URL ?? "https://rubicon-caligagateway-production.up.railway.app",
-  authorization: process.env.RUBICON_AGENT_API_KEY
-    ? `Bearer ${process.env.RUBICON_AGENT_API_KEY}`
-    : undefined,
-});
-
-const receipt = await rubicon.run({
-  articleId: "rubicon-streaming-001",
-  goal: "Find the resale-fee clause",
-  maxSpendAtomic: "20000",
-});
-```
-
 ## SDK Surface
 
 Primary method:
@@ -205,10 +187,16 @@ same receipt is mirrored in the gateway's `PAYMENT-RESPONSE` header.
 
 ## Payment Modes
 
-Development mode uses `StaticPaymentEngine` and settles no real funds. This is
-the default when no payment engine is passed.
+Unpaid dry-run mode uses `StaticPaymentEngine` and settles no real funds. This
+is the default when no payment engine is passed.
 
-Production/testnet settlement uses `CircleGatewayPaymentEngine`:
+Circle Agent Nanopayments mode uses Circle CLI and Gateway Nanopayments for
+gas-free, batched USDC payments to x402-compatible services. Set up Circle
+Agent Wallet and Gateway balance first, then use the Rubicon SDK only after the
+Circle payment capability is configured.
+
+Production/testnet SDK settlement can also use `CircleGatewayPaymentEngine`
+when the environment is configured for that payment engine:
 
 ```ts
 import Rubicon, { CircleGatewayPaymentEngine } from "@rubicon-caliga/agent-sdk";
@@ -252,34 +240,7 @@ Use the user's confirmed limit as `maxSpendAtomic` or `budget.maxAmountAtomic`,
 and stop as soon as the task is satisfied or the approved budget would be
 exceeded.
 
-## Troubleshooting
-
-If the gateway fails with `EADDRINUSE`, the port is already in use. Pick another
-port and use the same URL in the SDK:
-
-```bash
-GATEWAY_PORT=8790 pnpm dev:gateway
-```
-
-```ts
-const rubicon = new Rubicon({
-  baseUrl: "http://localhost:8790",
-});
-```
-
-If the agent project cannot resolve `@rubicon-caliga/agent-sdk`, install the
-local SDK path for local testing:
-
-```bash
-pnpm add /Users/michaelzoubkoff/Documents/rubicon/packages/agent-sdk
-```
-
-If SDK behavior or types are stale, rebuild the SDK in the Rubicon repo, then
-reinstall it in the agent project:
-
-```bash
-pnpm --filter @rubicon-caliga/agent-sdk build
-```
+## Raw HTTP Protocol
 
 If the request is about the raw HTTP protocol, see the gateway endpoints:
 
