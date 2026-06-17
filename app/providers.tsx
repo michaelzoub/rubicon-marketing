@@ -24,6 +24,13 @@ export function AppProviders({ children }: { children: ReactNode }) {
             theme: "light",
             accentColor: "#2f6df0",
           },
+          embeddedWallets: {
+            // Give every creator a wallet on login, including email/Twitter
+            // sign-ins, so the receiving address is one click in Settings.
+            ethereum: {
+              createOnLogin: "all-users",
+            },
+          },
         }}
       >
         {children}

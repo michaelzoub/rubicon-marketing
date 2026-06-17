@@ -168,8 +168,8 @@ function Hero() {
     <section className="relative overflow-hidden">
       <div className="aurora" aria-hidden="true" />
       <div className="grid-texture" aria-hidden="true" />
-      <div className="container grid gap-12 pb-16 pt-20 md:grid-cols-[1.02fr_0.98fr] md:pb-28 md:pt-28">
-        <motion.div {...fade} className="flex flex-col justify-center">
+      <div className="container grid gap-12 pb-16 pt-12 md:grid-cols-[1.02fr_0.98fr] md:pb-28 md:pt-16">
+        <motion.div {...fade} className="flex flex-col justify-start md:pt-2">
           {/* <p className="eyebrow inline-flex w-fit items-center gap-2 rounded-full border border-[var(--river-line)] bg-[var(--river-pale)] px-3 py-1">
             <span className="status-dot h-1.5 w-1.5 rounded-full bg-[var(--river)]" /> Paid reading for AI agents
           </p> */}
@@ -357,6 +357,58 @@ function StreamDemoSection() {
   );
 }
 
+function BrandChip({ name, src }: { name: string; src: string }) {
+  const [failed, setFailed] = useState(false);
+  return (
+    <div className="flex h-16 items-center justify-center rounded-xl border border-[var(--faint)] bg-[var(--surface-muted)] px-5">
+      {failed ? (
+        <span className="text-lg font-semibold tracking-[-0.01em]">{name}</span>
+      ) : (
+        <img src={src} alt={`${name} logo`} className="max-h-7 w-auto object-contain" onError={() => setFailed(true)} />
+      )}
+    </div>
+  );
+}
+
+function Settlement() {
+  return (
+    <StackPanel className="section stack-panel stack-panel-base bg-[var(--background)]">
+      <motion.div {...fade} className="container grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
+        <div>
+          <p className="eyebrow">Settlement</p>
+          <h2 className="mt-4 section-title">How thousands of micropayments actually clear.</h2>
+          <p className="section-copy mt-5">
+            A single word can cost a fraction of a cent. Card rails would lose that to fees, so Rubicon settles every
+            word as a USDC <strong>nanopayment</strong>—a transfer small enough to move per word, instantly, without a
+            fee swallowing the payment.
+          </p>
+          <p className="section-copy mt-4">
+            It runs on Circle’s stablecoin infrastructure and Arc, Circle’s USDC-native chain where stablecoins are the
+            gas. That’s what makes paying for one word—then another, thousands of times over—economically real.
+          </p>
+        </div>
+        <div className="card-soft grid gap-5 p-7">
+          <div className="grid grid-cols-2 gap-4">
+            <BrandChip name="Circle" src="/circle-logo.avif" />
+            <BrandChip name="Arc" src="/arc-logo.webp" />
+          </div>
+          <div className="grid gap-3 text-sm">
+            {[
+              "Per-word price set by the creator",
+              "Each word settles as its own USDC nanopayment",
+              "No card fees eating sub-cent amounts",
+            ].map((item) => (
+              <div key={item} className="flex items-center gap-3">
+                <Check size={16} className="text-[var(--river)]" aria-hidden="true" /> {item}
+              </div>
+            ))}
+          </div>
+        </div>
+      </motion.div>
+    </StackPanel>
+  );
+}
+
 function Developers() {
   const steps = [
     "Install the Agent SDK",
@@ -506,6 +558,7 @@ export default function Home() {
         <CreatorValue />
         <SellerAgent />
         <StreamDemoSection />
+        <Settlement />
         <Developers />
         <Pricing />
         <Trust />

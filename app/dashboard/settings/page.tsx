@@ -1,8 +1,8 @@
 "use client";
 
-import { usePrivy } from "@privy-io/react-auth";
+import { getEmbeddedConnectedWallet, useCreateWallet, usePrivy, useWallets } from "@privy-io/react-auth";
 import { useEffect, useState } from "react";
-import { ChevronDown, ExternalLink, LogOut, ShieldCheck } from "lucide-react";
+import { ChevronDown, ExternalLink, LogOut, ShieldCheck, Wallet } from "lucide-react";
 import { useRubiconMutation, useRubiconQuery } from "@/lib/rubicon/hooks";
 import { SUPABASE_URL } from "@/lib/rubicon/auth";
 import {
@@ -154,31 +154,72 @@ function WalletEditor({
   error: string | null;
   onSave: (addr: string, network: string) => void;
 }) {
-  const [value, setValue] = useState(address);
-  const [networkValue, setNetworkValue] = useState(network);
-  useEffect(() => setValue(address), [address]);
-  useEffect(() => setNetworkValue(network), [network]);
+  const { ready, wallets } = useWallets();
+  const { createWallet } = useCreateWallet();
+  const [busy, setBusy] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+
+  const embedded = getEmbeddedConnectedWallet(wallets);
+  const embeddedAddress = embedded?.address ?? "";
+  const payoutNetwork = network || "base";
+  const isConnected = Boolean(address) && address.toLowerCase() === embeddedAddress.toLowerCase();
+
+  const connect = async () => {
+    setLocalError(null);
+    let addr = embeddedAddress;
+    if (!addr) {
+      setBusy(true);
+      try {
+        const created = await createWallet();
+        addr = created?.address ?? "";
+      } catch {
+        setLocalError("Could not create your wallet. Try again.");
+      } finally {
+        setBusy(false);
+      }
+    }
+    if (addr) onSave(addr, payoutNetwork);
+  };
+
+  const working = busy || pending;
+  const shownError = localError ?? error;
+
   return (
     <div className="grid gap-4">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">Wallet address</span>
+        <span className="text-sm font-medium">Receiving wallet</span>
         {address && <WalletStatePill verified={verified} />}
       </div>
-      <div className="grid gap-3 sm:grid-cols-[1fr_180px_auto]">
-        <input value={value} onChange={(e) => setValue(e.target.value)} placeholder="0x… receiving wallet address" className={`${inputClass} mono flex-1`} />
-        <input value={networkValue} onChange={(e) => setNetworkValue(e.target.value)} placeholder="base" className={inputClass} />
+
+      {address ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] px-4 py-3">
+          <div className="grid gap-0.5 min-w-0">
+            <span className="mono truncate text-sm">{address}</span>
+            <span className="text-xs text-[var(--muted)]">
+              {isConnected ? "Privy wallet" : "External address"} · {payoutNetwork}
+            </span>
+          </div>
+          {!isConnected && (
+            <button type="button" onClick={connect} disabled={working || !ready} className="button button-secondary text-sm disabled:opacity-50">
+              {working ? "Connecting…" : "Use my Privy wallet"}
+            </button>
+          )}
+        </div>
+      ) : (
         <button
           type="button"
-          onClick={() => onSave(value.trim(), networkValue.trim())}
-          disabled={pending || !value.trim() || !networkValue.trim() || (value.trim() === address && networkValue.trim() === network)}
-          className="button button-primary text-sm disabled:opacity-50"
+          onClick={connect}
+          disabled={working || !ready}
+          className="button button-primary inline-flex w-fit items-center gap-2 text-sm disabled:opacity-50"
         >
-          {pending ? "Saving…" : address ? "Change wallet" : "Connect wallet"}
+          <Wallet size={15} aria-hidden="true" /> {working ? "Connecting…" : "Connect wallet"}
         </button>
-      </div>
-      {error && <p className="rounded-lg border border-[#e3a2a0] bg-[#fff1f0] px-4 py-3 text-sm text-[#8d2f2d]">{error}</p>}
+      )}
+
+      {shownError && <p className="rounded-lg border border-[#e3a2a0] bg-[#fff1f0] px-4 py-3 text-sm text-[#8d2f2d]">{shownError}</p>}
       <p className="rounded-lg border border-[var(--faint)] bg-[var(--surface-muted)] px-4 py-3 text-xs leading-5 text-[var(--muted)]">
-        Payments for your articles are routed directly to this wallet. Rubicon never takes custody of your funds. Double-check the address — payments sent to a wrong address can’t be recovered.
+        Payments for your articles are routed directly to this wallet. Rubicon never takes custody of your funds. Your
+        wallet is created and secured by Privy when you sign in.
       </p>
     </div>
   );

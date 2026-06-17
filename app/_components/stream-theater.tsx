@@ -11,19 +11,19 @@ const ease = [0.16, 1, 0.3, 1] as const;
 
 type Phase = "ask" | "route" | "stream" | "followup" | "routeDeeper" | "streamDeeper" | "answer";
 
-const SECTION_HEADER = "Consent Decree Language";
-const DEEP_HEADER = "Authorized Exchange Requirements";
+const SECTION_HEADER = "Self-Attention Mechanism";
+const DEEP_HEADER = "Scaling the Context Window";
 
 const ARTICLE_SECTIONS = [
   {
     header: SECTION_HEADER,
     words:
-      "the consent decree prohibits any resale fee exceeding the original face value when the ticket is transferred between unaffiliated holders through a verified marketplace operated by the issuer or its appointed exchange agent the clause also requires each transfer record to preserve the article identifier wallet receipt and settlement reference",
+      "each token is projected into query key and value vectors and attention scores are computed as the scaled dot product between every query and key so the model can weigh how much each word attends to the others the resulting weights blend the value vectors into a context aware representation",
   },
   {
     header: DEEP_HEADER,
     words:
-      "authorized exchanges must confirm that the buyer agent has accepted the posted price per word before releasing protected language the seller agent can search within this section again compare the exchange rules against the buyer question and continue streaming only the words needed to answer whether resale requires issuer approved routing",
+      "longer context windows let the model read more tokens at once but the attention cost grows quadratically so engineers cache key and value tensors reuse past computation and add positional encodings that help the network track order across thousands of tokens without recomputing every previous step",
   },
 ];
 
@@ -143,7 +143,7 @@ export function StreamTheater() {
           <span className="text-sm font-semibold">{done ? "Session settled" : "Live agent session"}</span>
         </div>
         <span className="mono shrink-0 text-[0.68rem] uppercase tracking-[0.14em] text-[var(--muted)]">
-          rbcn://resale-fee-clause
+          rbcn://how-attention-works
         </span>
       </div>
 
@@ -196,7 +196,7 @@ export function StreamTheater() {
           <AnimatePresence>
             {(phase === "ask" || phase === "route" || phase === "stream") && (
               <Bubble key="ask" side="left">
-                Where does the article discuss <span className="text-[var(--ink)]">resale fees</span>?
+                Where does the article explain how <span className="text-[var(--ink)]">attention</span> works?
               </Bubble>
             )}
             {(phase === "route" || phase === "stream") && (
@@ -206,7 +206,7 @@ export function StreamTheater() {
             )}
             {(phase === "followup" || phase === "routeDeeper" || phase === "streamDeeper") && (
               <Bubble key="followup" side="left">
-                Does it require an authorized exchange?
+                Does it cover long-context tradeoffs?
               </Bubble>
             )}
             {(phase === "routeDeeper" || phase === "streamDeeper") && (
@@ -216,7 +216,7 @@ export function StreamTheater() {
             )}
             {done && (
               <Bubble key="answer" side="left" tone="answer" icon={<Sparkles size={13} aria-hidden="true" />}>
-                Got the clause. Stopping the stream — I have enough.
+                Got the explanation. Stopping the stream — I have enough.
               </Bubble>
             )}
           </AnimatePresence>
@@ -277,7 +277,7 @@ export function StreamTheater() {
             })}
           </div>
           <div className="mono h-[74px] border-t border-[var(--faint)] px-3.5 py-2 text-[0.66rem] leading-5 text-[var(--muted)]">
-            {visibleCollectedWords.length > 0 ? visibleCollectedWords.join(" ") : "Where does the article discuss resale fees?"}
+            {visibleCollectedWords.length > 0 ? visibleCollectedWords.join(" ") : "Where does the article explain how attention works?"}
           </div>
         </div>
       </div>
