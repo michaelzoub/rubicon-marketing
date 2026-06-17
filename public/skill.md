@@ -94,6 +94,12 @@ USDC into a Gateway balance, discover services, and pay with gas-free batched
 USDC nanopayments. Use Circle's Agent Nanopayments quickstart when the user
 wants Circle CLI / Gateway Nanopayments rather than dry-run payments.
 
+During Circle CLI setup, expect an interactive onboarding step: the wallet
+controller must review and confirm Circle's terms of service, then Circle sends
+an OTP to the configured email address. Pause for the wallet controller to
+provide the OTP before continuing; do not invent, bypass, or retry OTP values
+without the controller's instruction.
+
 The SDK should consume an already configured wallet-backed payment capability
 and keep enforcing the user's confirmed Rubicon budget. Do not create wallets,
 fund wallets, change wallet policies, or use a user's personal key unless the
@@ -193,7 +199,9 @@ is the default when no payment engine is passed.
 Circle Agent Nanopayments mode uses Circle CLI and Gateway Nanopayments for
 gas-free, batched USDC payments to x402-compatible services. Set up Circle
 Agent Wallet and Gateway balance first, then use the Rubicon SDK only after the
-Circle payment capability is configured.
+Circle payment capability is configured. Circle CLI onboarding may require the
+wallet controller to accept Circle's terms of service and complete an email OTP
+challenge before deposits, service discovery, or payments are available.
 
 Production/testnet SDK settlement can also use `CircleGatewayPaymentEngine`
 when the environment is configured for that payment engine:

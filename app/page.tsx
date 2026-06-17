@@ -10,6 +10,7 @@ import {
   Copy,
   FileText,
   Github,
+  Link2,
   MessageSquare,
   Quote,
   Settings2,
@@ -21,6 +22,7 @@ import { StreamTheater } from "./_components/stream-theater";
 import { WordStreamDemo } from "./_components/word-stream";
 
 const githubUrl = "https://github.com/michaelzoub/rubicon";
+const skillUrl = "https://www.rubiconpay.xyz/skill.md";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -136,6 +138,37 @@ function CodeShowcase() {
           <code>{developerCode[active]}</code>
         </pre>
       </div>
+    </div>
+  );
+}
+
+function AgentSkillSetup() {
+  const [copied, setCopied] = useState(false);
+  const copySkillUrl = async () => {
+    await navigator.clipboard.writeText(skillUrl);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  };
+
+  return (
+    <div className="rounded-lg border border-[var(--river-line)] bg-[var(--river-pale)] p-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <Link2 size={16} className="text-[var(--river)]" aria-hidden="true" /> Agent skill
+          </div>
+          <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--muted)]">
+            Give this skill to buyer agents so they can set up a wallet, use x402, talk to seller agents, stream paid
+            words, and stop when satisfied.
+          </p>
+        </div>
+        <button type="button" onClick={copySkillUrl} className="button button-secondary min-h-10 shrink-0 text-sm">
+          {copied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />} {copied ? "Copied" : "Copy URL"}
+        </button>
+      </div>
+      <code className="mono mt-4 block overflow-x-auto rounded-md border border-[var(--faint)] bg-[rgba(0,0,0,0.22)] px-4 py-3 text-sm text-[var(--ink)]">
+        {skillUrl}
+      </code>
     </div>
   );
 }
@@ -424,17 +457,20 @@ function Developers() {
         <p className="eyebrow">For developers</p>
         <h2 className="mt-4 section-title">Read paid articles in a few lines.</h2>
         <div className="mt-10 grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
-          <ol className="grid gap-3">
-            {steps.map((step, i) => (
-              <li key={step} className="flex items-start gap-3 rounded-lg border border-[var(--faint)] bg-[var(--card)] px-4 py-3">
-                <span className="mono mt-0.5 text-sm text-[var(--river-deep)]">{String(i + 1).padStart(2, "0")}</span>
-                <span className="text-sm font-medium leading-6">{step}</span>
+          <div className="grid gap-4">
+            <ol className="grid gap-3">
+              {steps.map((step, i) => (
+                <li key={step} className="flex items-start gap-3 rounded-lg border border-[var(--faint)] bg-[var(--card)] px-4 py-3">
+                  <span className="mono mt-0.5 text-sm text-[var(--river-deep)]">{String(i + 1).padStart(2, "0")}</span>
+                  <span className="text-sm font-medium leading-6">{step}</span>
+                </li>
+              ))}
+              <li className="mono mt-1 rounded-lg border border-[var(--river-line)] bg-[var(--river-pale)] px-4 py-3 text-sm text-[var(--river-deep)]">
+                npm install @rubicon-caliga/agent-sdk
               </li>
-            ))}
-            <li className="mono mt-1 rounded-lg border border-[var(--river-line)] bg-[var(--river-pale)] px-4 py-3 text-sm text-[var(--river-deep)]">
-              npm install @rubicon-caliga/agent-sdk
-            </li>
-          </ol>
+            </ol>
+            <AgentSkillSetup />
+          </div>
           <CodeShowcase />
         </div>
         <div className="mt-6 flex flex-wrap gap-3">
