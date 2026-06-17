@@ -7,7 +7,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import { RubiconError, type RubiconClient } from "./client";
-import { useRubiconClient } from "./auth";
+import { getSupabasePublicKeyIssue, useRubiconClient } from "./auth";
 
 export type QueryStatus = "loading" | "success" | "error";
 
@@ -18,12 +18,14 @@ export interface QueryResult<T> {
   refetch: () => void;
 }
 
-const notConfiguredError = new RubiconError(
-  "backend",
-  0,
-  "not_configured",
-  "Supabase is not connected yet. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to load live data.",
-);
+function notConfiguredError() {
+  return new RubiconError(
+    "backend",
+    0,
+    "not_configured",
+    getSupabasePublicKeyIssue() ?? "Supabase is not connected yet. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to load live data.",
+  );
+}
 
 /**
  * Runs `fetcher` against the Rubicon client and tracks its state. Re-runs when
@@ -51,7 +53,7 @@ export function useRubiconQuery<T>(
     if (!enabled) return;
     if (!client) {
       setStatus("error");
-      setError(notConfiguredError);
+      setError(notConfiguredError());
       setData(null);
       return;
     }
@@ -101,7 +103,7 @@ export function useRubiconMutation<TArgs extends unknown[], TResult>(
 
   const run = useCallback(
     async (...args: TArgs) => {
-      if (!client) throw notConfiguredError;
+      if (!client) throw notConfiguredError();
       setPending(true);
       setError(null);
       try {

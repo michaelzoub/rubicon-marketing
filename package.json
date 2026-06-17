@@ -8,6 +8,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@privy-io/node": "^0.21.0",
     "@privy-io/react-auth": "^3.31.0",
     "@supabase/supabase-js": "^2.108.2",
     "@tailwindcss/postcss": "^4.1.10",

@@ -13,8 +13,75 @@ import { createRubiconClient, type RubiconClient } from "./client";
 export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
+function legacyJwtRole(key: string): string | null {
+  const [, payload] = key.split(".");
+  if (!payload) return null;
+
+  try {
+    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const decoded = atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "="));
+    const parsed = JSON.parse(decoded) as { role?: unknown };
+    return typeof parsed.role === "string" ? parsed.role : null;
+  } catch {
+    return null;
+  }
+}
+
+export function getSupabasePublicKeyIssue(): string | null {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    return "Supabase is not connected yet. Set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to load live data.";
+  }
+
+  if (SUPABASE_ANON_KEY.startsWith("sb_secret_")) {
+    return "NEXT_PUBLIC_SUPABASE_ANON_KEY is using a Supabase secret key. Use a publishable key (sb_publishable_...) or the legacy anon JWT in browser-exposed env vars.";
+  }
+
+  if (SUPABASE_ANON_KEY.startsWith("eyJ") && legacyJwtRole(SUPABASE_ANON_KEY) !== "anon") {
+    return "NEXT_PUBLIC_SUPABASE_ANON_KEY is using the wrong legacy JWT role. Use the legacy anon key, not service_role.";
+  }
+
+  return null;
+}
+
 export function isRubiconConfigured(): boolean {
-  return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+  return getSupabasePublicKeyIssue() === null;
+}
+
+let supabaseTokenCache: { privyToken: string; supabaseToken: string; expiresAt: number } | null = null;
+
+async function getSupabaseToken(privyToken: string | null): Promise<string | null> {
+  if (!privyToken) return null;
+
+  const now = Math.floor(Date.now() / 1000);
+  if (supabaseTokenCache?.privyToken === privyToken && supabaseTokenCache.expiresAt > now + 30) {
+    return supabaseTokenCache.supabaseToken;
+  }
+
+  const response = await fetch("/api/auth/supabase-token", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${privyToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    supabaseTokenCache = null;
+    return null;
+  }
+
+  const body = (await response.json()) as { token?: string; expiresAt?: number };
+  if (!body.token || !body.expiresAt) {
+    supabaseTokenCache = null;
+    return null;
+  }
+
+  supabaseTokenCache = {
+    privyToken,
+    supabaseToken: body.token,
+    expiresAt: body.expiresAt,
+  };
+
+  return body.token;
 }
 
 /**
@@ -25,7 +92,7 @@ export function useRubiconClient(): RubiconClient | null {
   const { getAccessToken, user } = usePrivy();
 
   return useMemo(() => {
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) return null;
+    if (!isRubiconConfigured()) return null;
     const username =
       user?.twitter?.username ??
       user?.email?.address?.split("@")[0]?.replace(/[^a-zA-Z0-9_]/g, "_") ??
@@ -37,7 +104,7 @@ export function useRubiconClient(): RubiconClient | null {
     return createRubiconClient({
       supabaseUrl: SUPABASE_URL,
       supabaseAnonKey: SUPABASE_ANON_KEY,
-      getToken: () => getAccessToken(),
+      getToken: async () => getSupabaseToken(await getAccessToken()),
       getIdentity: () =>
         user
           ? {

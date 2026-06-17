@@ -57,7 +57,7 @@ function AuthGate({ children }: { children: ReactNode }) {
 
 function Layout({ children }: { children: ReactNode }) {
   return (
-    <div className="min-h-screen bg-[var(--surface-muted)] lg:grid lg:grid-cols-[256px_1fr]">
+    <div className="dashboard-theme min-h-screen bg-[var(--surface-muted)] lg:grid lg:grid-cols-[256px_1fr]">
       <Sidebar />
       <main className="min-w-0">
         <MobileBar />
