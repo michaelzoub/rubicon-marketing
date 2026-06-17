@@ -2,7 +2,6 @@
 
 import { motion } from "framer-motion";
 import {
-  ArrowDown,
   ArrowRight,
   BadgeCheck,
   BookOpen,
@@ -16,32 +15,34 @@ import {
   Waves,
 } from "lucide-react";
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { StreamTheater } from "./_components/stream-theater";
 import { WordStreamDemo } from "./_components/word-stream";
 
 const githubUrl = "https://github.com/michaelzoub/rubicon";
 
+const ease = [0.16, 1, 0.3, 1] as const;
+
 const fade = {
-  initial: { opacity: 0, y: 18 },
-  whileInView: { opacity: 1, y: 0 },
-  viewport: { once: true, amount: 0.24 },
-  transition: { duration: 0.55, ease: "easeOut" },
+  initial: { opacity: 0, y: 22, filter: "blur(6px)" },
+  whileInView: { opacity: 1, y: 0, filter: "blur(0px)" },
+  viewport: { once: true, amount: 0.2 },
+  transition: { duration: 0.7, ease },
 } as const;
 
 function Navigation() {
   return (
-    <header className="sticky top-0 z-50 border-b border-[var(--faint)] bg-[rgba(255,255,255,0.82)] backdrop-blur-md">
+    <header className="sticky top-0 z-50 border-b border-[var(--faint)] bg-[rgba(21,21,23,0.92)] backdrop-blur-md">
       <nav className="container flex h-16 items-center justify-between gap-6" aria-label="Main navigation">
         <Link href="/" className="flex items-center gap-2 font-semibold">
           <Waves size={21} strokeWidth={1.9} className="text-[var(--river)]" aria-hidden="true" />
           <span>Rubicon</span>
         </Link>
         <div className="hidden items-center gap-7 text-sm text-[var(--muted)] md:flex">
-          <a className="hover:text-[var(--ink)]" href="#product">Product</a>
-          <a className="hover:text-[var(--ink)]" href="#creators">Creators</a>
-          <a className="hover:text-[var(--ink)]" href="#developers">Developers</a>
-          <a className="hover:text-[var(--ink)]" href="#docs">Docs</a>
-          <Link className="hover:text-[var(--ink)]" href="/dashboard">Sign in</Link>
+          <a className="transition-colors hover:text-[var(--ink)]" href="#product">Product</a>
+          <a className="transition-colors hover:text-[var(--ink)]" href="#creators">Creators</a>
+          <a className="transition-colors hover:text-[var(--ink)]" href="#developers">Developers</a>
+          <a className="transition-colors hover:text-[var(--ink)]" href="#docs">Docs</a>
+          <Link className="transition-colors hover:text-[var(--ink)]" href="/dashboard">Sign in</Link>
         </div>
         <Link href="/dashboard" className="button button-primary text-sm">
           Start publishing <ArrowRight size={15} aria-hidden="true" />
@@ -53,71 +54,48 @@ function Navigation() {
 
 function Hero() {
   return (
-    <section className="container grid gap-12 pb-16 pt-16 md:grid-cols-[1.05fr_0.95fr] md:pb-24 md:pt-24">
-      <motion.div {...fade} className="flex flex-col justify-center">
-        <p className="eyebrow">Paid reading for AI agents</p>
-        <h1 className="mt-5 max-w-[640px] text-[clamp(2.3rem,4.8vw,4.4rem)] font-[700] leading-[1.02] tracking-[-0.02em]">
-          Let AI agents pay to read your work.
-        </h1>
-        <p className="mt-6 max-w-[560px] text-lg leading-8 text-[var(--muted)]">
-          Publish premium articles, choose a price per word, and earn whenever an AI agent reads. Every word is paid, and
-          agents can stop as soon as they have enough information.
-        </p>
-        <div className="mt-8 flex flex-wrap gap-3">
-          <Link href="/dashboard" className="button button-primary">
-            Start publishing <ArrowRight size={16} aria-hidden="true" />
-          </Link>
-          <a href="#developers" className="button button-secondary">
-            View developer docs
-          </a>
-        </div>
-        <div className="mono mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-[var(--muted)]">
-          <span className="flex items-center gap-1.5"><Check size={14} className="text-[var(--river)]" aria-hidden="true" /> Pay per word</span>
-          <span className="flex items-center gap-1.5"><Check size={14} className="text-[var(--river)]" aria-hidden="true" /> Stop anytime</span>
-          <span className="flex items-center gap-1.5"><Check size={14} className="text-[var(--river)]" aria-hidden="true" /> 0% platform fee</span>
-        </div>
-      </motion.div>
-
-      <motion.div {...fade} transition={{ duration: 0.65, delay: 0.08, ease: "easeOut" as const }} className="flex items-center">
-        <HeroFlow />
-      </motion.div>
-    </section>
-  );
-}
-
-function HeroFlow() {
-  const steps = [
-    "Buyer agent asks a question",
-    "Seller agent finds the relevant section",
-    "Words stream individually",
-    "One word = one payment",
-    "Agent stops when the answer is found",
-    "Creator earns for the exact words read",
-  ];
-  return (
-    <div className="w-full rounded-2xl border border-[var(--line)] bg-white p-6 shadow-sm">
-      <div className="grid gap-2">
-        {steps.map((step, i) => (
-          <div key={step}>
-            <div
-              className={`flex items-center gap-3 rounded-lg border px-4 py-3 text-sm ${
-                i === steps.length - 1
-                  ? "border-[#69b88c] bg-[#e8f6ef] font-medium text-[#165c3e]"
-                  : "border-[var(--faint)] bg-[var(--surface-muted)]"
-              }`}
-            >
-              <span className="mono text-[0.66rem] text-[var(--river-deep)]">{String(i + 1).padStart(2, "0")}</span>
-              {step}
-            </div>
-            {i < steps.length - 1 && (
-              <div className="flex justify-center py-0.5 text-[var(--river)]">
-                <ArrowDown size={15} strokeWidth={1.8} aria-hidden="true" />
-              </div>
-            )}
+    <section className="relative overflow-hidden">
+      <div className="aurora" aria-hidden="true" />
+      <div className="grid-texture" aria-hidden="true" />
+      <div className="container grid gap-12 pb-16 pt-20 md:grid-cols-[1.02fr_0.98fr] md:pb-28 md:pt-28">
+        <motion.div {...fade} className="flex flex-col justify-center">
+          {/* <p className="eyebrow inline-flex w-fit items-center gap-2 rounded-full border border-[var(--river-line)] bg-[var(--river-pale)] px-3 py-1">
+            <span className="status-dot h-1.5 w-1.5 rounded-full bg-[var(--river)]" /> Paid reading for AI agents
+          </p> */}
+          <h1 className="mt-5 max-w-[640px] text-[clamp(2.4rem,5vw,4.6rem)] font-[800] leading-[0.98] tracking-[-0.045em]">
+            Let AI agents pay to read your work.
+          </h1>
+          <p className="mt-6 max-w-[560px] text-lg leading-8 text-[var(--muted)]">
+            Publish premium articles, choose a price per word, and earn whenever an AI agent reads. Every word is paid, and
+            agents can stop as soon as they have enough information.
+          </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Link href="/dashboard" className="button button-primary">
+              Start publishing <ArrowRight size={16} aria-hidden="true" />
+            </Link>
+            <a href="#developers" className="button button-secondary">
+              View developer docs
+            </a>
           </div>
-        ))}
+          <div className="mono mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-[var(--muted)]">
+            <span className="flex items-center gap-1.5"><Check size={14} className="text-[var(--river)]" aria-hidden="true" /> Pay per word</span>
+            <span className="flex items-center gap-1.5"><Check size={14} className="text-[var(--river)]" aria-hidden="true" /> Stop anytime</span>
+            <span className="flex items-center gap-1.5"><Check size={14} className="text-[var(--river)]" aria-hidden="true" /> 0% platform fee</span>
+          </div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 28, filter: "blur(8px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          transition={{ duration: 0.85, delay: 0.12, ease }}
+          className="flex min-w-0 items-center"
+        >
+          <div className="hero-visual w-full min-w-0" style={{ animation: "soft-float 7s var(--ease-in-out) infinite" }}>
+            <StreamTheater />
+          </div>
+        </motion.div>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -140,12 +118,12 @@ function HowItWorks() {
     },
   ];
   return (
-    <section id="product" className="section border-y border-[var(--faint)] bg-[var(--surface-muted)]">
+    <section id="product" className="section stack-panel stack-panel-muted border-y border-[var(--faint)] bg-[var(--surface-muted)]">
       <motion.div {...fade} className="container">
         <h2 className="section-title">How it works</h2>
         <div className="mt-12 grid gap-5 md:grid-cols-3">
           {steps.map((step, i) => (
-            <div key={step.title} className="rounded-xl border border-[var(--line)] bg-white p-6">
+            <div key={step.title} className="card-soft p-6">
               <div className="flex items-center gap-3">
                 <span className="grid h-10 w-10 place-items-center rounded-lg bg-[var(--river-pale)] text-[var(--river)]">{step.icon}</span>
                 <span className="mono text-xs text-[var(--river-deep)]">{String(i + 1).padStart(2, "0")}</span>
@@ -179,13 +157,13 @@ function CreatorValue() {
     },
   ];
   return (
-    <section id="creators" className="section">
+    <section id="creators" className="section stack-panel stack-panel-base bg-[var(--background)]">
       <motion.div {...fade} className="container">
         <p className="eyebrow">For creators</p>
         <h2 className="mt-4 section-title">Built around what creators actually want.</h2>
         <div className="mt-12 grid gap-5 md:grid-cols-3">
           {cards.map((card) => (
-            <div key={card.title} className="rounded-xl border border-[var(--line)] bg-white p-6">
+            <div key={card.title} className="card-soft p-6">
               <span className="grid h-10 w-10 place-items-center rounded-lg bg-[var(--river-pale)] text-[var(--river)]">{card.icon}</span>
               <h3 className="mt-5 text-xl font-semibold">{card.title}</h3>
               <p className="mt-2 leading-7 text-[var(--muted)]">{card.copy}</p>
@@ -205,7 +183,7 @@ function SellerAgent() {
     { who: "Seller agent", tone: "seller", text: "Begins the paid word stream." },
   ];
   return (
-    <section className="section border-y border-[var(--faint)] bg-[var(--surface-muted)]">
+    <section className="section stack-panel stack-panel-muted border-y border-[var(--faint)] bg-[var(--surface-muted)]">
       <motion.div {...fade} className="container grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
         <div>
           <p className="eyebrow">The seller agent</p>
@@ -215,21 +193,21 @@ function SellerAgent() {
             releases the article one paid word at a time.
           </p>
         </div>
-        <div className="rounded-2xl border border-[var(--line)] bg-white p-5 shadow-sm">
+        <div className="card-soft p-5">
           <div className="grid gap-3">
             {conversation.map((line, i) => (
               <div
                 key={i}
-                className={`rounded-xl border px-4 py-3 ${
+                className={`rounded-2xl border px-4 py-3 ${
                   line.tone === "seller"
-                    ? "border-[#69b88c] bg-[#e8f6ef]"
+                    ? "border-[var(--river-line)] bg-[var(--river-pale)]"
                     : "border-[var(--faint)] bg-[var(--surface-muted)]"
                 }`}
               >
-                <div className={`mono text-[0.62rem] uppercase tracking-[0.12em] ${line.tone === "seller" ? "text-[#24734f]" : "text-[var(--river-deep)]"}`}>
+                <div className={`mono text-[0.62rem] uppercase tracking-[0.12em] ${line.tone === "seller" ? "text-[var(--river-deep)]" : "text-[var(--river-deep)]"}`}>
                   {line.who}
                 </div>
-                <p className={`mt-1.5 text-sm leading-6 ${line.tone === "seller" ? "text-[#165c3e]" : "text-[var(--ink)]"}`}>{line.text}</p>
+                <p className="mt-1.5 text-sm leading-6 text-[var(--ink)]">{line.text}</p>
               </div>
             ))}
           </div>
@@ -241,7 +219,7 @@ function SellerAgent() {
 
 function StreamDemoSection() {
   return (
-    <section className="section">
+    <section className="section bg-[var(--background)]">
       <motion.div {...fade} className="container grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
         <div>
           <p className="eyebrow">Word-level metering</p>
@@ -308,23 +286,23 @@ client.streamWithStopConditions(
 );`;
 
   return (
-    <section id="developers" className="section border-y border-[var(--faint)] bg-[var(--surface-muted)]">
+    <section id="developers" className="section stack-panel stack-panel-muted border-y border-[var(--faint)] bg-[var(--surface-muted)]">
       <motion.div {...fade} className="container">
         <p className="eyebrow">For developers</p>
         <h2 className="mt-4 section-title">Read paid articles in a few lines.</h2>
         <div className="mt-10 grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
           <ol className="grid gap-3">
             {steps.map((step, i) => (
-              <li key={step} className="flex items-start gap-3 rounded-lg border border-[var(--line)] bg-white px-4 py-3">
+              <li key={step} className="flex items-start gap-3 rounded-lg border border-[var(--faint)] bg-[var(--card)] px-4 py-3">
                 <span className="mono mt-0.5 text-sm text-[var(--river-deep)]">{String(i + 1).padStart(2, "0")}</span>
                 <span className="text-sm font-medium leading-6">{step}</span>
               </li>
             ))}
-            <li className="mono mt-1 rounded-lg border border-[var(--line)] bg-white px-4 py-3 text-sm text-[var(--river-deep)]">
+            <li className="mono mt-1 rounded-lg border border-[var(--river-line)] bg-[var(--river-pale)] px-4 py-3 text-sm text-[var(--river-deep)]">
               npm install @rubicon-caliga/agent-sdk
             </li>
           </ol>
-          <pre className="mono max-w-full overflow-x-auto rounded-xl border border-[var(--faint)] bg-[#0f1519] p-5 text-[0.8rem] leading-6 text-[#dff4fb]">
+          <pre className="mono max-w-full overflow-x-auto rounded-xl border border-[var(--faint)] bg-[#101014] p-5 text-[0.8rem] leading-6 text-[#e8ecff] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
             <code>{code}</code>
           </pre>
         </div>
@@ -345,7 +323,7 @@ function Pricing() {
   return (
     <section id="docs" className="section">
       <motion.div {...fade} className="container">
-        <div className="grid gap-8 rounded-2xl border border-[var(--line)] bg-white p-8 md:grid-cols-[auto_1fr] md:items-center md:p-10">
+        <div className="card-soft grid gap-8 p-8 md:grid-cols-[auto_1fr] md:items-center md:p-10">
           <div className="text-center md:text-left">
             <div className="text-[clamp(3rem,8vw,5rem)] font-bold leading-none tracking-[-0.03em] text-[var(--river-deep)]">0%</div>
             <div className="mono mt-2 text-xs uppercase tracking-[0.14em] text-[var(--muted)]">Rubicon platform fee</div>
@@ -378,7 +356,7 @@ function Trust() {
         <h2 className="section-title">Trust built into every stream.</h2>
         <div className="mt-10 grid gap-3 md:grid-cols-2">
           {items.map((item) => (
-            <div key={item} className="flex items-center gap-3 rounded-lg border border-[var(--line)] bg-white px-4 py-4">
+            <div key={item} className="flex items-center gap-3 rounded-2xl border border-[var(--faint)] bg-[var(--card)] px-4 py-4">
               <Check size={17} className="shrink-0 text-[var(--green)]" aria-hidden="true" />
               <span>{item}</span>
             </div>
@@ -393,7 +371,7 @@ function FinalCTA() {
   return (
     <section className="section">
       <motion.div {...fade} className="container">
-        <div className="rounded-2xl border border-[var(--line)] bg-[linear-gradient(135deg,#f7fbff,#eef4fe)] p-8 text-center md:p-14">
+        <div className="card-soft relative overflow-hidden bg-[radial-gradient(circle_at_50%_0%,rgba(102,132,255,0.18),transparent_42%),var(--card)] p-8 text-center md:p-14">
           <Quote size={28} className="mx-auto text-[var(--river)]" aria-hidden="true" />
           <h2 className="mx-auto mt-5 max-w-2xl text-[clamp(1.7rem,3.4vw,2.6rem)] font-semibold leading-tight tracking-[-0.01em]">
             Make your writing readable—and payable—by agents.
@@ -422,7 +400,7 @@ function Footer() {
           </div>
           <p className="text-sm text-[var(--muted)]">Let AI agents pay to read your work.</p>
           <div className="flex items-center gap-3 border-t border-[var(--faint)] pt-4 text-sm text-[var(--muted)]">
-            <span className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden">
+            <span className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden bg-white">
               <img src="/caliga-logo.png" alt="Caliga" className="h-10 w-10 object-cover [filter:brightness(8)_contrast(2.4)]" />
             </span>
             <span>Built and maintained by Caliga</span>

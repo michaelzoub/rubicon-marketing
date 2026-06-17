@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -47,10 +47,10 @@ export function WordStreamDemo() {
   const aggregated = Math.max(count - VISIBLE_ROWS, 0);
 
   return (
-    <div className={`overflow-hidden rounded-2xl border bg-white shadow-sm transition-colors duration-500 ${done ? "border-[#69b88c]" : "border-[var(--line)]"}`}>
+    <div className={`overflow-hidden rounded-2xl border bg-[var(--card)] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-colors duration-500 ${done ? "border-[rgba(88,213,155,0.38)]" : "border-[var(--line)]"}`}>
       <div className="flex items-center justify-between border-b border-[var(--faint)] bg-[var(--surface-muted)] px-5 py-3">
         <span className="mono text-[0.66rem] uppercase tracking-[0.16em] text-[var(--muted)]">Paid word stream</span>
-        <span className={`mono text-xs ${done ? "text-[#24734f]" : "text-[var(--river-deep)]"}`}>
+        <span className={`mono text-xs ${done ? "text-[var(--green)]" : "text-[var(--river-deep)]"}`}>
           {done ? "stopped" : "streaming"}
         </span>
       </div>
@@ -60,7 +60,8 @@ export function WordStreamDemo() {
           Goal: Find the resale-fee clause
         </div>
 
-        <div className="grid gap-1.5">
+        {/* fixed-height region so the surrounding page never reflows */}
+        <div className="grid h-[228px] content-start gap-1.5 overflow-hidden">
           {aggregated > 0 && (
             <div className="mono flex items-center justify-between rounded-md bg-[var(--surface-muted)] px-3 py-1.5 text-xs text-[var(--muted)]">
               <span>Words 001–{String(aggregated).padStart(3, "0")} delivered</span>
@@ -72,8 +73,8 @@ export function WordStreamDemo() {
               key={n}
               initial={i === 0 ? { opacity: 0, y: -6 } : false}
               animate={{ opacity: 1 - i * 0.12, y: 0 }}
-              transition={{ duration: 0.18 }}
-              className="mono flex items-center justify-between rounded-md border border-[var(--faint)] bg-white px-3 py-1.5 text-xs"
+              transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+              className="mono flex items-center justify-between rounded-md border border-[var(--faint)] bg-[var(--surface)] px-3 py-1.5 text-xs"
             >
               <span className="text-[var(--ink)]">Word {String(n).padStart(3, "0")} delivered</span>
               <span className="text-[var(--river-deep)]">$0.00001 paid</span>
@@ -86,19 +87,25 @@ export function WordStreamDemo() {
           <span className="mono text-sm font-semibold text-[var(--river-deep)]">${paid} paid</span>
         </div>
 
-        {done && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
-            className="mt-4 rounded-lg border border-[#69b88c] bg-[#e8f6ef] px-4 py-3"
-          >
-            <div className="flex items-center gap-2 text-sm font-semibold text-[#165c3e]">
-              <CheckCircle2 size={16} aria-hidden="true" /> Answer found — agent stopped
-            </div>
-            <div className="mt-1 text-xs text-[#24734f]">Unread words were not charged.</div>
-          </motion.div>
-        )}
+        {/* reserved slot keeps height constant whether or not the banner is shown */}
+        <div className="mt-4 h-[64px]">
+          <AnimatePresence>
+            {done && (
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                className="flex h-full flex-col justify-center rounded-lg border border-[rgba(88,213,155,0.38)] bg-[rgba(88,213,155,0.1)] px-4"
+              >
+                <div className="flex items-center gap-2 text-sm font-semibold text-[var(--ink)]">
+                  <CheckCircle2 size={16} aria-hidden="true" /> Answer found — agent stopped
+                </div>
+                <div className="mt-1 text-xs text-[var(--green)]">Unread words were not charged.</div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );
