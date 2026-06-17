@@ -1,0 +1,522 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  EyeOff,
+  Upload,
+} from "lucide-react";
+import { useRubiconMutation, useRubiconQuery } from "@/lib/rubicon/hooks";
+import {
+  atomicForWords,
+  atomicToUsd,
+  formatUsd,
+  per1000UsdToAtomicPerWord,
+} from "@/lib/rubicon/pricing";
+import { parseSections } from "@/lib/rubicon/sections";
+import type { ArticleSectionInput } from "@/lib/rubicon/types";
+import { Card, PageHeader, shortWallet, WalletStatePill } from "../../_components/ui";
+
+interface EditableSection {
+  title: string;
+  wordCount: number;
+  excluded: boolean;
+}
+
+const steps = ["Add your article", "Review sections", "Choose pricing", "Publish"] as const;
+
+export default function NewArticlePage() {
+  const router = useRouter();
+  const creator = useRubiconQuery((c) => c.getCreator(), []);
+  const wallet = useRubiconQuery((c) => c.getWallet(), []);
+  const createArticle = useRubiconMutation((c, ...args: Parameters<typeof c.createArticle>) => c.createArticle(...args));
+  const publishArticle = useRubiconMutation((c, id: string) => c.publishArticle(id));
+
+  const [step, setStep] = useState(0);
+  const [title, setTitle] = useState("");
+  const [originalSource, setOriginalSource] = useState("");
+  const [content, setContent] = useState("");
+  const [sections, setSections] = useState<EditableSection[]>([]);
+  const lastParsed = useRef<string>("");
+
+  const [pricePer1000, setPricePer1000] = useState("");
+  const [maxPrice, setMaxPrice] = useState("");
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
+  // Prefill default pricing once the creator loads (only if untouched).
+  const prefilled = useRef(false);
+  useEffect(() => {
+    if (prefilled.current) return;
+    const atomic = creator.data?.defaultPricePerWord;
+    if (!atomic) return;
+    const usdPer1000 = atomicToUsd(atomic) * 1000;
+    if (usdPer1000) {
+      setPricePer1000(usdPer1000.toString());
+      prefilled.current = true;
+    }
+  }, [creator.data?.defaultPricePerWord]);
+
+  function enterReview() {
+    if (content !== lastParsed.current) {
+      const parsed = parseSections(content);
+      setSections(parsed.map((s) => ({ title: s.title, wordCount: s.wordCount, excluded: false })));
+      lastParsed.current = content;
+    }
+    setStep(1);
+  }
+
+  const includedWords = sections.filter((s) => !s.excluded).reduce((sum, s) => sum + s.wordCount, 0);
+  const atomicPerWord = pricePer1000 ? per1000UsdToAtomicPerWord(Number(pricePer1000)) : "0";
+  const estFullPrice = atomicForWords(atomicPerWord, includedWords);
+  const maxPriceAtomic = maxPrice ? per1000UsdToAtomicPerWord(Number(maxPrice) * 1000) : null;
+
+  function buildInput() {
+    const sectionInput: ArticleSectionInput[] = sections.map((s, i) => ({
+      title: s.title,
+      order: i,
+      excluded: s.excluded,
+    }));
+    return {
+      title: title.trim(),
+      originalSource: originalSource.trim() || null,
+      content,
+      sections: sectionInput,
+      pricePerWord: atomicPerWord,
+      maxArticlePrice: maxPriceAtomic,
+    };
+  }
+
+  async function submit(publish: boolean) {
+    setSubmitError(null);
+    try {
+      const article = await createArticle.run(buildInput());
+      if (publish) await publishArticle.run(article.id);
+      router.push(`/dashboard/articles/${article.id}`);
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "Could not save the article.");
+    }
+  }
+
+  const submitting = createArticle.pending || publishArticle.pending;
+
+  return (
+    <div className="grid gap-6">
+      <PageHeader title="New article" description="Add your content, review sections, choose a price, and publish." />
+
+      <Stepper current={step} />
+
+      {step === 0 && (
+        <StepAddArticle
+          title={title}
+          originalSource={originalSource}
+          content={content}
+          onTitle={setTitle}
+          onSource={setOriginalSource}
+          onContent={setContent}
+          onNext={enterReview}
+        />
+      )}
+
+      {step === 1 && (
+        <StepReviewSections
+          sections={sections}
+          onChange={setSections}
+          onBack={() => setStep(0)}
+          onNext={() => setStep(2)}
+        />
+      )}
+
+      {step === 2 && (
+        <StepPricing
+          pricePer1000={pricePer1000}
+          maxPrice={maxPrice}
+          atomicPerWord={atomicPerWord}
+          includedWords={includedWords}
+          estFullPrice={estFullPrice}
+          onPrice={setPricePer1000}
+          onMaxPrice={setMaxPrice}
+          onBack={() => setStep(1)}
+          onNext={() => setStep(3)}
+        />
+      )}
+
+      {step === 3 && (
+        <StepPublish
+          title={title}
+          includedWords={includedWords}
+          sectionCount={sections.filter((s) => !s.excluded).length}
+          atomicPerWord={atomicPerWord}
+          estFullPrice={estFullPrice}
+          walletAddress={wallet.data?.address ?? null}
+          walletState={wallet.data?.verificationState ?? "unverified"}
+          submitting={submitting}
+          error={submitError}
+          onBack={() => setStep(2)}
+          onSaveDraft={() => submit(false)}
+          onPublish={() => submit(true)}
+        />
+      )}
+    </div>
+  );
+}
+
+function Stepper({ current }: { current: number }) {
+  return (
+    <ol className="flex flex-wrap gap-2">
+      {steps.map((label, i) => {
+        const active = i === current;
+        const done = i < current;
+        return (
+          <li
+            key={label}
+            className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm ${
+              active
+                ? "border-[var(--river)] bg-[var(--river-pale)] text-[var(--river-deep)]"
+                : done
+                  ? "border-[#69b88c] bg-[#e8f6ef] text-[#165c3e]"
+                  : "border-[var(--line)] bg-white text-[var(--muted)]"
+            }`}
+          >
+            <span className="mono text-xs">{i + 1}</span>
+            {label}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <label className="grid gap-2">
+      <span className="text-sm font-medium">{label}</span>
+      {children}
+      {hint && <span className="text-xs text-[var(--muted)]">{hint}</span>}
+    </label>
+  );
+}
+
+const inputClass =
+  "h-11 rounded-lg border border-[var(--line)] px-3 outline-none focus:border-[var(--river)]";
+
+function StepAddArticle({
+  title,
+  originalSource,
+  content,
+  onTitle,
+  onSource,
+  onContent,
+  onNext,
+}: {
+  title: string;
+  originalSource: string;
+  content: string;
+  onTitle: (v: string) => void;
+  onSource: (v: string) => void;
+  onContent: (v: string) => void;
+  onNext: () => void;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const text = await file.text();
+    onContent(text);
+    if (!title) onTitle(file.name.replace(/\.(md|markdown|txt)$/i, ""));
+  }
+
+  const ready = title.trim() && content.trim();
+
+  return (
+    <Card className="p-6">
+      <div className="grid gap-5">
+        <Field label="Article title">
+          <input value={title} onChange={(e) => onTitle(e.target.value)} placeholder="A clear, descriptive title" className={inputClass} />
+        </Field>
+        <Field label="Original source" hint="Optional. A link to where this was first published.">
+          <input value={originalSource} onChange={(e) => onSource(e.target.value)} placeholder="https://example.com/your-article" className={inputClass} />
+        </Field>
+        <Field label="Article content" hint="Paste your article, or upload a Markdown file. Use # headings to define sections.">
+          <textarea
+            value={content}
+            onChange={(e) => onContent(e.target.value)}
+            placeholder={"# Section title\n\nYour content…"}
+            className="min-h-[320px] resize-y rounded-lg border border-[var(--line)] p-4 font-serif text-base leading-7 outline-none focus:border-[var(--river)]"
+          />
+        </Field>
+        <div className="flex flex-wrap items-center gap-3">
+          <input ref={fileRef} type="file" accept=".md,.markdown,.txt" onChange={onUpload} className="hidden" />
+          <button type="button" onClick={() => fileRef.current?.click()} className="button button-secondary text-sm">
+            <Upload size={15} aria-hidden="true" /> Upload Markdown
+          </button>
+          <span className="text-xs text-[var(--muted)]">Import from a URL is coming soon.</span>
+        </div>
+      </div>
+      <div className="mt-6 flex justify-end border-t border-[var(--faint)] pt-5">
+        <button type="button" onClick={onNext} disabled={!ready} className="button button-primary disabled:opacity-50">
+          Review sections <ArrowRight size={16} aria-hidden="true" />
+        </button>
+      </div>
+    </Card>
+  );
+}
+
+function StepReviewSections({
+  sections,
+  onChange,
+  onBack,
+  onNext,
+}: {
+  sections: EditableSection[];
+  onChange: (s: EditableSection[]) => void;
+  onBack: () => void;
+  onNext: () => void;
+}) {
+  function update(index: number, patch: Partial<EditableSection>) {
+    onChange(sections.map((s, i) => (i === index ? { ...s, ...patch } : s)));
+  }
+  function move(index: number, dir: -1 | 1) {
+    const next = [...sections];
+    const target = index + dir;
+    if (target < 0 || target >= next.length) return;
+    [next[index], next[target]] = [next[target], next[index]];
+    onChange(next);
+  }
+
+  return (
+    <Card className="p-6">
+      <h2 className="text-lg font-semibold">Sections agents can navigate</h2>
+      <p className="mt-1 text-sm text-[var(--muted)]">
+        Section titles help your seller agent guide buyers without revealing unpaid text. Rename, reorder, or exclude any section.
+      </p>
+
+      {sections.length === 0 ? (
+        <p className="mt-6 rounded-lg border border-dashed border-[var(--line)] p-6 text-center text-sm text-[var(--muted)]">
+          No headings detected. Your article will be offered as a single section. Add Markdown <code className="mono">#</code> headings to split it.
+        </p>
+      ) : (
+        <ul className="mt-5 grid gap-3">
+          {sections.map((section, index) => (
+            <li
+              key={index}
+              className={`grid gap-3 rounded-lg border p-4 sm:grid-cols-[auto_1fr_auto] sm:items-center ${
+                section.excluded ? "border-[var(--faint)] bg-[var(--surface-muted)] opacity-70" : "border-[var(--line)] bg-white"
+              }`}
+            >
+              <div className="flex flex-col">
+                <button type="button" onClick={() => move(index, -1)} disabled={index === 0} className="text-[var(--muted)] hover:text-[var(--ink)] disabled:opacity-30" aria-label="Move up">
+                  <ChevronUp size={16} aria-hidden="true" />
+                </button>
+                <button type="button" onClick={() => move(index, 1)} disabled={index === sections.length - 1} className="text-[var(--muted)] hover:text-[var(--ink)] disabled:opacity-30" aria-label="Move down">
+                  <ChevronDown size={16} aria-hidden="true" />
+                </button>
+              </div>
+              <div className="min-w-0">
+                <input
+                  value={section.title}
+                  onChange={(e) => update(index, { title: e.target.value })}
+                  className="w-full rounded-md border border-transparent bg-transparent py-1 font-medium outline-none hover:border-[var(--faint)] focus:border-[var(--river)]"
+                />
+                <div className="mt-1 text-xs text-[var(--muted)]">{section.wordCount.toLocaleString()} words</div>
+              </div>
+              <button
+                type="button"
+                onClick={() => update(index, { excluded: !section.excluded })}
+                className="button button-secondary justify-self-start text-sm sm:justify-self-end"
+              >
+                {section.excluded ? <Eye size={15} aria-hidden="true" /> : <EyeOff size={15} aria-hidden="true" />}
+                {section.excluded ? "Include" : "Exclude"}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <div className="mt-6 flex justify-between border-t border-[var(--faint)] pt-5">
+        <button type="button" onClick={onBack} className="button button-secondary">
+          <ArrowLeft size={16} aria-hidden="true" /> Back
+        </button>
+        <button type="button" onClick={onNext} className="button button-primary">
+          Choose pricing <ArrowRight size={16} aria-hidden="true" />
+        </button>
+      </div>
+    </Card>
+  );
+}
+
+function StepPricing({
+  pricePer1000,
+  maxPrice,
+  atomicPerWord,
+  includedWords,
+  estFullPrice,
+  onPrice,
+  onMaxPrice,
+  onBack,
+  onNext,
+}: {
+  pricePer1000: string;
+  maxPrice: string;
+  atomicPerWord: string;
+  includedWords: number;
+  estFullPrice: string;
+  onPrice: (v: string) => void;
+  onMaxPrice: (v: string) => void;
+  onBack: () => void;
+  onNext: () => void;
+}) {
+  const valid = Number(pricePer1000) > 0;
+  return (
+    <Card className="p-6">
+      <h2 className="text-lg font-semibold">Choose pricing</h2>
+      <p className="mt-1 text-sm text-[var(--muted)]">Set what agents pay to read. You earn for exactly the words they read.</p>
+
+      <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_320px]">
+        <div className="grid gap-5">
+          <Field label="Price per 1,000 words" hint="Enter the amount in US dollars.">
+            <div className="flex items-center rounded-lg border border-[var(--line)] focus-within:border-[var(--river)]">
+              <span className="px-3 text-[var(--muted)]">$</span>
+              <input
+                value={pricePer1000}
+                onChange={(e) => onPrice(e.target.value.replace(/[^0-9.]/g, ""))}
+                inputMode="decimal"
+                placeholder="0.01"
+                className="h-11 w-full rounded-r-lg border-0 px-0 outline-none"
+              />
+            </div>
+          </Field>
+          <Field label="Maximum article price" hint="Optional. A cap on what one agent can be charged. Agents still pay only for words actually read.">
+            <div className="flex items-center rounded-lg border border-[var(--line)] focus-within:border-[var(--river)]">
+              <span className="px-3 text-[var(--muted)]">$</span>
+              <input
+                value={maxPrice}
+                onChange={(e) => onMaxPrice(e.target.value.replace(/[^0-9.]/g, ""))}
+                inputMode="decimal"
+                placeholder="No cap"
+                className="h-11 w-full rounded-r-lg border-0 px-0 outline-none"
+              />
+            </div>
+          </Field>
+        </div>
+
+        <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-muted)] p-5">
+          <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Pricing preview</div>
+          <dl className="mt-4 grid gap-3 text-sm">
+            <Row term="Price per word" value={formatUsd(atomicPerWord)} />
+            <Row term="Estimated full-article price" value={`${formatUsd(estFullPrice)}`} hint={`${includedWords.toLocaleString()} words`} />
+            <Row term="Earnings for 100 words" value={formatUsd(atomicForWords(atomicPerWord, 100))} />
+            <Row term="Earnings for 1,000 words" value={formatUsd(atomicForWords(atomicPerWord, 1000))} />
+            <Row term="Rubicon platform fee" value="0%" />
+          </dl>
+          <p className="mt-4 border-t border-[var(--faint)] pt-3 text-xs leading-5 text-[var(--muted)]">
+            Estimates use a preview word count. Billing always reflects the exact words an agent reads, measured by Rubicon.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-6 flex justify-between border-t border-[var(--faint)] pt-5">
+        <button type="button" onClick={onBack} className="button button-secondary">
+          <ArrowLeft size={16} aria-hidden="true" /> Back
+        </button>
+        <button type="button" onClick={onNext} disabled={!valid} className="button button-primary disabled:opacity-50">
+          Review <ArrowRight size={16} aria-hidden="true" />
+        </button>
+      </div>
+    </Card>
+  );
+}
+
+function StepPublish({
+  title,
+  includedWords,
+  sectionCount,
+  atomicPerWord,
+  estFullPrice,
+  walletAddress,
+  walletState,
+  submitting,
+  error,
+  onBack,
+  onSaveDraft,
+  onPublish,
+}: {
+  title: string;
+  includedWords: number;
+  sectionCount: number;
+  atomicPerWord: string;
+  estFullPrice: string;
+  walletAddress: string | null;
+  walletState: import("@/lib/rubicon/types").WalletVerificationState;
+  submitting: boolean;
+  error: string | null;
+  onBack: () => void;
+  onSaveDraft: () => void;
+  onPublish: () => void;
+}) {
+  const noWallet = !walletAddress;
+  return (
+    <Card className="p-6">
+      <h2 className="text-lg font-semibold">Review and publish</h2>
+      <p className="mt-1 text-sm text-[var(--muted)]">Confirm the details below. You can save a draft or publish it live to agents.</p>
+
+      <dl className="mt-5 grid gap-3 rounded-xl border border-[var(--line)] p-5 text-sm">
+        <Row term="Article title" value={title || "Untitled"} />
+        <Row term="Word count" value={includedWords.toLocaleString()} />
+        <Row term="Sections" value={sectionCount.toLocaleString()} />
+        <Row term="Price per word" value={formatUsd(atomicPerWord)} />
+        <Row term="Estimated full price" value={formatUsd(estFullPrice)} />
+        <Row
+          term="Receiving wallet"
+          value={
+            <span className="flex items-center gap-2">
+              <span className="mono">{shortWallet(walletAddress)}</span>
+              {walletAddress && <WalletStatePill state={walletState} />}
+            </span>
+          }
+        />
+        <Row term="Platform fee" value="0%" />
+        <Row term="Article status" value="Draft until published" />
+      </dl>
+
+      {noWallet && (
+        <p className="mt-4 rounded-lg border border-[#e7c9a3] bg-[#fdf6ec] px-4 py-3 text-sm text-[#7b4e12]">
+          You can save this as a draft now. Connect a receiving wallet in Settings before publishing so payments have somewhere to go.
+        </p>
+      )}
+
+      {error && <p className="mt-4 rounded-lg border border-[#e3a2a0] bg-[#fff1f0] px-4 py-3 text-sm text-[#8d2f2d]">{error}</p>}
+
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--faint)] pt-5">
+        <button type="button" onClick={onBack} className="button button-secondary">
+          <ArrowLeft size={16} aria-hidden="true" /> Back
+        </button>
+        <div className="flex flex-wrap gap-3">
+          <button type="button" onClick={onSaveDraft} disabled={submitting} className="button button-secondary disabled:opacity-50">
+            Save draft
+          </button>
+          <button type="button" onClick={onPublish} disabled={submitting || noWallet} className="button button-primary disabled:opacity-50">
+            {submitting ? "Publishing…" : "Publish article"}
+          </button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function Row({ term, value, hint }: { term: string; value: React.ReactNode; hint?: string }) {
+  return (
+    <div className="grid grid-cols-[1fr_auto] items-baseline gap-4 border-b border-[var(--faint)] pb-3 last:border-0 last:pb-0">
+      <dt className="text-[var(--muted)]">{term}</dt>
+      <dd className="text-right font-medium">
+        {value}
+        {hint && <span className="ml-2 text-xs font-normal text-[var(--muted)]">{hint}</span>}
+      </dd>
+    </div>
+  );
+}

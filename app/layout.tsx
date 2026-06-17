@@ -10,9 +10,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Rubicon | Paid Article Streams for Agents",
+  title: "Rubicon | Let AI agents pay to read your work",
   description:
-    "Rubicon lets buyer agents stream paid article words through x402 micropayments and stop once they have what they need.",
+    "Publish premium articles, choose a price per word, and earn whenever an AI agent reads. Every word is paid, and agents can stop as soon as they have enough information.",
 };
 
 export default function RootLayout({
