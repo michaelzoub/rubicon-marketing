@@ -210,6 +210,13 @@ a {
   box-shadow: 0 16px 32px -20px rgba(131, 160, 255, 0.42);
 }
 
+.button-nav {
+  min-height: 40px;
+  padding-inline: 1.05rem;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+}
+
 .button-secondary {
   border: 1px solid var(--faint);
   background: rgba(255, 255, 255, 0.035);
@@ -294,9 +301,6 @@ a {
 
 @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
   .stack-panel {
-    position: sticky;
-    top: 64px;
-    z-index: 1;
     transform-origin: center top;
     box-shadow: 0 -1px 0 var(--faint), 0 28px 70px -64px rgba(0, 0, 0, 0.9);
     transition:

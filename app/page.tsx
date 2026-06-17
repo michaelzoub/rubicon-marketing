@@ -1,12 +1,13 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import {
   ArrowRight,
   BadgeCheck,
   BookOpen,
   Check,
   Coins,
+  Copy,
   FileText,
   Github,
   MessageSquare,
@@ -15,6 +16,7 @@ import {
   Waves,
 } from "lucide-react";
 import Link from "next/link";
+import { useRef, useState, type ReactNode } from "react";
 import { StreamTheater } from "./_components/stream-theater";
 import { WordStreamDemo } from "./_components/word-stream";
 
@@ -28,6 +30,115 @@ const fade = {
   viewport: { once: true, amount: 0.2 },
   transition: { duration: 0.7, ease },
 } as const;
+
+function StackPanel({
+  id,
+  className,
+  children,
+}: {
+  id?: string;
+  className: string;
+  children: ReactNode;
+}) {
+  const ref = useRef<HTMLElement | null>(null);
+  const reducedMotion = useReducedMotion();
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start 86%", "end 18%"],
+  });
+  const scale = useTransform(scrollYProgress, [0, 0.55, 1], [1, 0.992, 1]);
+  const y = useTransform(scrollYProgress, [0, 0.55, 1], [0, -8, 0]);
+  const opacity = useTransform(scrollYProgress, [0, 0.55, 1], [1, 0.96, 1]);
+
+  return (
+    <motion.section
+      ref={ref}
+      id={id}
+      className={className}
+      style={reducedMotion ? undefined : { scale, y, opacity }}
+    >
+      {children}
+    </motion.section>
+  );
+}
+
+const developerCode = {
+  sdk: `import Rubicon from "@rubicon-caliga/agent-sdk";
+
+const rubicon = new Rubicon();
+
+const receipt = await rubicon.run({
+  articleId: "rubicon-streaming-001",
+  goal: "Find the resale-fee clause",
+  maxSpendAtomic: "20000",
+});
+
+console.log(receipt);`,
+  stream: `const receipt = await rubicon.run({
+  articleId: "rubicon-streaming-001",
+  goal: "Find the resale-fee clause",
+  maxSpendAtomic: "20000",
+  onWord: (word) => {
+    process.stdout.write(\`\${word} \`);
+  },
+});`,
+} as const;
+
+function CodeShowcase() {
+  const [active, setActive] = useState<keyof typeof developerCode>("sdk");
+  const [copied, setCopied] = useState(false);
+  const tabs: Array<{ id: keyof typeof developerCode; label: string }> = [
+    { id: "sdk", label: "sdk" },
+    { id: "stream", label: "stream" },
+  ];
+  const copyCode = async () => {
+    await navigator.clipboard.writeText(developerCode[active]);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  };
+
+  return (
+    <div className="code-showcase min-w-0">
+      <div className="flex items-center gap-7 border-b border-[var(--faint)] px-1">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActive(tab.id)}
+            className={`mono border-b-2 px-2 pb-3 pt-1 text-sm transition-colors ${
+              active === tab.id
+                ? "border-[var(--ink)] text-[var(--ink)]"
+                : "border-transparent text-[var(--quiet)] hover:text-[var(--muted)]"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <div className="mt-6 overflow-hidden rounded-lg border border-[var(--line)] bg-[#1d1d1f] shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]">
+        <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.06)] px-5 py-3">
+          <div className="flex items-center gap-3">
+            <span className="h-2.5 w-2.5 rounded-full bg-[#f58bb2]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#f2d18f]" />
+            <span className="h-2.5 w-2.5 rounded-full bg-[#8fdc9b]" />
+            <span className="mono ml-4 text-sm text-[var(--quiet)]">ts</span>
+          </div>
+          <button
+            type="button"
+            onClick={copyCode}
+            className="mono flex items-center gap-2 text-sm text-[var(--quiet)] transition-colors hover:text-[var(--ink)]"
+            aria-label="Copy code"
+          >
+            {copied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />} {copied ? "copied" : "copy"}
+          </button>
+        </div>
+        <pre className="mono max-h-[420px] max-w-full overflow-auto p-5 text-[0.82rem] leading-6 text-[#d6d6d9] md:p-7 md:text-[0.9rem] md:leading-7">
+          <code>{developerCode[active]}</code>
+        </pre>
+      </div>
+    </div>
+  );
+}
 
 function Navigation() {
   return (
@@ -44,7 +155,7 @@ function Navigation() {
           <a className="transition-colors hover:text-[var(--ink)]" href="#docs">Docs</a>
           <Link className="transition-colors hover:text-[var(--ink)]" href="/dashboard">Sign in</Link>
         </div>
-        <Link href="/dashboard" className="button button-primary text-sm">
+        <Link href="/dashboard" className="button button-primary button-nav text-sm">
           Start publishing <ArrowRight size={15} aria-hidden="true" />
         </Link>
       </nav>
@@ -118,7 +229,7 @@ function HowItWorks() {
     },
   ];
   return (
-    <section id="product" className="section stack-panel stack-panel-muted border-y border-[var(--faint)] bg-[var(--surface-muted)]">
+    <StackPanel id="product" className="section stack-panel stack-panel-muted border-y border-[var(--faint)] bg-[var(--surface-muted)]">
       <motion.div {...fade} className="container">
         <h2 className="section-title">How it works</h2>
         <div className="mt-12 grid gap-5 md:grid-cols-3">
@@ -134,7 +245,7 @@ function HowItWorks() {
           ))}
         </div>
       </motion.div>
-    </section>
+    </StackPanel>
   );
 }
 
@@ -157,7 +268,7 @@ function CreatorValue() {
     },
   ];
   return (
-    <section id="creators" className="section stack-panel stack-panel-base bg-[var(--background)]">
+    <StackPanel id="creators" className="section stack-panel stack-panel-base bg-[var(--background)]">
       <motion.div {...fade} className="container">
         <p className="eyebrow">For creators</p>
         <h2 className="mt-4 section-title">Built around what creators actually want.</h2>
@@ -171,7 +282,7 @@ function CreatorValue() {
           ))}
         </div>
       </motion.div>
-    </section>
+    </StackPanel>
   );
 }
 
@@ -183,7 +294,7 @@ function SellerAgent() {
     { who: "Seller agent", tone: "seller", text: "Begins the paid word stream." },
   ];
   return (
-    <section className="section stack-panel stack-panel-muted border-y border-[var(--faint)] bg-[var(--surface-muted)]">
+    <StackPanel className="section stack-panel stack-panel-muted border-y border-[var(--faint)] bg-[var(--surface-muted)]">
       <motion.div {...fade} className="container grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
         <div>
           <p className="eyebrow">The seller agent</p>
@@ -213,7 +324,7 @@ function SellerAgent() {
           </div>
         </div>
       </motion.div>
-    </section>
+    </StackPanel>
   );
 }
 
@@ -249,44 +360,13 @@ function StreamDemoSection() {
 function Developers() {
   const steps = [
     "Install the Agent SDK",
-    "Connect to a Rubicon gateway",
-    "Ask the seller agent for navigation",
-    "Open a budgeted stream",
-    "Receive paid words until the stop condition is met",
+    "Create a Rubicon client",
+    "Set the article, goal, and budget",
+    "Run the agent",
+    "Stream words live when needed",
   ];
-  const code = `import { AgentClient, AgentPaymentEngine } from "@rubicon-caliga/agent-sdk";
-
-// Connect to a Rubicon gateway
-const client = new AgentClient({
-  baseUrl: "https://api.rubicon.dev",
-  paymentEngine: new AgentPaymentEngine(),
-});
-
-// Ask the seller agent for navigation
-const { sellerAgent } = await client.askSellerAgentNavigation({
-  articleId: "antitrust-analysis",
-  buyerGoal: "Find the resale-fee clause",
-  maxSpendAtomic: "20000", // $0.02 in USDC atomic units
-});
-
-// Open a budgeted stream
-const session = await client.startArticleStream({
-  articleId: "antitrust-analysis",
-  sectionId: sellerAgent.selectedSectionIds[0],
-  budget: { currency: "USDC", maxAmountAtomic: "20000" },
-});
-
-// Receive paid words until the stop condition is met
-client.streamWithStopConditions(
-  session,
-  { hasEnoughInformation: ({ wordsStreamed }) => wordsStreamed >= 137 },
-  (event) => {
-    if (event.type === "article.usage") console.log(event.wordsStreamed, "words read");
-  },
-);`;
-
   return (
-    <section id="developers" className="section stack-panel stack-panel-muted border-y border-[var(--faint)] bg-[var(--surface-muted)]">
+    <StackPanel id="developers" className="section stack-panel stack-panel-muted border-y border-[var(--faint)] bg-[var(--surface-muted)]">
       <motion.div {...fade} className="container">
         <p className="eyebrow">For developers</p>
         <h2 className="mt-4 section-title">Read paid articles in a few lines.</h2>
@@ -302,9 +382,7 @@ client.streamWithStopConditions(
               npm install @rubicon-caliga/agent-sdk
             </li>
           </ol>
-          <pre className="mono max-w-full overflow-x-auto rounded-xl border border-[var(--faint)] bg-[#101014] p-5 text-[0.8rem] leading-6 text-[#e8ecff] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-            <code>{code}</code>
-          </pre>
+          <CodeShowcase />
         </div>
         <div className="mt-6 flex flex-wrap gap-3">
           <a href={githubUrl} className="button button-secondary text-sm">
@@ -315,7 +393,7 @@ client.streamWithStopConditions(
           </a>
         </div>
       </motion.div>
-    </section>
+    </StackPanel>
   );
 }
 
