@@ -79,6 +79,17 @@ USDC for the approved budget, and pass the wallet-backed payment engine into
 the SDK. Never use a user's personal key implicitly; use an agent-owned key or
 an agent wallet service the user has explicitly configured.
 
+Circle Agent Wallets are a recommended buyer setup path, but the person
+controlling the wallet/funds should create the Agent Wallet, fund it, and set
+spending policies such as transfer limits, recipient allowlists, and contract
+blocklists before the agent starts a paid read. See Circle's Agent Wallets
+guide: https://developers.circle.com/agent-stack/agent-wallets
+
+The SDK should consume an already configured wallet-backed payment capability
+and keep enforcing the user's confirmed Rubicon budget. Do not create wallets,
+fund wallets, change wallet policies, or use a user's personal key unless the
+wallet controller has explicitly asked for that setup action.
+
 For Circle x402 settlement, set the agent wallet environment:
 
 ```bash
