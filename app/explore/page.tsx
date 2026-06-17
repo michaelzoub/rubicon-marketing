@@ -165,6 +165,7 @@ export default async function ExplorePage() {
   try {
     creators = await listPublicCreators();
   } catch (error) {
+    console.error("[explore] failed to load public directory:", error);
     failed = error instanceof PublicDirectoryUnavailable || error instanceof Error;
   }
 

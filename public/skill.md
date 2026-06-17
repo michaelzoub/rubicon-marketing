@@ -35,7 +35,7 @@ From the Rubicon repo:
 ```bash
 pnpm install
 pnpm --filter @rubicon-caliga/agent-sdk build
-GATEWAY_PORT=8788 pnpm dev:gateway
+GATEWAY_PORT=8080 pnpm dev:gateway
 ```
 
 Keep the gateway running.
@@ -52,7 +52,7 @@ Then run:
 import Rubicon from "@rubicon-caliga/agent-sdk";
 
 const rubicon = new Rubicon({
-  baseUrl: "http://localhost:8788",
+  baseUrl: "http://localhost:8080",
 });
 
 const receipt = await rubicon.run({

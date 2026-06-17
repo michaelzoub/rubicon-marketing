@@ -77,3 +77,53 @@ begin
     );
   end loop;
 end $$;
+
+-- ---------------------------------------------------------------------------
+-- public (anon) read access for the Explore directory
+--
+-- The /explore page reads with the anon key (no service-role key in the
+-- browser-facing env). Without these policies RLS returns zero rows and the
+-- catalog renders empty. Scope is restricted to *live* articles and the
+-- creators/profiles/sections attached to them -- drafts and private data stay
+-- hidden. Policies are additive (OR), so authenticated owners keep full access
+-- to their own rows via the policies above.
+-- ---------------------------------------------------------------------------
+
+-- Supabase grants SELECT to anon/authenticated by default; re-assert to be safe.
+grant select on public.articles to anon, authenticated;
+grant select on public.creators to anon, authenticated;
+grant select on public.creator_profiles to anon, authenticated;
+grant select on public.article_sections to anon, authenticated;
+
+-- live articles are publicly readable
+drop policy if exists articles_select_public_live on public.articles;
+create policy articles_select_public_live on public.articles
+  for select to anon, authenticated
+  using (state = 'live');
+
+-- creators who have at least one live article are publicly readable
+drop policy if exists creators_select_public on public.creators;
+create policy creators_select_public on public.creators
+  for select to anon, authenticated
+  using (exists (
+    select 1 from public.articles a
+    where a.creator_id = creators.id and a.state = 'live'
+  ));
+
+-- profiles of creators who have at least one live article
+drop policy if exists creator_profiles_select_public on public.creator_profiles;
+create policy creator_profiles_select_public on public.creator_profiles
+  for select to anon, authenticated
+  using (exists (
+    select 1 from public.articles a
+    where a.creator_id = creator_profiles.creator_id and a.state = 'live'
+  ));
+
+-- section headings belonging to live articles
+drop policy if exists article_sections_select_public on public.article_sections;
+create policy article_sections_select_public on public.article_sections
+  for select to anon, authenticated
+  using (exists (
+    select 1 from public.articles a
+    where a.id = article_sections.article_id and a.state = 'live'
+  ));
