@@ -71,6 +71,61 @@ Expected result: words stream to stdout, followed by a receipt containing
 `sessionId`, `articleId`, `wordsRead`, `amountPaidAtomic`, `payments`,
 `transactionHashes`, `text`, `completed`, and `stopReason`.
 
+## Agent Wallet Setup
+
+Rubicon assumes the buyer is an agent with its own wallet. Before attempting a
+paid read, configure the wallet, confirm it has enough testnet or production
+USDC for the approved budget, and pass the wallet-backed payment engine into
+the SDK. Never use a user's personal key implicitly; use an agent-owned key or
+an agent wallet service the user has explicitly configured.
+
+For Circle x402 settlement, set the agent wallet environment:
+
+```bash
+RUBICON_PAYMENTS=circle
+CIRCLE_PRIVATE_KEY=0x...
+CIRCLE_RPC_URL=https://...
+CIRCLE_FACILITATOR_URL=https://gateway-api-testnet.circle.com
+CIRCLE_X402_NETWORKS=eip155:5042002
+```
+
+Then create the buyer with a wallet-backed payment engine:
+
+```ts
+import Rubicon, { CircleGatewayPaymentEngine } from "@rubicon-caliga/agent-sdk";
+
+const paymentEngine = new CircleGatewayPaymentEngine({
+  chain: "arcTestnet",
+  privateKey: process.env.CIRCLE_PRIVATE_KEY as `0x${string}`,
+  rpcUrl: process.env.CIRCLE_RPC_URL,
+});
+
+const rubicon = new Rubicon({
+  baseUrl: process.env.RUBICON_GATEWAY_URL ?? "https://rubicon-caligagateway-production.up.railway.app",
+  authorization: process.env.RUBICON_AGENT_API_KEY
+    ? `Bearer ${process.env.RUBICON_AGENT_API_KEY}`
+    : undefined,
+  paymentEngine,
+});
+```
+
+The end-to-end buyer flow is:
+
+1. Confirm the user's maximum budget for this specific request.
+2. Use the agent wallet to call the x402-protected Rubicon backend endpoint.
+3. Let the gateway communicate with the article's seller agent to find useful
+   sections and negotiate what to reveal next.
+4. Open a paid stream and pay word by word from the agent wallet.
+5. Stop and close the stream as soon as the user's goal is satisfied, the
+   stop condition matches, or the approved budget would be exceeded.
+6. Return the final receipt, including words read, amount paid, payment
+   receipts, transaction hashes, completion state, and stop reason.
+
+Prefer `rubicon.run(...)` for this lifecycle. It handles seller-agent
+conversation, x402 payment headers, streaming words, budget enforcement, abort,
+and receipt collection. Use `rubicon.read(...)` or lower-level methods only
+when the user asks to inspect or customize a specific part of the protocol.
+
 ## Quick Start: Published SDK
 
 When `@rubicon-caliga/agent-sdk` is published, install it normally:
