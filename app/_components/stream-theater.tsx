@@ -145,12 +145,12 @@ export function StreamTheater() {
 
   return (
     <div className="stream-theater card-soft relative min-h-[560px] w-full min-w-0 overflow-hidden p-5 sm:p-6">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(ellipse_at_50%_0%,rgba(102,132,255,0.14),transparent_68%)]" aria-hidden="true" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(ellipse_at_50%_0%,rgba(36,127,214,0.14),transparent_68%)]" aria-hidden="true" />
       <div className="relative flex items-center justify-between gap-4 border-b border-[var(--faint)] pb-4">
         <div className="flex items-center gap-2.5">
           <span
             className={`status-dot h-2.5 w-2.5 rounded-full ${done ? "bg-[var(--green)]" : "bg-[var(--river)]"}`}
-            style={{ boxShadow: `0 0 0 4px ${done ? "rgba(88,213,155,0.14)" : "rgba(102,132,255,0.14)"}` }}
+            style={{ boxShadow: `0 0 0 4px ${done ? "rgba(88,213,155,0.14)" : "rgba(36,127,214,0.14)"}` }}
           />
           <span className="text-sm font-semibold">{done ? "Session settled" : "Live agent session"}</span>
         </div>
@@ -196,7 +196,7 @@ export function StreamTheater() {
                 initial={{ left: "72%", opacity: 0, scale: 0.92 }}
                 animate={{ left: "28%", opacity: [0, 1, 1, 0], scale: 1 }}
                 transition={{ duration: 1.0, ease, times: [0, 0.18, 0.8, 1] }}
-                className="mono pointer-events-none absolute top-[30px] z-10 w-[116px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--river-line)] bg-[var(--surface)] px-2.5 py-1 text-center text-[0.62rem] text-[var(--river-deep)] shadow-[0_10px_22px_-16px_rgba(102,132,255,0.8)]"
+                className="mono pointer-events-none absolute top-[30px] z-10 w-[116px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--river-line)] bg-[var(--surface)] px-2.5 py-1 text-center text-[0.62rem] text-[var(--river-deep)] shadow-[0_10px_22px_-16px_rgba(36,127,214,0.8)]"
               >
                 {p.word}
               </motion.div>
@@ -279,14 +279,14 @@ export function StreamTheater() {
                             active
                               ? {
                                   color: "var(--ink)",
-                                  backgroundColor: "rgba(154, 146, 255, 0.24)",
-                                  borderColor: "rgba(154, 146, 255, 0.4)",
+                                  backgroundColor: "rgba(36, 127, 214, 0.24)",
+                                  borderColor: "rgba(36, 127, 214, 0.4)",
                                 }
                               : delivered
                                 ? {
                                     color: "var(--river-deep)",
-                                    backgroundColor: "rgba(154, 146, 255, 0.1)",
-                                    borderColor: "rgba(154, 146, 255, 0.16)",
+                                    backgroundColor: "rgba(36, 127, 214, 0.1)",
+                                    borderColor: "rgba(36, 127, 214, 0.16)",
                                   }
                                 : {
                                     color: "var(--quiet)",
@@ -384,7 +384,7 @@ function Agent({
         animate={active ? { scale: 1, boxShadow: `0 0 0 6px ${color}1f` } : { scale: 0.94, boxShadow: `0 0 0 0px ${color}00` }}
         transition={{ duration: 0.6, ease }}
         className="grid h-[60px] w-[60px] place-items-center rounded-[20px] text-white"
-        style={{ background: `linear-gradient(145deg, ${color}, ${tint === "river" ? "var(--river-deep)" : "#6684ff"})` }}
+        style={{ background: `linear-gradient(145deg, ${color}, var(--river))` }}
       >
         {icon}
       </motion.div>

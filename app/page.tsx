@@ -502,7 +502,7 @@ function FinalCTA() {
   return (
     <section className="section">
       <motion.div {...fade} className="container">
-        <div className="card-soft relative overflow-hidden bg-[radial-gradient(circle_at_50%_0%,rgba(102,132,255,0.18),transparent_42%),var(--card)] p-8 text-center md:p-14">
+        <div className="card-soft relative overflow-hidden bg-[radial-gradient(circle_at_50%_0%,rgba(36,127,214,0.18),transparent_42%),var(--card)] p-8 text-center md:p-14">
           <Quote size={28} className="mx-auto text-[var(--river)]" aria-hidden="true" />
           <h2 className="mx-auto mt-5 max-w-2xl text-[clamp(1.7rem,3.4vw,2.6rem)] font-semibold leading-tight tracking-[-0.01em]">
             Make your writing readable—and payable—by agents.
