@@ -2,6 +2,7 @@
 
 import { PrivyProvider } from "@privy-io/react-auth";
 import { createContext, useContext, type ReactNode } from "react";
+import { ACTIVE_CHAIN } from "@/lib/chain";
 
 const PrivyConfiguredContext = createContext(false);
 
@@ -24,6 +25,9 @@ export function AppProviders({ children }: { children: ReactNode }) {
             theme: "light",
             accentColor: "#2f6df0",
           },
+          // Transactions settle on Arc — Arc Testnet for now.
+          defaultChain: ACTIVE_CHAIN,
+          supportedChains: [ACTIVE_CHAIN],
           embeddedWallets: {
             // Give every creator a wallet on login, including email/Twitter
             // sign-ins, so the receiving address is one click in Settings.

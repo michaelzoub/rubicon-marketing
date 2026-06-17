@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { Activity, ArrowRight, CheckCircle2, Circle, FileText, Wallet2 } from "lucide-react";
+import { useState } from "react";
+import { Activity, ArrowRight, CheckCircle2, Circle, Copy, ExternalLink, FileText, Link2, RefreshCw, Wallet2 } from "lucide-react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useRubiconQuery } from "@/lib/rubicon/hooks";
 import { formatUsd } from "@/lib/rubicon/pricing";
+import { ACTIVE_CHAIN } from "@/lib/chain";
+import { explorerAddressUrl, formatBalance, useNativeBalance } from "@/lib/onchain";
 import {
   ArticleStatePill,
   Card,
@@ -16,6 +19,7 @@ import {
   PageHeader,
   PaymentStatusPill,
   PrimaryLink,
+  shortWallet,
   StatTile,
 } from "./_components/ui";
 
@@ -115,6 +119,8 @@ export default function OverviewPage() {
             </Card>
           )}
 
+          <OnchainCard address={wallet.data?.address ?? null} />
+
           <Card>
             <CardHeader
               title="Recent payment activity"
@@ -195,6 +201,96 @@ export default function OverviewPage() {
         </>
       )}
     </div>
+  );
+}
+
+function OnchainCard({ address }: { address: string | null }) {
+  const balance = useNativeBalance(address);
+  const [copied, setCopied] = useState(false);
+
+  const copy = async () => {
+    if (!address) return;
+    await navigator.clipboard.writeText(address);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  };
+
+  return (
+    <Card>
+      <CardHeader
+        title="On-chain"
+        action={
+          address ? (
+            <button
+              type="button"
+              onClick={() => balance.refetch()}
+              className="inline-flex items-center gap-1.5 text-sm text-[var(--river-deep)] hover:underline"
+            >
+              <RefreshCw size={14} aria-hidden="true" /> Refresh
+            </button>
+          ) : undefined
+        }
+      />
+      {!address ? (
+        <div className="p-5">
+          <EmptyState
+            icon={<Wallet2 size={22} aria-hidden="true" />}
+            title="No wallet connected"
+            description="Connect a receiving wallet to see your on-chain address, network, and balance."
+            action={<PrimaryLink href="/dashboard/settings">Connect wallet</PrimaryLink>}
+          />
+        </div>
+      ) : (
+        <div className="grid gap-px bg-[var(--faint)] sm:grid-cols-3">
+          {/* Wallet address */}
+          <div className="bg-white p-5">
+            <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Wallet address</div>
+            <div className="mt-2 flex items-center gap-2">
+              <span className="mono text-sm font-medium">{shortWallet(address)}</span>
+              <button type="button" onClick={copy} className="text-[var(--muted)] transition-colors hover:text-[var(--ink)]" aria-label="Copy address">
+                <Copy size={14} aria-hidden="true" />
+              </button>
+              {copied && <span className="text-xs text-[var(--green)]">copied</span>}
+            </div>
+            <a
+              href={explorerAddressUrl(address)}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 inline-flex items-center gap-1 text-xs text-[var(--river-deep)] hover:underline"
+            >
+              View on {ACTIVE_CHAIN.blockExplorers?.default.name ?? "explorer"} <ExternalLink size={11} aria-hidden="true" />
+            </a>
+          </div>
+
+          {/* Network */}
+          <div className="bg-white p-5">
+            <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Network</div>
+            <div className="mt-2 flex items-center gap-2 text-sm font-medium">
+              <Link2 size={15} className="text-[var(--river)]" aria-hidden="true" /> {ACTIVE_CHAIN.name}
+            </div>
+            <div className="mt-2 text-xs text-[var(--muted)]">Chain ID {ACTIVE_CHAIN.id}</div>
+          </div>
+
+          {/* Balance */}
+          <div className="bg-white p-5">
+            <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Balance</div>
+            <div className="mt-2 text-2xl font-semibold tracking-[-0.01em]">
+              {balance.status === "loading" ? (
+                <span className="text-base font-normal text-[var(--muted)]">Loading…</span>
+              ) : balance.status === "error" ? (
+                <span className="text-base font-normal text-[#8d2f2d]">Unavailable</span>
+              ) : (
+                <>
+                  {formatBalance(balance.value)}
+                  <span className="ml-1.5 text-sm font-medium text-[var(--muted)]">{balance.symbol}</span>
+                </>
+              )}
+            </div>
+            {balance.status === "error" && <div className="mt-1 text-xs text-[var(--muted)]">Could not reach the RPC. Try Refresh.</div>}
+          </div>
+        </div>
+      )}
+    </Card>
   );
 }
 

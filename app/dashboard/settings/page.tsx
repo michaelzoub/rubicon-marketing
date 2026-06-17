@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { ChevronDown, ExternalLink, LogOut, ShieldCheck, Wallet } from "lucide-react";
 import { useRubiconMutation, useRubiconQuery } from "@/lib/rubicon/hooks";
 import { SUPABASE_URL } from "@/lib/rubicon/auth";
+import { RECEIVING_NETWORK, RECEIVING_NETWORK_LABEL } from "@/lib/chain";
 import {
   Card,
   CardHeader,
@@ -78,7 +79,7 @@ export default function SettingsPage() {
               {wallet.status === "success" && (
                 <WalletEditor
                   address={wallet.data?.address ?? ""}
-                  network={wallet.data?.network ?? "base"}
+                  network={wallet.data?.network ?? RECEIVING_NETWORK}
                   verified={wallet.data?.verified ?? false}
                   pending={updateWallet.pending}
                   error={updateWallet.error?.message ?? null}
@@ -161,7 +162,8 @@ function WalletEditor({
 
   const embedded = getEmbeddedConnectedWallet(wallets);
   const embeddedAddress = embedded?.address ?? "";
-  const payoutNetwork = network || "base";
+  const payoutNetwork = network || RECEIVING_NETWORK;
+  const networkLabel = payoutNetwork === RECEIVING_NETWORK ? RECEIVING_NETWORK_LABEL : payoutNetwork;
   const isConnected = Boolean(address) && address.toLowerCase() === embeddedAddress.toLowerCase();
 
   const connect = async () => {
@@ -196,7 +198,7 @@ function WalletEditor({
           <div className="grid gap-0.5 min-w-0">
             <span className="mono truncate text-sm">{address}</span>
             <span className="text-xs text-[var(--muted)]">
-              {isConnected ? "Privy wallet" : "External address"} · {payoutNetwork}
+              {isConnected ? "Privy wallet" : "External address"} · {networkLabel}
             </span>
           </div>
           {!isConnected && (
