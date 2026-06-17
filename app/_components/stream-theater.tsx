@@ -32,12 +32,15 @@ const ARTICLE_WORDS = ARTICLE_SECTIONS.flatMap((section, sectionIndex) =>
 );
 
 let packetSeq = 0;
+let paymentSeq = 0;
 type Packet = { id: number; word: string };
+type Payment = { id: number };
 
 export function StreamTheater() {
   const [phase, setPhase] = useState<Phase>("ask");
   const [words, setWords] = useState(0);
   const [packets, setPackets] = useState<Packet[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const articleRef = useRef<HTMLDivElement | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -62,6 +65,14 @@ export function StreamTheater() {
         setPackets([{ id, word }]);
         // remove packet after it finishes its glide across the channel
         t.push(setTimeout(() => setPackets((p) => p.filter((x) => x.id !== id)), 1050));
+        // once the word lands, the buyer sends a tiny micropayment back the other way
+        t.push(
+          setTimeout(() => {
+            const pid = ++paymentSeq;
+            setPayments((p) => [...p, { id: pid }]);
+            t.push(setTimeout(() => setPayments((p) => p.filter((x) => x.id !== pid)), 700));
+          }, 760),
+        );
         if (phase === "stream" && n >= FIRST_STOP) {
           t.push(setTimeout(() => setPhase("followup"), 700));
           return;
@@ -84,6 +95,7 @@ export function StreamTheater() {
         setTimeout(() => {
           setWords(0);
           setPackets([]);
+          setPayments([]);
           setPhase("ask");
         }, 4200),
       );
@@ -187,6 +199,24 @@ export function StreamTheater() {
                 className="mono pointer-events-none absolute top-[30px] z-10 w-[116px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--river-line)] bg-[var(--surface)] px-2.5 py-1 text-center text-[0.62rem] text-[var(--river-deep)] shadow-[0_10px_22px_-16px_rgba(102,132,255,0.8)]"
               >
                 {p.word}
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {/* tiny micropayments drifting buyer → seller for each word received */}
+          <AnimatePresence>
+            {payments.map((p) => (
+              <motion.div
+                key={p.id}
+                initial={{ left: "28%", opacity: 0, scale: 0.6 }}
+                animate={{ left: "72%", opacity: [0, 0.7, 0.7, 0], scale: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.7, ease, times: [0, 0.25, 0.8, 1] }}
+                className="mono pointer-events-none absolute top-[42px] z-20 flex -translate-x-1/2 -translate-y-1/2 items-center gap-0.5 rounded-full border border-[rgba(88,213,155,0.5)] bg-[var(--surface)] px-1.5 py-[1px] text-[0.5rem] font-medium text-[var(--green)] shadow-[0_0_8px_-2px_var(--green)]"
+                aria-hidden="true"
+              >
+                <Coins size={8} aria-hidden="true" />
+                +$0.00001
               </motion.div>
             ))}
           </AnimatePresence>

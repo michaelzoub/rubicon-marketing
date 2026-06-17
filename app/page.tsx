@@ -151,6 +151,7 @@ function Navigation() {
         <div className="hidden items-center gap-7 text-sm text-[var(--muted)] md:flex">
           <a className="transition-colors hover:text-[var(--ink)]" href="#product">Product</a>
           <a className="transition-colors hover:text-[var(--ink)]" href="#creators">Creators</a>
+          <Link className="transition-colors hover:text-[var(--ink)]" href="/explore">Explore</Link>
           <a className="transition-colors hover:text-[var(--ink)]" href="#developers">Developers</a>
           <a className="transition-colors hover:text-[var(--ink)]" href="#docs">Docs</a>
           <Link className="transition-colors hover:text-[var(--ink)]" href="/dashboard">Sign in</Link>
@@ -539,6 +540,7 @@ function Footer() {
         <div className="flex flex-wrap gap-5 text-sm text-[var(--muted)]">
           <a href="#product">Product</a>
           <a href="#creators">Creators</a>
+          <Link href="/explore">Explore</Link>
           <a href="#developers">Developers</a>
           <a href={githubUrl}>GitHub</a>
           <Link href="/dashboard">Sign in</Link>
