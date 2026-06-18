@@ -57,7 +57,7 @@ export function formatBalance(value: string | null): string {
   if (value === null) return "—";
   const n = Number(value);
   if (Number.isNaN(n)) return value;
-  return n.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  return n.toLocaleString(undefined, { maximumFractionDigits: 6 });
 }
 
 export function explorerAddressUrl(address: string): string {

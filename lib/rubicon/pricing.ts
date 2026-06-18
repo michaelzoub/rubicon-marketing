@@ -28,18 +28,23 @@ export function atomicToUsd(atomic: string | null | undefined): number {
 }
 
 /**
- * Format an atomic amount as a dollar string. Picks enough decimals to show
- * sub-cent micro-amounts without misleading rounding to $0.00.
+ * Format a dollar number at full USDC precision (up to 6 decimals), always
+ * keeping at least 2 decimals and trimming any trailing zeros beyond that.
+ */
+export function formatUsdNumber(usd: number): string {
+  if (!Number.isFinite(usd) || usd === 0) return "$0.00";
+  // Render at full USDC precision, then trim trailing zeros down to 2 decimals.
+  const fixed = usd.toFixed(USDC_DECIMALS).replace(/(\.\d{2}\d*?)0+$/, "$1");
+  return `$${fixed}`;
+}
+
+/**
+ * Format an atomic amount as a dollar string. Shows up to 6 decimals (USDC's
+ * full precision) so sub-cent micro-amounts are visible, while always keeping
+ * at least 2 decimals and trimming any trailing zeros beyond that.
  */
 export function formatUsd(atomic: string | null | undefined): string {
-  const usd = atomicToUsd(atomic);
-  if (usd === 0) return "$0.00";
-  if (usd >= 1) return `$${usd.toFixed(2)}`;
-  if (usd >= 0.01) return `$${usd.toFixed(2)}`;
-  // Sub-cent: show up to 6 decimals, trimming trailing zeros but keeping >= 2.
-  const fixed = usd.toFixed(6).replace(/0+$/, "");
-  const padded = fixed.endsWith(".") ? `${fixed}00` : fixed;
-  return `$${padded}`;
+  return formatUsdNumber(atomicToUsd(atomic));
 }
 
 /** Convert a creator's "price per 1,000 words" (USD) to atomic-per-word. */

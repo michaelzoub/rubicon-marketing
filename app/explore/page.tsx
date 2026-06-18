@@ -2,7 +2,7 @@ import { ArrowRight, BookOpen, Coins, FileText, Hash, Users, Waves } from "lucid
 import Link from "next/link";
 import type { Metadata } from "next";
 import { listPublicCreators, PublicDirectoryUnavailable, type PublicCreator } from "@/lib/rubicon/public";
-import { atomicPerWordToPer1000Usd, atomicToUsd, formatUsd } from "@/lib/rubicon/pricing";
+import { atomicPerWordToPer1000Usd, atomicToUsd, formatUsd, formatUsdNumber } from "@/lib/rubicon/pricing";
 
 export const metadata: Metadata = {
   title: "Explore creators · Rubicon",
@@ -18,10 +18,7 @@ function initials(name: string): string {
 }
 
 function per1000Label(atomicPerWord: string): string {
-  const usd = atomicPerWordToPer1000Usd(atomicPerWord);
-  if (usd === 0) return "$0";
-  if (usd >= 1) return `$${usd.toFixed(2)}`;
-  return `$${usd.toFixed(3).replace(/0+$/, "").replace(/\.$/, "")}`;
+  return formatUsdNumber(atomicPerWordToPer1000Usd(atomicPerWord));
 }
 
 function ExploreNav() {
