@@ -64,11 +64,11 @@ Expected result: words stream to stdout, followed by a receipt containing
 
 ## Agent Wallet Setup
 
-Rubicon assumes the buyer is an agent with its own wallet. Before attempting a
-paid read, configure the wallet, confirm it has enough testnet or production
-USDC for the approved budget, and pass the wallet-backed payment engine into
-the SDK. Never use a user's personal key implicitly; use an agent-owned key or
-an agent wallet service the user has explicitly configured.
+Rubicon assumes the buyer is an agent with its own wallet. When the user asks
+for wallet setup, use a **Circle Agent Wallet** managed through the **Circle
+CLI**. This is the default path — do not fall back to a raw private-key wallet
+(for example, passing `privateKey` to `CircleGatewayPaymentEngine`) unless the
+user explicitly requests it.
 
 For the latest Circle Agent Stack docs, fetch the documentation index first and
 use it to discover the relevant setup, Agent Wallet, and Nanopayments pages:
@@ -77,40 +77,126 @@ use it to discover the relevant setup, Agent Wallet, and Nanopayments pages:
 curl -sL https://developers.circle.com/llms.txt
 ```
 
-To set up the agent wallet, fetch Circle's agent setup guide and follow its
-instructions to set up Circle Agent Wallet:
+Then fetch Circle's Agent Wallet setup flow and follow it exactly:
 
 ```bash
 curl -sL https://agents.circle.com/skills/setup.md
 ```
 
+> The setup guide uses **BASE** as its default example chain. Circle Agent
+> Wallets are **not** BASE-only — they also support Arc Testnet, which is the
+> chain Rubicon uses for testnet reads. Substitute the Arc Testnet identifier
+> wherever the guide shows `BASE`.
+
+### Arc Testnet chain identifiers
+
+Rubicon's testnet runs on Arc Testnet. Confirm the live identifiers with:
+
+```bash
+circle blockchain list
+```
+
+Expected values for Arc Testnet:
+
+| Field            | Value                              |
+| ---------------- | ---------------------------------- |
+| CLI chain id     | `ARC-TESTNET`                      |
+| EVM chain id     | `5042002`                          |
+| RPC URL          | `https://rpc.testnet.arc.network`  |
+
+Use `ARC-TESTNET` as the `--chain` value for all Circle CLI wallet commands on
+Rubicon testnet. Mainnet and testnet Circle CLI sessions are separate — a
+mainnet login does not authenticate testnet commands, and vice versa.
+
+### Terms acceptance
+
+Circle CLI may require Terms acceptance before any wallet command works. Show
+the live output to the user:
+
+```bash
+circle terms show --init --output json
+```
+
+Review the URLs and notice from that JSON with the user, then accept **only
+after explicit user consent**:
+
+```bash
+circle terms accept --output json
+```
+
+### Wallet login / authentication
+
+If a wallet command such as
+
+```bash
+circle wallet list --chain ARC-TESTNET --type agent --output json
+```
+
+fails with an auth-required error, start a testnet agent login:
+
+```bash
+circle wallet login <email> --type agent --testnet --init
+```
+
+Circle emails an OTP. Pause for the wallet controller to provide the OTP and the
+request id, then complete the login:
+
+```bash
+circle wallet login --request <request-id> --otp <code>
+```
+
+Never invent, bypass, or retry OTP values without the controller's instruction.
+Do not store OTPs, private keys, or API keys in this file, in env files, or in
+logs.
+
+### Funding via Circle Faucet
+
+Circle's faucet supports Arc Testnet and can send testnet USDC. If the wallet is
+unfunded, give the controller the Arc Testnet wallet address and direct them to
+fund it at:
+
+```
+https://faucet.circle.com
+```
+
+### Pre-paid-read checklist
+
+Before any paid Rubicon read:
+
+1. **Confirm the budget** with the user for this specific request (see Buyer
+   Budget Confirmation).
+2. **List/find the wallet** on the requested chain — usually `ARC-TESTNET` for
+   Rubicon testnet:
+   ```bash
+   circle wallet list --chain ARC-TESTNET --type agent --output json
+   ```
+3. **Check the wallet and/or Gateway balance** to confirm it covers the budget.
+4. **If unfunded**, provide the Arc Testnet wallet address and tell the user to
+   fund it via Circle Faucet (https://faucet.circle.com). Stop and wait.
+5. **Only start the paid Rubicon read once funds are present.**
+
 The person controlling the wallet/funds should create the Circle Agent Wallet,
 fund it, and set spending policies such as transfer limits, recipient
-allowlists, and contract blocklists before the agent starts a paid read.
+allowlists, and contract blocklists before the agent starts a paid read. The SDK
+should consume an already configured wallet-backed payment capability and keep
+enforcing the user's confirmed Rubicon budget. Do not create wallets, fund
+wallets, change wallet policies, or use a personal key unless the wallet
+controller has explicitly asked for that action.
 
 Circle Agent Nanopayments are the recommended Circle-native production path for
 x402-compatible services. In that flow, the agent uses Circle CLI to deposit
 USDC into a Gateway balance, discover services, and pay with gas-free batched
-USDC nanopayments. Use Circle's Agent Nanopayments quickstart when the user
-wants Circle CLI / Gateway Nanopayments rather than dry-run payments.
+USDC nanopayments.
 
-During Circle CLI setup, expect an interactive onboarding step: the wallet
-controller must review and confirm Circle's terms of service, then Circle sends
-an OTP to the configured email address. Pause for the wallet controller to
-provide the OTP before continuing; do not invent, bypass, or retry OTP values
-without the controller's instruction.
+### Explicit private-key path (only on request)
 
-The SDK should consume an already configured wallet-backed payment capability
-and keep enforcing the user's confirmed Rubicon budget. Do not create wallets,
-fund wallets, change wallet policies, or use a user's personal key unless the
-wallet controller has explicitly asked for that setup action.
-
-For Circle x402 settlement, set the agent wallet environment:
+If — and only if — the user explicitly asks to use a raw private-key wallet
+instead of a Circle Agent Wallet, set the agent wallet environment:
 
 ```bash
 RUBICON_PAYMENTS=circle
 CIRCLE_PRIVATE_KEY=0x...
-CIRCLE_RPC_URL=https://...
+CIRCLE_RPC_URL=https://rpc.testnet.arc.network
 CIRCLE_FACILITATOR_URL=https://gateway-api-testnet.circle.com
 CIRCLE_X402_NETWORKS=eip155:5042002
 ```
@@ -203,8 +289,9 @@ Circle payment capability is configured. Circle CLI onboarding may require the
 wallet controller to accept Circle's terms of service and complete an email OTP
 challenge before deposits, service discovery, or payments are available.
 
-Production/testnet SDK settlement can also use `CircleGatewayPaymentEngine`
-when the environment is configured for that payment engine:
+Prefer the Circle Agent Wallet / Circle CLI flow above for real settlement.
+`CircleGatewayPaymentEngine` with an explicit `privateKey` is the raw private-key
+path and should only be used when the user explicitly asks for it:
 
 ```ts
 import Rubicon, { CircleGatewayPaymentEngine } from "@rubicon-caliga/agent-sdk";
@@ -217,7 +304,7 @@ const rubicon = new Rubicon({
   paymentEngine: new CircleGatewayPaymentEngine({
     chain: "arcTestnet",
     privateKey: process.env.CIRCLE_PRIVATE_KEY as `0x${string}`,
-    rpcUrl: process.env.CIRCLE_RPC_URL,
+    rpcUrl: process.env.CIRCLE_RPC_URL ?? "https://rpc.testnet.arc.network",
   }),
 });
 ```
@@ -247,6 +334,9 @@ from wallet balance, or start paying just because credentials are configured.
 Use the user's confirmed limit as `maxSpendAtomic` or `budget.maxAmountAtomic`,
 and stop as soon as the task is satisfied or the approved budget would be
 exceeded.
+
+Budgets are expressed in atomic USDC units (6 decimals). For example,
+`$0.02 USDC` equals `20000` atomic units.
 
 ## Raw HTTP Protocol
 
