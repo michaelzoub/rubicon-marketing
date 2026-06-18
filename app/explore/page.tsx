@@ -25,15 +25,17 @@ function ExploreNav() {
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--faint)] bg-[rgba(21,21,23,0.92)] backdrop-blur-md">
       <nav className="container flex h-16 items-center justify-between gap-6" aria-label="Main navigation">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
-          <Waves size={21} strokeWidth={1.9} className="text-[var(--river)]" aria-hidden="true" />
-          <span>Rubicon</span>
-        </Link>
-        <div className="hidden items-center gap-7 text-sm text-[var(--muted)] lg:flex">
-          <Link className="site-nav-link" href="/#product">Product</Link>
-          <Link className="site-nav-link" href="/#creators">Creators</Link>
-          <Link className="site-nav-link" href="/#developers">Developers</Link>
-          <Link className="site-nav-link" href="/#docs">Docs</Link>
+        <div className="flex min-w-0 items-center gap-8">
+          <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold">
+            <Waves size={21} strokeWidth={1.9} className="text-[var(--river)]" aria-hidden="true" />
+            <span>Rubicon</span>
+          </Link>
+          <div className="hidden items-center gap-7 text-sm text-[var(--muted)] lg:flex">
+            <Link className="site-nav-link" href="/#product">Product</Link>
+            <Link className="site-nav-link" href="/#agents">Agents</Link>
+            <Link className="site-nav-link" href="/#creators">Creators</Link>
+            <Link className="site-nav-link" href="/#docs">Docs</Link>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <Link href="/dashboard" className="button button-primary button-nav hidden text-sm sm:inline-flex">
@@ -236,9 +238,9 @@ export default async function ExplorePage() {
           </div>
           <div className="flex flex-wrap gap-5 text-sm text-[var(--muted)]">
             <Link href="/#product">Product</Link>
+            <Link href="/#agents">Agents</Link>
             <Link href="/#creators">Creators</Link>
             <Link href="/explore">Explore</Link>
-            <Link href="/#developers">Developers</Link>
             <Link href="https://github.com/michaelzoub/rubicon">GitHub</Link>
             <Link href="/dashboard">Sign in</Link>
           </div>

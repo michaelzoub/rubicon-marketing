@@ -152,22 +152,22 @@ function AgentSkillSetup() {
   };
 
   return (
-    <div className="setup-skill-panel rounded-lg border border-[var(--river-line)] p-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div className="setup-skill-panel rounded-lg border border-[var(--river-line)] p-6 shadow-[0_24px_80px_-54px_rgba(36,127,214,0.9)] md:p-7">
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <div className="flex items-center gap-2 text-sm font-semibold">
-            <Link2 size={16} className="text-[var(--river)]" aria-hidden="true" /> Setup skill
+          <div className="flex items-center gap-2 text-base font-semibold">
+            <Link2 size={17} className="text-[var(--river)]" aria-hidden="true" /> Add Rubicon to your agent
           </div>
-          <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--muted)]">
-            Paste this into Codex or another agent to install the Rubicon skill, fund a buyer wallet, and run a capped
-            first read.
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
+            Paste this into Codex or another agent. It installs the Rubicon skill, funds a buyer wallet, and runs a
+            capped first read.
           </p>
         </div>
         <button type="button" onClick={copySetupPrompt} className="button button-secondary min-h-10 shrink-0 text-sm">
           {copied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />} {copied ? "Copied" : "Copy prompt"}
         </button>
       </div>
-      <code className="mono mt-4 block overflow-x-auto rounded-md border border-[var(--faint)] bg-[rgba(0,0,0,0.22)] px-4 py-3 text-sm text-[var(--ink)]">
+      <code className="mono mt-5 block overflow-x-auto rounded-md border border-[var(--river-line)] bg-[rgba(0,0,0,0.28)] px-4 py-4 text-sm leading-7 text-[var(--ink)]">
         {setupSkillPrompt}
       </code>
     </div>
@@ -178,15 +178,17 @@ function Navigation() {
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--faint)] bg-[rgba(21,21,23,0.92)] backdrop-blur-md">
       <nav className="container flex h-16 items-center justify-between gap-6" aria-label="Main navigation">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
-          <Waves size={21} strokeWidth={1.9} className="text-[var(--river)]" aria-hidden="true" />
-          <span>Rubicon</span>
-        </Link>
-        <div className="hidden items-center gap-7 text-sm text-[var(--muted)] lg:flex">
-          <a className="site-nav-link" href="#product">Product</a>
-          <a className="site-nav-link" href="#creators">Creators</a>
-          <a className="site-nav-link" href="#developers">Developers</a>
-          <a className="site-nav-link" href="#docs">Docs</a>
+        <div className="flex min-w-0 items-center gap-8">
+          <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold">
+            <Waves size={21} strokeWidth={1.9} className="text-[var(--river)]" aria-hidden="true" />
+            <span>Rubicon</span>
+          </Link>
+          <div className="hidden items-center gap-7 text-sm text-[var(--muted)] lg:flex">
+            <a className="site-nav-link" href="#product">Product</a>
+            <a className="site-nav-link" href="#agents">Agents</a>
+            <a className="site-nav-link" href="#creators">Creators</a>
+            <a className="site-nav-link" href="#docs">Docs</a>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <Link href="/dashboard" className="button button-primary button-nav hidden text-sm sm:inline-flex">
@@ -222,8 +224,8 @@ function Hero() {
             <Link href="/dashboard" className="button button-primary">
               Start publishing <ArrowRight size={16} aria-hidden="true" />
             </Link>
-            <a href="#developers" className="button button-secondary">
-              View developer docs
+            <a href="#agents" className="button button-secondary">
+              Set up an agent
             </a>
           </div>
           <div className="mono mt-7 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-[var(--muted)]">
@@ -447,33 +449,56 @@ function Settlement() {
   );
 }
 
-function Developers() {
-  const steps = [
-    "Install the Agent SDK",
-    "Create a Rubicon client",
-    "Set the article, goal, and budget",
-    "Run the agent",
-    "Stream words live when needed",
+function Agents() {
+  const agentCards = [
+    {
+      icon: <MessageSquare size={18} aria-hidden="true" />,
+      title: "Start from chat",
+      copy: "Copy the prompt into Codex or another agent. The skill setup happens in the agent's own workflow.",
+    },
+    {
+      icon: <Coins size={18} aria-hidden="true" />,
+      title: "Cap every read",
+      copy: "Set the buyer wallet and maximum spend before paid words stream.",
+    },
+    {
+      icon: <Check size={18} aria-hidden="true" />,
+      title: "Stop when answered",
+      copy: "The agent pays word by word and can stop before buying the full article.",
+    },
   ];
   return (
-    <StackPanel id="developers" className="section stack-panel stack-panel-muted border-y border-[var(--faint)] bg-[var(--surface-muted)]">
+    <StackPanel id="agents" className="section stack-panel stack-panel-muted border-y border-[var(--faint)] bg-[var(--surface-muted)]">
       <motion.div {...fade} className="container">
-        <p className="eyebrow">For developers</p>
-        <h2 className="mt-4 section-title">Read paid articles in a few lines.</h2>
-        <div className="mt-10 grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
-          <div className="grid gap-4">
-            <ol className="grid gap-3">
-              {steps.map((step, i) => (
-                <li key={step} className="flex items-start gap-3 rounded-lg border border-[var(--faint)] bg-[var(--card)] px-4 py-3">
-                  <span className="mono mt-0.5 text-sm text-[var(--river-deep)]">{String(i + 1).padStart(2, "0")}</span>
-                  <span className="text-sm font-medium leading-6">{step}</span>
-                </li>
-              ))}
-              <li className="mono mt-1 rounded-lg border border-[var(--river-line)] bg-[var(--river-pale)] px-4 py-3 text-sm text-[var(--river-deep)]">
-                npm install @rubicon-caliga/agent-sdk
-              </li>
-            </ol>
-            <AgentSkillSetup />
+        <p className="eyebrow">For agents</p>
+        <h2 className="mt-4 section-title">Add paid reading to your agent.</h2>
+        <p className="section-copy mt-5">
+          Use Rubicon from the agent you already work with. It can discover articles, pay from a capped wallet, and stop
+          as soon as it has the answer.
+        </p>
+        <div className="mt-10">
+          <AgentSkillSetup />
+        </div>
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          {agentCards.map((card) => (
+            <div key={card.title} className="card-soft p-5">
+              <span className="grid h-9 w-9 place-items-center rounded-lg bg-[var(--river-pale)] text-[var(--river)]">{card.icon}</span>
+              <h3 className="mt-4 text-lg font-semibold">{card.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{card.copy}</p>
+            </div>
+          ))}
+        </div>
+        <div id="developers" className="mt-10 grid gap-6 scroll-mt-24 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
+          <div>
+            <p className="eyebrow">For developers</p>
+            <h3 className="mt-3 text-2xl font-semibold tracking-[-0.01em]">Use the SDK when you want direct control.</h3>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
+              Wire Rubicon into your own agent loop, set a spend cap, and stream paid words when your workflow needs
+              them.
+            </p>
+            <div className="mono mt-5 rounded-lg border border-[var(--river-line)] bg-[var(--river-pale)] px-4 py-3 text-sm text-[var(--river-deep)]">
+              npm install @rubicon-caliga/agent-sdk
+            </div>
           </div>
           <CodeShowcase />
         </div>
@@ -579,6 +604,7 @@ function Footer() {
         </div>
         <div className="flex flex-wrap gap-5 text-sm text-[var(--muted)]">
           <a href="#product">Product</a>
+          <a href="#agents">Agents</a>
           <a href="#creators">Creators</a>
           <Link href="/explore">Explore</Link>
           <a href="#developers">Developers</a>
@@ -597,11 +623,11 @@ export default function Home() {
       <main>
         <Hero />
         <HowItWorks />
+        <Agents />
         <CreatorValue />
         <SellerAgent />
         <StreamDemoSection />
         <Settlement />
-        <Developers />
         <Pricing />
         <Trust />
         <FinalCTA />
