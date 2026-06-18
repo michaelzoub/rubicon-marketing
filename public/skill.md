@@ -43,13 +43,18 @@ Practical notes:
   ```bash
   circle gateway balance --address <agent-wallet-address> --chain ARC-TESTNET --output json
   ```
-- Gateway settlement ids may look like UUIDs, not EVM transaction hashes.
+- Two addresses can appear in a successful paid read:
+  `CIRCLE_AGENT_WALLET_ADDRESS` is the Circle Agent Wallet address used by
+  Gateway for custody, funding, debits, and balance checks;
+  `receipt.buyerWalletAddress` is the buyer address recorded by the Rubicon
+  session/receipt and may differ from the Agent Wallet address.
+- Gateway nanopayments return settlement ids, not EVM transaction hashes. These
+  ids may look like UUIDs and should not be treated as Arcscan transaction
+  hashes.
 - A successful Gateway nanopayment may not appear as a direct ERC-20 seller
   transfer on Arcscan.
 - Verify success with the SDK receipt, Rubicon events, and Circle Gateway
   balance before/after.
-- `receipt.buyerWalletAddress` may differ from the Agent Wallet address used for
-  Gateway balance checks.
 
 ## Decision Flow
 
@@ -110,5 +115,6 @@ For raw session creation, the budget shape is:
 ## Output
 
 Return the final SDK receipt to the user. Highlight `sessionId`, `articleId`,
-`wordsRead`, `amountPaidAtomic`, `completed`, `stopReason`, and any payment or
-Gateway settlement ids reported by the SDK.
+`wordsRead`, `amountPaidAtomic`, `completed`, `stopReason`, the two-address
+distinction when present, and any Gateway settlement ids reported by the SDK.
+Do not label Gateway settlement ids as transaction hashes.
