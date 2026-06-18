@@ -15,6 +15,7 @@ import type {
   Creator,
   EarningsSummary,
   PaymentActivity,
+  PaymentStatus,
   SectionUsage,
   SellerAgentSession,
   UpdateArticleInput,
@@ -117,8 +118,50 @@ type WordPaymentRow = {
   creator_amount_atomic: string;
   rubicon_fee_atomic: string;
   transfer_id: string | null;
+  settlement_id: string | null;
+  settlement_ids: string[] | null;
   created_at: string;
 };
+
+// Circle Gateway nanopayments settle to a Gateway settlement/transfer UUID, not
+// an on-chain ERC-20 transfer hash. Treat a payment as settled when any of
+// transfer_id / settlement_id / settlement_ids is present, mirroring the
+// gateway's own persistence (apps/gateway/src/repositories/postgres.ts).
+function settlementReferenceOf(payment: WordPaymentRow): string | null {
+  return payment.transfer_id ?? payment.settlement_id ?? payment.settlement_ids?.[0] ?? null;
+}
+
+// A Circle Gateway x402 transfer record, as proxied by /api/onchain/x402-transfers.
+// This is the authoritative settlement ledger: the dashboard sources payment
+// activity and settled earnings from here rather than the local DB. The record
+// only knows the wallet it paid — it carries no article/session/fee metadata.
+type GatewayTransfer = {
+  id: string;
+  status: "received" | "batched" | "confirmed" | "completed" | "failed";
+  token: string;
+  fromAddress: string;
+  toAddress: string;
+  amount: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+function paymentStatusFromTransfer(status: GatewayTransfer["status"]): PaymentStatus {
+  if (status === "completed" || status === "confirmed") return "settled";
+  if (status === "failed") return "failed";
+  return "pending";
+}
+
+async function fetchGatewayTransfers(address: string): Promise<GatewayTransfer[]> {
+  const res = await fetch(`/api/onchain/x402-transfers?address=${encodeURIComponent(address)}`, {
+    headers: { accept: "application/json" },
+  });
+  if (!res.ok) {
+    throw new RubiconError("backend", res.status, "gateway_transfers_failed", "Could not load Gateway settlement records.");
+  }
+  const body = (await res.json()) as { transfers?: GatewayTransfer[] };
+  return (body.transfers ?? []).slice().sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+}
 
 function toRubiconError(error: { code?: string; message?: string } | null, fallback = "Supabase request failed."): RubiconError {
   const code = error?.code ?? "supabase_error";
@@ -253,6 +296,20 @@ export function createRubiconClient({ supabaseUrl, supabaseAnonKey, getToken, ge
     };
   }
 
+  // The creator's receiving wallet is the `to` address used to query Circle's
+  // Gateway transfers. Wallet config is creator settings, not the payment
+  // ledger, so it stays in the DB.
+  async function loadWalletAddress(creatorId: string): Promise<string | null> {
+    const wallet = await maybe(
+      supabase
+        .from("creator_wallets")
+        .select("address")
+        .eq("creator_id", creatorId)
+        .maybeSingle<{ address: string | null }>(),
+    );
+    return wallet?.address ?? null;
+  }
+
   async function articleContext(creatorId: string, articleId?: string) {
     let articleQuery = supabase
       .from("articles")
@@ -284,7 +341,7 @@ export function createRubiconClient({ supabaseUrl, supabaseAnonKey, getToken, ge
       must(
         supabase
           .from("word_payments")
-          .select("id, payment_id, article_id, creator_id, session_id, sequence, amount_atomic, creator_amount_atomic, rubicon_fee_atomic, transfer_id, created_at")
+          .select("id, payment_id, article_id, creator_id, session_id, sequence, amount_atomic, creator_amount_atomic, rubicon_fee_atomic, transfer_id, settlement_id, settlement_ids, created_at")
           .eq("creator_id", creatorId)
           .in("article_id", articleIds)
           .order("created_at", { ascending: false })
@@ -509,8 +566,8 @@ export function createRubiconClient({ supabaseUrl, supabaseAnonKey, getToken, ge
           grossAmount: payment.amount_atomic,
           platformFee: payment.rubicon_fee_atomic,
           creatorAmount: payment.creator_amount_atomic,
-          status: payment.transfer_id ? "settled" : "pending",
-          settlementReference: payment.transfer_id,
+          status: settlementReferenceOf(payment) ? "settled" : "pending",
+          settlementReference: settlementReferenceOf(payment),
         })),
       };
     },
@@ -598,7 +655,11 @@ export function createRubiconClient({ supabaseUrl, supabaseAnonKey, getToken, ge
 
     async getEarnings(): Promise<EarningsSummary> {
       const identity = requireIdentity(getIdentity);
-      const [articles, payments, sessions] = await Promise.all([
+      // Settled earnings / words paid come from the Circle Gateway settlement
+      // ledger. Article-level analytics (live count, top article) have no
+      // Gateway equivalent — a transfer record doesn't say which article it
+      // paid for — so they stay DB-derived.
+      const [articles, payments, address] = await Promise.all([
         must(supabase.from("articles").select("id, title, state").eq("creator_id", identity.id).neq("state", "deleted").returns<Array<Pick<ArticleRow, "id" | "title" | "state">>>()),
         must(
           supabase
@@ -607,8 +668,11 @@ export function createRubiconClient({ supabaseUrl, supabaseAnonKey, getToken, ge
             .eq("creator_id", identity.id)
             .returns<Array<Pick<WordPaymentRow, "id" | "article_id" | "creator_amount_atomic">>>(),
         ),
-        must(supabase.from("stream_sessions").select("id").eq("creator_id", identity.id).returns<Array<{ id: string }>>()),
+        loadWalletAddress(identity.id),
       ]);
+
+      const transfers = address ? await fetchGatewayTransfers(address) : [];
+      const settled = transfers.filter((transfer) => paymentStatusFromTransfer(transfer.status) === "settled");
 
       const topArticle = articles
         .map((article) => ({
@@ -619,9 +683,10 @@ export function createRubiconClient({ supabaseUrl, supabaseAnonKey, getToken, ge
         .sort((a, b) => Number(BigInt(b.earnings) - BigInt(a.earnings)))[0];
 
       return {
-        settledEarnings: sumAtomic(payments.map((payment) => payment.creator_amount_atomic)),
-        wordsPaidFor: payments.length,
-        agentReads: sessions.length,
+        settledEarnings: sumAtomic(settled.map((transfer) => transfer.amount)),
+        wordsPaidFor: settled.length,
+        // Distinct paying agents (by buyer wallet) from the Gateway ledger.
+        agentReads: new Set(transfers.map((transfer) => transfer.fromAddress)).size,
         liveArticles: articles.filter((article) => article.state === "live").length,
         topArticle: topArticle && topArticle.earnings !== "0" ? topArticle : null,
       };
@@ -629,30 +694,23 @@ export function createRubiconClient({ supabaseUrl, supabaseAnonKey, getToken, ge
 
     async getPaymentActivity(): Promise<PaymentActivity[]> {
       const identity = requireIdentity(getIdentity);
-      const [payments, articles] = await Promise.all([
-        must(
-          supabase
-            .from("word_payments")
-            .select("id, payment_id, article_id, creator_id, session_id, sequence, amount_atomic, creator_amount_atomic, rubicon_fee_atomic, transfer_id, created_at")
-            .eq("creator_id", identity.id)
-            .order("created_at", { ascending: false })
-            .limit(100)
-            .returns<WordPaymentRow[]>(),
-        ),
-        must(supabase.from("articles").select("id, title").eq("creator_id", identity.id).returns<Array<Pick<ArticleRow, "id" | "title">>>()),
-      ]);
-      const titles = new Map(articles.map((article) => [article.id, article.title]));
-      return payments.map((payment) => ({
-        id: payment.id,
-        date: payment.created_at,
-        articleId: payment.article_id,
-        articleTitle: titles.get(payment.article_id) ?? "Untitled",
+      const address = await loadWalletAddress(identity.id);
+      if (!address) return [];
+      const transfers = await fetchGatewayTransfers(address);
+      // x402 transfers carry no article/session/fee metadata, so the per-row
+      // article and word counts aren't available here — the settlement record
+      // only knows the wallet it paid. Rubicon takes no fee, so gross == net.
+      return transfers.map((transfer) => ({
+        id: transfer.id,
+        date: transfer.createdAt,
+        articleId: "",
+        articleTitle: "—",
         wordsRead: 1,
-        grossAmount: payment.amount_atomic,
-        platformFee: payment.rubicon_fee_atomic,
-        creatorAmount: payment.creator_amount_atomic,
-        status: payment.transfer_id ? "settled" : "pending",
-        settlementReference: payment.transfer_id,
+        grossAmount: transfer.amount,
+        platformFee: "0",
+        creatorAmount: transfer.amount,
+        status: paymentStatusFromTransfer(transfer.status),
+        settlementReference: transfer.id,
       }));
     },
   };

@@ -8,6 +8,7 @@ import { useRubiconQuery } from "@/lib/rubicon/hooks";
 import { formatUsd } from "@/lib/rubicon/pricing";
 import { ACTIVE_CHAIN } from "@/lib/chain";
 import { explorerAddressUrl, formatBalance, useNativeBalance } from "@/lib/onchain";
+import { WithdrawDialog } from "./_components/withdraw-dialog";
 import {
   ArticleStatePill,
   Card,
@@ -207,6 +208,7 @@ export default function OverviewPage() {
 function OnchainCard({ address }: { address: string | null }) {
   const balance = useNativeBalance(address);
   const [copied, setCopied] = useState(false);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
 
   const copy = async () => {
     if (!address) return;
@@ -217,17 +219,29 @@ function OnchainCard({ address }: { address: string | null }) {
 
   return (
     <Card>
+      {address && (
+        <WithdrawDialog open={withdrawOpen} onClose={() => setWithdrawOpen(false)} walletAddress={address} />
+      )}
       <CardHeader
         title="On-chain"
         action={
           address ? (
-            <button
-              type="button"
-              onClick={() => balance.refetch()}
-              className="inline-flex items-center gap-1.5 text-sm text-[var(--river-deep)] hover:underline"
-            >
-              <RefreshCw size={14} aria-hidden="true" /> Refresh
-            </button>
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => setWithdrawOpen(true)}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--river-deep)] hover:underline"
+              >
+                <ArrowRight size={14} aria-hidden="true" /> Withdraw
+              </button>
+              <button
+                type="button"
+                onClick={() => balance.refetch()}
+                className="inline-flex items-center gap-1.5 text-sm text-[var(--river-deep)] hover:underline"
+              >
+                <RefreshCw size={14} aria-hidden="true" /> Refresh
+              </button>
+            </div>
           ) : undefined
         }
       />
