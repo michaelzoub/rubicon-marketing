@@ -7,10 +7,9 @@ import { Archive, ArrowLeft, Pause, Play } from "lucide-react";
 import type { ArticleDetail } from "@/lib/rubicon/types";
 import { useRubiconMutation, useRubiconQuery } from "@/lib/rubicon/hooks";
 import {
-  atomicPerWordToPer1000Usd,
   atomicToUsd,
   formatUsd,
-  per1000UsdToAtomicPerWord,
+  usdToAtomic,
 } from "@/lib/rubicon/pricing";
 import {
   ArticleStatePill,
@@ -218,13 +217,13 @@ function EditPanel({
 }) {
   const [title, setTitle] = useState(article.title);
   const [author, setAuthor] = useState(article.author);
-  const [per1000, setPer1000] = useState(atomicPerWordToPer1000Usd(article.pricePerWordAtomic).toString());
+  const [pricePerWord, setPricePerWord] = useState(atomicToUsd(article.pricePerWordAtomic).toString());
   const [maxPrice, setMaxPrice] = useState(article.maxArticlePriceAtomic ? atomicToUsd(article.maxArticlePriceAtomic).toString() : "");
 
   useEffect(() => {
     setTitle(article.title);
     setAuthor(article.author);
-    setPer1000(atomicPerWordToPer1000Usd(article.pricePerWordAtomic).toString());
+    setPricePerWord(atomicToUsd(article.pricePerWordAtomic).toString());
     setMaxPrice(article.maxArticlePriceAtomic ? atomicToUsd(article.maxArticlePriceAtomic).toString() : "");
   }, [article]);
 
@@ -242,8 +241,8 @@ function EditPanel({
         </label>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="grid gap-2">
-            <span className="text-sm font-medium">Price per 1,000 words ($)</span>
-            <input value={per1000} onChange={(e) => setPer1000(e.target.value.replace(/[^0-9.]/g, ""))} inputMode="decimal" className="h-11 rounded-lg border border-[var(--line)] px-3 outline-none focus:border-[var(--river)]" />
+            <span className="text-sm font-medium">Price per word ($)</span>
+            <input value={pricePerWord} onChange={(e) => setPricePerWord(e.target.value.replace(/[^0-9.]/g, ""))} inputMode="decimal" placeholder="0.0001" className="h-11 rounded-lg border border-[var(--line)] px-3 outline-none focus:border-[var(--river)]" />
           </label>
           <label className="grid gap-2">
             <span className="text-sm font-medium">Maximum article price ($)</span>
@@ -255,13 +254,13 @@ function EditPanel({
       <div className="mt-5 flex justify-end">
         <button
           type="button"
-          disabled={pending || !title.trim() || !author.trim() || !(Number(per1000) > 0)}
+          disabled={pending || !title.trim() || !author.trim() || !(Number(usdToAtomic(Number(pricePerWord))) > 0)}
           onClick={() =>
             onSave({
               title: title.trim(),
               author: author.trim(),
-              pricePerWordAtomic: per1000UsdToAtomicPerWord(Number(per1000)),
-              maxArticlePriceAtomic: maxPrice ? per1000UsdToAtomicPerWord(Number(maxPrice) * 1000) : null,
+              pricePerWordAtomic: usdToAtomic(Number(pricePerWord)),
+              maxArticlePriceAtomic: maxPrice ? usdToAtomic(Number(maxPrice)) : null,
             })
           }
           className="button button-primary disabled:opacity-50"

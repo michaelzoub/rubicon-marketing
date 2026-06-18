@@ -13,7 +13,7 @@ import { useRubiconMutation, useRubiconQuery } from "@/lib/rubicon/hooks";
 import {
   atomicForWords,
   formatUsd,
-  per1000UsdToAtomicPerWord,
+  usdToAtomic,
 } from "@/lib/rubicon/pricing";
 import { parseSections } from "@/lib/rubicon/sections";
 import type { ArticleSectionInput } from "@/lib/rubicon/types";
@@ -40,7 +40,7 @@ export default function NewArticlePage() {
   const [sections, setSections] = useState<EditableSection[]>([]);
   const lastParsed = useRef<string>("");
 
-  const [pricePer1000, setPricePer1000] = useState("");
+  const [pricePerWord, setPricePerWord] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -64,9 +64,9 @@ export default function NewArticlePage() {
   }
 
   const includedWords = sections.reduce((sum, s) => sum + s.wordCount, 0);
-  const atomicPerWord = pricePer1000 ? per1000UsdToAtomicPerWord(Number(pricePer1000)) : "0";
+  const atomicPerWord = pricePerWord ? usdToAtomic(Number(pricePerWord)) : "0";
   const estFullPrice = atomicForWords(atomicPerWord, includedWords);
-  const maxPriceAtomic = maxPrice ? per1000UsdToAtomicPerWord(Number(maxPrice) * 1000) : null;
+  const maxPriceAtomic = maxPrice ? usdToAtomic(Number(maxPrice)) : null;
 
   function buildInput() {
     const sectionInput: ArticleSectionInput[] = sections.map((s, i) => ({
@@ -125,12 +125,12 @@ export default function NewArticlePage() {
 
       {step === 2 && (
         <StepPricing
-          pricePer1000={pricePer1000}
+          pricePerWord={pricePerWord}
           maxPrice={maxPrice}
           atomicPerWord={atomicPerWord}
           includedWords={includedWords}
           estFullPrice={estFullPrice}
-          onPrice={setPricePer1000}
+          onPrice={setPricePerWord}
           onMaxPrice={setMaxPrice}
           onBack={() => setStep(1)}
           onNext={() => setStep(3)}
@@ -332,7 +332,7 @@ function StepReviewSections({
 }
 
 function StepPricing({
-  pricePer1000,
+  pricePerWord,
   maxPrice,
   atomicPerWord,
   includedWords,
@@ -342,7 +342,7 @@ function StepPricing({
   onBack,
   onNext,
 }: {
-  pricePer1000: string;
+  pricePerWord: string;
   maxPrice: string;
   atomicPerWord: string;
   includedWords: number;
@@ -352,7 +352,7 @@ function StepPricing({
   onBack: () => void;
   onNext: () => void;
 }) {
-  const valid = Number(pricePer1000) > 0;
+  const valid = Number(atomicPerWord) > 0;
   return (
     <Card className="p-6">
       <h2 className="text-lg font-semibold">Choose pricing</h2>
@@ -360,14 +360,14 @@ function StepPricing({
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_320px]">
         <div className="grid gap-5">
-          <Field label="Price per 1,000 words" hint="Enter the amount in US dollars.">
+          <Field label="Price per word" hint="Enter the USDC amount per word. Minimum billable value is 0.000001.">
             <div className="flex items-center rounded-lg border border-[var(--line)] focus-within:border-[var(--river)]">
               <span className="px-3 text-[var(--muted)]">$</span>
               <input
-                value={pricePer1000}
+                value={pricePerWord}
                 onChange={(e) => onPrice(e.target.value.replace(/[^0-9.]/g, ""))}
                 inputMode="decimal"
-                placeholder="0.01"
+                placeholder="0.0001"
                 className="h-11 w-full rounded-r-lg border-0 px-0 outline-none"
               />
             </div>
