@@ -399,7 +399,7 @@ export function createRubiconClient({ supabaseUrl, supabaseAnonKey, getToken, ge
               creator_id: identity.id,
               address: input.address,
               network: input.network,
-              verified: false,
+              verified: input.verified ?? false,
             },
             { onConflict: "creator_id" },
           )

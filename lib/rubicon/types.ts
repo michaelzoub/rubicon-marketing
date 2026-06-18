@@ -172,6 +172,13 @@ export interface UpdateCreatorInput {
 export interface UpdateWalletInput {
   address: string;
   network: string;
+  /**
+   * Whether the address is proven to be controlled by the creator. The
+   * receiving wallet is the creator's own Privy embedded EOA, so connecting it
+   * is proof of control — set this true when the saved address matches the
+   * embedded wallet. The gateway only settles payouts to verified wallets.
+   */
+  verified?: boolean;
 }
 
 /** Error envelope the gateway returns on non-2xx responses. */

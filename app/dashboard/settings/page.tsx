@@ -20,7 +20,7 @@ export default function SettingsPage() {
   const creator = useRubiconQuery((c) => c.getCreator(), []);
   const wallet = useRubiconQuery((c) => c.getWallet(), []);
   const updateCreator = useRubiconMutation((c, ...a: Parameters<typeof c.updateCreator>) => c.updateCreator(...a));
-  const updateWallet = useRubiconMutation((c, walletInput: { address: string; network: string }) => c.updateWallet(walletInput));
+  const updateWallet = useRubiconMutation((c, walletInput: { address: string; network: string; verified: boolean }) => c.updateWallet(walletInput));
 
   return (
     <div className="grid gap-6">
@@ -83,8 +83,8 @@ export default function SettingsPage() {
                   verified={wallet.data?.verified ?? false}
                   pending={updateWallet.pending}
                   error={updateWallet.error?.message ?? null}
-                  onSave={async (addr, network) => {
-                    await updateWallet.run({ address: addr, network });
+                  onSave={async (addr, network, verified) => {
+                    await updateWallet.run({ address: addr, network, verified });
                     wallet.refetch();
                   }}
                 />
@@ -153,7 +153,7 @@ function WalletEditor({
   verified: boolean;
   pending: boolean;
   error: string | null;
-  onSave: (addr: string, network: string) => void;
+  onSave: (addr: string, network: string, verified: boolean) => void;
 }) {
   const { ready, wallets } = useWallets();
   const { createWallet } = useCreateWallet();
@@ -165,6 +165,18 @@ function WalletEditor({
   const payoutNetwork = network || RECEIVING_NETWORK;
   const networkLabel = payoutNetwork === RECEIVING_NETWORK ? RECEIVING_NETWORK_LABEL : payoutNetwork;
   const isConnected = Boolean(address) && address.toLowerCase() === embeddedAddress.toLowerCase();
+
+  // Self-heal wallets that were connected before verification was persisted:
+  // if the stored address is the creator's embedded EOA but the row is still
+  // unverified, possessing the wallet proves control, so mark it verified.
+  // Without this the gateway reports `creator_wallet_not_configured` and never
+  // settles payouts. The `!verified` guard makes this fire at most once.
+  useEffect(() => {
+    if (ready && isConnected && !verified && !pending) {
+      onSave(address, payoutNetwork, true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, isConnected, verified, pending]);
 
   const connect = async () => {
     setLocalError(null);
@@ -180,7 +192,12 @@ function WalletEditor({
         setBusy(false);
       }
     }
-    if (addr) onSave(addr, payoutNetwork);
+    // `addr` is always the Privy embedded EOA here — either the existing one or
+    // the one we just created — so possessing it proves control. Mark the
+    // wallet verified so the gateway will settle payouts to it. (We can't
+    // compare against `embeddedAddress` because `useWallets()` hasn't refreshed
+    // yet for a freshly created wallet.)
+    if (addr) onSave(addr, payoutNetwork, true);
   };
 
   const working = busy || pending;
