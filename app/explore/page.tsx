@@ -29,17 +29,20 @@ function ExploreNav() {
           <Waves size={21} strokeWidth={1.9} className="text-[var(--river)]" aria-hidden="true" />
           <span>Rubicon</span>
         </Link>
-        <div className="hidden items-center gap-7 text-sm text-[var(--muted)] md:flex">
-          <Link className="transition-colors hover:text-[var(--ink)]" href="/#product">Product</Link>
-          <Link className="transition-colors hover:text-[var(--ink)]" href="/#creators">Creators</Link>
-          <Link className="text-[var(--ink)]" href="/explore" aria-current="page">Explore</Link>
-          <Link className="transition-colors hover:text-[var(--ink)]" href="/#developers">Developers</Link>
-          <Link className="transition-colors hover:text-[var(--ink)]" href="/#docs">Docs</Link>
-          <Link className="transition-colors hover:text-[var(--ink)]" href="/dashboard">Sign in</Link>
+        <div className="hidden items-center gap-7 text-sm text-[var(--muted)] lg:flex">
+          <Link className="site-nav-link" href="/#product">Product</Link>
+          <Link className="site-nav-link" href="/#creators">Creators</Link>
+          <Link className="site-nav-link" href="/#developers">Developers</Link>
+          <Link className="site-nav-link" href="/#docs">Docs</Link>
         </div>
-        <Link href="/dashboard" className="button button-primary button-nav text-sm">
-          Start publishing <ArrowRight size={15} aria-hidden="true" />
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard" className="button button-primary button-nav hidden text-sm sm:inline-flex">
+            Start publishing <ArrowRight size={15} aria-hidden="true" />
+          </Link>
+          <Link href="/explore" className="explore-pill text-sm" aria-current="page">
+            Explore <ArrowRight size={15} aria-hidden="true" />
+          </Link>
+        </div>
       </nav>
     </header>
   );

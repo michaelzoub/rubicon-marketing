@@ -23,6 +23,7 @@ import { WordStreamDemo } from "./_components/word-stream";
 
 const githubUrl = "https://github.com/michaelzoub/rubicon";
 const skillUrl = "https://www.rubiconpay.xyz/skill.md";
+const setupSkillPrompt = `Set up the Rubicon skill from ${skillUrl}. Help me fund my buyer wallet, then find and summarize the first available article. Spend no more than $0.01.`;
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -144,30 +145,30 @@ function CodeShowcase() {
 
 function AgentSkillSetup() {
   const [copied, setCopied] = useState(false);
-  const copySkillUrl = async () => {
-    await navigator.clipboard.writeText(skillUrl);
+  const copySetupPrompt = async () => {
+    await navigator.clipboard.writeText(setupSkillPrompt);
     setCopied(true);
     window.setTimeout(() => setCopied(false), 1400);
   };
 
   return (
-    <div className="rounded-lg border border-[var(--river-line)] bg-[var(--river-pale)] p-5">
+    <div className="setup-skill-panel rounded-lg border border-[var(--river-line)] p-5">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-2 text-sm font-semibold">
-            <Link2 size={16} className="text-[var(--river)]" aria-hidden="true" /> Agent skill
+            <Link2 size={16} className="text-[var(--river)]" aria-hidden="true" /> Setup skill
           </div>
           <p className="mt-2 max-w-xl text-sm leading-6 text-[var(--muted)]">
-            Give this skill to buyer agents so they can set up a wallet, use x402, talk to seller agents, stream paid
-            words, and stop when satisfied.
+            Paste this into Codex or another agent to install the Rubicon skill, fund a buyer wallet, and run a capped
+            first read.
           </p>
         </div>
-        <button type="button" onClick={copySkillUrl} className="button button-secondary min-h-10 shrink-0 text-sm">
-          {copied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />} {copied ? "Copied" : "Copy URL"}
+        <button type="button" onClick={copySetupPrompt} className="button button-secondary min-h-10 shrink-0 text-sm">
+          {copied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />} {copied ? "Copied" : "Copy prompt"}
         </button>
       </div>
       <code className="mono mt-4 block overflow-x-auto rounded-md border border-[var(--faint)] bg-[rgba(0,0,0,0.22)] px-4 py-3 text-sm text-[var(--ink)]">
-        {skillUrl}
+        {setupSkillPrompt}
       </code>
     </div>
   );
@@ -181,17 +182,20 @@ function Navigation() {
           <Waves size={21} strokeWidth={1.9} className="text-[var(--river)]" aria-hidden="true" />
           <span>Rubicon</span>
         </Link>
-        <div className="hidden items-center gap-7 text-sm text-[var(--muted)] md:flex">
-          <a className="transition-colors hover:text-[var(--ink)]" href="#product">Product</a>
-          <a className="transition-colors hover:text-[var(--ink)]" href="#creators">Creators</a>
-          <Link className="transition-colors hover:text-[var(--ink)]" href="/explore">Explore</Link>
-          <a className="transition-colors hover:text-[var(--ink)]" href="#developers">Developers</a>
-          <a className="transition-colors hover:text-[var(--ink)]" href="#docs">Docs</a>
-          <Link className="transition-colors hover:text-[var(--ink)]" href="/dashboard">Sign in</Link>
+        <div className="hidden items-center gap-7 text-sm text-[var(--muted)] lg:flex">
+          <a className="site-nav-link" href="#product">Product</a>
+          <a className="site-nav-link" href="#creators">Creators</a>
+          <a className="site-nav-link" href="#developers">Developers</a>
+          <a className="site-nav-link" href="#docs">Docs</a>
         </div>
-        <Link href="/dashboard" className="button button-primary button-nav text-sm">
-          Start publishing <ArrowRight size={15} aria-hidden="true" />
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/dashboard" className="button button-primary button-nav hidden text-sm sm:inline-flex">
+            Start publishing <ArrowRight size={15} aria-hidden="true" />
+          </Link>
+          <Link href="/explore" className="explore-pill text-sm">
+            Explore <ArrowRight size={15} aria-hidden="true" />
+          </Link>
+        </div>
       </nav>
     </header>
   );
