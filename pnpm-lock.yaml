@@ -32,6 +32,9 @@ importers:
       next:
         specifier: ^15.3.3
         version: 15.5.19(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
+      ox:
+        specifier: ^0.14.27
+        version: 0.14.27(typescript@5.9.3)(zod@4.4.3)
       react:
         specifier: ^19.0.0
         version: 19.2.7

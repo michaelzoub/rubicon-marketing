@@ -12,16 +12,17 @@
     "@privy-io/node": "^0.21.0",
     "@privy-io/react-auth": "^3.31.0",
     "@supabase/supabase-js": "^2.108.2",
-    "viem": "^2.52.0",
     "@tailwindcss/postcss": "^4.1.10",
     "clsx": "^2.1.1",
     "framer-motion": "^12.18.1",
     "lucide-react": "^0.468.0",
     "next": "^15.3.3",
+    "ox": "^0.14.27",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^2.6.0",
-    "tailwindcss": "^4.1.10"
+    "tailwindcss": "^4.1.10",
+    "viem": "^2.52.0"
   },
   "devDependencies": {
     "@types/node": "^22.15.31",
