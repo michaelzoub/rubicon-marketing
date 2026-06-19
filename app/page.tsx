@@ -374,16 +374,17 @@ function StreamDemoSection() {
       <motion.div {...fade} className="container grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
         <div>
           <p className="eyebrow">Word-level metering</p>
-          <h2 className="mt-4 section-title">Every word is delivered and paid for, one at a time.</h2>
+          <h2 className="mt-4 section-title">Pay per word — bundled into one payment at scale.</h2>
           <p className="section-copy mt-5">
-            No subscriptions, no full-article purchases, no arbitrary bundles. The agent pays for each word as it reads,
-            and stops the moment it has the answer. You earn for exactly what was read.
+            Short reads stream and settle one word at a time. For large articles, the gateway bundles a contiguous run
+            of words into a single chunk released by one payment — fewer round-trips, faster delivery, and you still
+            earn for exactly the words that were read.
           </p>
           <div className="mt-6 grid gap-3 text-sm">
             {[
-              "Each paid word is metered individually",
-              "The agent sees the per-word price before streaming",
-              "Unread words are never charged",
+              "Short reads stream and pay word by word",
+              "Large articles bundle consecutive words into one payment",
+              "Either way, you earn for exactly the words read",
             ].map((item) => (
               <div key={item} className="flex items-center gap-3">
                 <Check size={16} className="text-[var(--river)]" aria-hidden="true" /> {item}
