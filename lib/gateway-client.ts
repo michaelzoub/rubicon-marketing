@@ -7,7 +7,7 @@
  * the Gateway Wallet contract directly — there is no SDK install.
  */
 import { useCallback, useEffect, useState } from "react";
-import { createPublicClient, createWalletClient, custom, http } from "viem";
+import { createPublicClient, createWalletClient, custom, formatUnits, http } from "viem";
 import type { ConnectedWallet } from "@privy-io/react-auth";
 import { ACTIVE_CHAIN } from "./chain";
 import {
@@ -88,7 +88,7 @@ export function useGatewayBalance(address: string | null | undefined): GatewayBa
 
 export class WithdrawError extends Error {
   constructor(
-    readonly kind: "rejected" | "network" | "unknown",
+    readonly kind: "rejected" | "network" | "gas" | "unknown",
     message: string,
   ) {
     super(message);
@@ -106,7 +106,36 @@ export function toWithdrawError(err: unknown): WithdrawError {
   if (/network|fetch|timeout|connection/i.test(message)) {
     return new WithdrawError("network", "Network error. Check your connection and try again.");
   }
+  if (/insufficient funds|gas \* price \+ value/i.test(message)) {
+    const have = message.match(/\bhave\s+(\d+)/i)?.[1];
+    const want = message.match(/\bwant\s+(\d+)/i)?.[1];
+    const detail =
+      have && want
+        ? ` Your wallet has ${formatNativeGas(BigInt(have))} ${ACTIVE_CHAIN.nativeCurrency.symbol}; this transaction needs about ${formatNativeGas(BigInt(want))} ${ACTIVE_CHAIN.nativeCurrency.symbol} for gas.`
+        : "";
+    return new WithdrawError(
+      "gas",
+      `Your wallet needs ${ACTIVE_CHAIN.nativeCurrency.symbol} on ${ACTIVE_CHAIN.name} to pay gas.${detail}`,
+    );
+  }
   return new WithdrawError("unknown", message || "Something went wrong.");
+}
+
+function formatNativeGas(value: bigint): string {
+  const formatted = formatUnits(value, ACTIVE_CHAIN.nativeCurrency.decimals);
+  const numeric = Number(formatted);
+  if (!Number.isFinite(numeric)) return formatted;
+  return numeric.toLocaleString(undefined, { maximumSignificantDigits: 6 });
+}
+
+async function assertHasGas(account: `0x${string}`) {
+  const balance = await publicClient.getBalance({ address: account });
+  if (balance <= BigInt(0)) {
+    throw new WithdrawError(
+      "gas",
+      `Your wallet has 0 ${ACTIVE_CHAIN.nativeCurrency.symbol} for gas. Add ${ACTIVE_CHAIN.nativeCurrency.symbol} on ${ACTIVE_CHAIN.name}, then try again.`,
+    );
+  }
 }
 
 async function walletClientFor(wallet: ConnectedWallet) {
@@ -131,6 +160,7 @@ async function walletClientFor(wallet: ConnectedWallet) {
 export async function initiateWithdrawal(wallet: ConnectedWallet, amountAtomic: bigint): Promise<`0x${string}`> {
   try {
     const client = await walletClientFor(wallet);
+    await assertHasGas(wallet.address as `0x${string}`);
     const hash = await client.writeContract({
       address: GATEWAY_WALLET_ADDRESS,
       abi: GATEWAY_WALLET_ABI,
@@ -157,6 +187,7 @@ export async function completeWithdrawal(
 ): Promise<CompleteResult> {
   try {
     const client = await walletClientFor(wallet);
+    await assertHasGas(wallet.address as `0x${string}`);
     const withdrawHash = await client.writeContract({
       address: GATEWAY_WALLET_ADDRESS,
       abi: GATEWAY_WALLET_ABI,

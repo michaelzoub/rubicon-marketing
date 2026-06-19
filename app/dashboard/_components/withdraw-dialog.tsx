@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { getEmbeddedConnectedWallet, useWallets } from "@privy-io/react-auth";
 import { ExternalLink, Loader2, X } from "lucide-react";
 import { ACTIVE_CHAIN } from "@/lib/chain";
+import { formatBalance, useNativeBalance } from "@/lib/onchain";
 import {
   WITHDRAWAL_DELAY_DAYS,
   explorerTxUrl,
@@ -44,6 +45,7 @@ export function WithdrawDialog({ open, onClose, walletAddress }: Props) {
   const { wallets } = useWallets();
   const wallet = getEmbeddedConnectedWallet(wallets);
   const balance = useGatewayBalance(open ? walletAddress : null);
+  const gasBalance = useNativeBalance(open && wallet ? wallet.address : null);
 
   const [amount, setAmount] = useState("");
   const [destination, setDestination] = useState(walletAddress);
@@ -74,8 +76,16 @@ export function WithdrawDialog({ open, onClose, walletAddress }: Props) {
   const amountError = amount ? validateWithdrawAmount(amount, available) : null;
   const destError = validateDestination(destination);
   const differentDestination = destination.toLowerCase() !== walletAddress.toLowerCase();
+  const gasMissing = gasBalance.status === "success" && Number(gasBalance.value ?? "0") <= 0;
   const canInitiate =
-    balance.status === "success" && !hasPending && !!amount && !amountError && !destError && available > BigInt(0) && !!wallet;
+    balance.status === "success" &&
+    !hasPending &&
+    !!amount &&
+    !amountError &&
+    !destError &&
+    available > BigInt(0) &&
+    !!wallet &&
+    !gasMissing;
 
   const close = () => {
     if (!busy) onClose();
@@ -97,6 +107,7 @@ export function WithdrawDialog({ open, onClose, walletAddress }: Props) {
       localStorage.setItem(intentKey(walletAddress), JSON.stringify({ destination }));
       const hash = await initiateWithdrawal(wallet, parsed);
       setDone({ type: "initiated", hash });
+      gasBalance.refetch();
       balance.refetch();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Could not initiate the withdrawal.");
@@ -118,6 +129,7 @@ export function WithdrawDialog({ open, onClose, walletAddress }: Props) {
       const result = await completeWithdrawal(wallet, { destination: dest, amountAtomic: balance.withdrawingAtomic });
       localStorage.removeItem(intentKey(walletAddress));
       setDone({ type: "completed", result });
+      gasBalance.refetch();
       balance.refetch();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Could not complete the withdrawal.");
@@ -185,6 +197,19 @@ export function WithdrawDialog({ open, onClose, walletAddress }: Props) {
                   </div>
                 )}
               </div>
+              <div className="rounded-lg border border-[var(--faint)] px-4 py-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs font-medium text-[var(--muted)]">Gas balance</span>
+                  <span className="mono text-xs text-[var(--ink)]">
+                    {gasBalance.status === "success" ? formatBalance(gasBalance.value) : "—"} {ACTIVE_CHAIN.nativeCurrency.symbol}
+                  </span>
+                </div>
+                {gasBalance.status === "success" && Number(gasBalance.value ?? "0") <= 0 && (
+                  <p className="mt-2 text-xs text-[#8d2f2d]">
+                    Add {ACTIVE_CHAIN.nativeCurrency.symbol} on {ACTIVE_CHAIN.name} before withdrawing.
+                  </p>
+                )}
+              </div>
 
               {done ? (
                 <SuccessPanel done={done} differentDestination={differentDestination} />
@@ -198,7 +223,7 @@ export function WithdrawDialog({ open, onClose, walletAddress }: Props) {
                     <button
                       type="button"
                       onClick={onComplete}
-                      disabled={!!busy}
+                      disabled={!!busy || gasMissing}
                       className="inline-flex items-center justify-center gap-2 rounded-md bg-[var(--river-deep)] px-4 py-2.5 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
                     >
                       {busy === "completing" && <Loader2 size={15} className="animate-spin" aria-hidden="true" />}
