@@ -493,16 +493,56 @@ a {
   pointer-events: none;
 }
 
+/* Top-level blocks render as joined segments of a per-section box. Borders sit
+   on every block; zero vertical margins keep the side borders continuous, while
+   the box ends (a heading, the block before a heading, and the first/last
+   block) add the rounded caps and the spacing between sections. */
 .md-canvas > * {
-  margin: 0 0 0.7em;
+  margin: 0;
+  padding: 0.3em 18px;
+  border-left: 1px solid var(--line);
+  border-right: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.5);
 }
 
-.md-canvas > *:first-child {
+/* Box top: any heading (starts a section) or the very first block (lead-in). */
+.md-canvas > :is(h1, h2, h3),
+.md-canvas > :first-child {
+  margin-top: 18px;
+  padding-top: 0.6em;
+  border-top: 1px solid var(--line);
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+}
+
+/* Box bottom: the last block, or the block just before the next heading.
+   Spacing between sections comes from the next box's top margin, so no bottom
+   margin here — that keeps the dead zone between boxes small. */
+.md-canvas > :last-child,
+.md-canvas > *:has(+ :is(h1, h2, h3)) {
+  margin-bottom: 0;
+  padding-bottom: 0.7em;
+  border-bottom: 1px solid var(--line);
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+.md-canvas > :first-child {
   margin-top: 0;
 }
 
-.md-canvas > *:last-child {
+.md-canvas > :last-child {
   margin-bottom: 0;
+}
+
+/* The heading reads as the section's header band inside the box. */
+.md-canvas > :is(h1, h2, h3) {
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  font-weight: 700;
+  font-size: 1.25rem;
+  line-height: 1.35;
+  color: var(--ink);
+  background: var(--surface-muted);
 }
 
 .md-canvas strong {

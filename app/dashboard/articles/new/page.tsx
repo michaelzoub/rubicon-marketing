@@ -231,11 +231,11 @@ function StepAddArticle({
         <Field label="Author">
           <input value={author} onChange={(e) => onAuthor(e.target.value)} placeholder="Author name" className={inputClass} />
         </Field>
-        <Field label="Editor" hint="Write or paste your article, or upload a Markdown file. Use the heading buttons to start a new section — each heading becomes a section agents can navigate.">
+        <Field label="Editor" hint="Paste a whole article from Substack or X, or write it here. Each heading starts a new section — shown boxed below — and becomes a section agents can navigate.">
           <MarkdownEditor
             value={content}
             onChange={onContent}
-            placeholder="Start writing, or paste your article here…"
+            placeholder="Paste your article from Substack or X, or start writing…"
           />
         </Field>
         <div className="flex flex-wrap items-center gap-3">
