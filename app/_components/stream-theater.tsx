@@ -161,18 +161,14 @@ export function StreamTheater() {
   return (
     <div className="stream-theater card-soft relative min-h-[560px] w-full min-w-0 overflow-hidden p-5 sm:p-6">
       <div className="stream-chrome" aria-hidden="true" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(ellipse_at_50%_0%,rgba(36,127,214,0.18),transparent_68%)]" aria-hidden="true" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(ellipse_at_50%_0%,rgba(var(--river-rgb),0.14),transparent_68%)]" aria-hidden="true" />
       <div className="relative flex items-center justify-between gap-4 border-b border-[var(--faint)] pb-4">
         <div className="flex min-w-0 items-center gap-2.5">
           <span
             className={`status-dot h-2.5 w-2.5 rounded-full ${done ? "bg-[var(--green)]" : "bg-[var(--river)]"}`}
-            style={{ boxShadow: `0 0 0 4px ${done ? "rgba(88,213,155,0.14)" : "rgba(36,127,214,0.14)"}` }}
           />
           <span className="truncate text-sm font-semibold">{done ? "Session settled" : "Live agent session"}</span>
         </div>
-        <span className="mono hidden shrink-0 text-[0.68rem] uppercase tracking-[0.22em] text-[var(--muted)] sm:inline">
-          RBCN://HOW-ATTENTION-WORKS
-        </span>
       </div>
 
       <div className="relative mt-6">
@@ -295,14 +291,14 @@ export function StreamTheater() {
                             active
                               ? {
                                   color: "var(--ink)",
-                                  backgroundColor: "rgba(36, 127, 214, 0.24)",
-                                  borderColor: "rgba(36, 127, 214, 0.4)",
+                                  backgroundColor: "rgba(var(--river-rgb), 0.24)",
+                                  borderColor: "rgba(var(--river-rgb), 0.42)",
                                 }
                               : delivered
                                 ? {
                                     color: "var(--river-deep)",
-                                    backgroundColor: "rgba(36, 127, 214, 0.1)",
-                                    borderColor: "rgba(36, 127, 214, 0.16)",
+                                    backgroundColor: "rgba(var(--river-rgb), 0.11)",
+                                    borderColor: "rgba(var(--river-rgb), 0.2)",
                                   }
                                 : {
                                     color: "var(--quiet)",
@@ -397,7 +393,7 @@ function Agent({
   return (
     <div className={`absolute top-0 flex w-[40%] min-w-0 flex-col gap-2 ${pos}`}>
       <motion.div
-        animate={active ? { scale: 1, boxShadow: `0 0 0 6px ${color}1f` } : { scale: 0.94, boxShadow: `0 0 0 0px ${color}00` }}
+        animate={active ? { scale: 1, opacity: 1 } : { scale: 0.94, opacity: 0.72 }}
         transition={{ duration: 0.6, ease }}
         className="agent-token grid h-[60px] w-[60px] place-items-center text-white"
         style={{ background: `linear-gradient(145deg, ${color}, var(--river))` }}

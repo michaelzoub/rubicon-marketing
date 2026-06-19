@@ -23,7 +23,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
           loginMethods: ["twitter", "email", "wallet"],
           appearance: {
             theme: "light",
-            accentColor: "#247fd6",
+            accentColor: "#255075",
           },
           // Transactions settle on Arc — Arc Testnet for now.
           defaultChain: ACTIVE_CHAIN,

@@ -110,7 +110,7 @@ function WordStreamAnimated() {
 
   return (
     <div
-      className={`overflow-hidden rounded-2xl border bg-[var(--card)] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-colors duration-500 ${
+      className={`overflow-hidden rounded-2xl border bg-[var(--card)] transition-colors duration-500 ${
         done ? "border-[rgba(88,213,155,0.38)]" : bundled ? "border-[var(--river-line)]" : "border-[var(--line)]"
       }`}
     >
@@ -295,7 +295,7 @@ function WordStreamStatic() {
   const bundledPayments = compareWords / BUNDLE_SIZE;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--card)] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
+    <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--card)]">
       <div className="flex items-center justify-between border-b border-[var(--faint)] bg-[var(--surface-muted)] px-5 py-3">
         <span className="mono text-[0.66rem] uppercase tracking-[0.16em] text-[var(--muted)]">Paid word stream</span>
         <span className="mono text-xs text-[var(--river-deep)]">two modes</span>
