@@ -46,7 +46,6 @@ export default function OverviewPage() {
       <PageHeader
         title="Overview"
         description={`Welcome back, ${greeting}.`}
-        action={<PrimaryLink href="/dashboard/articles/new">New article</PrimaryLink>}
       />
 
       {loading && <LoadingState />}
@@ -77,10 +76,10 @@ export default function OverviewPage() {
                 />
                 <ChecklistItem
                   done={walletConnected}
-                  title="Connect a receiving wallet"
-                  description="Payments for your articles will be routed to this wallet."
+                  title="Set up a receiving wallet"
+                  description="Your Privy wallet receives payments for your articles."
                   href="/dashboard/settings"
-                  cta="Connect wallet"
+                  cta="Set up wallet"
                 />
                 <ChecklistItem
                   done={hasLive}
@@ -249,9 +248,9 @@ function OnchainCard({ address }: { address: string | null }) {
         <div className="p-5">
           <EmptyState
             icon={<Wallet2 size={22} aria-hidden="true" />}
-            title="No wallet connected"
-            description="Connect a receiving wallet to see your on-chain address, network, and balance."
-            action={<PrimaryLink href="/dashboard/settings">Connect wallet</PrimaryLink>}
+            title="No wallet set up yet"
+            description="Set up your Privy wallet to see your on-chain address, network, and balance."
+            action={<PrimaryLink href="/dashboard/settings">Set up wallet</PrimaryLink>}
           />
         </div>
       ) : (

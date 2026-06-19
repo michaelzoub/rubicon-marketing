@@ -471,3 +471,102 @@ a {
     padding: 58px 0;
   }
 }
+
+/* ---- Article editor: per-section Tiptap body canvas ---- */
+.md-canvas {
+  min-height: 120px;
+  padding: 16px 18px;
+  outline: none;
+  font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--ink);
+  caret-color: var(--river-deep);
+}
+
+/* Placeholder shown by @tiptap/extensions Placeholder on the empty first node. */
+.md-canvas p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--quiet);
+  pointer-events: none;
+}
+
+.md-canvas > * {
+  margin: 0 0 0.7em;
+}
+
+.md-canvas > *:first-child {
+  margin-top: 0;
+}
+
+.md-canvas > *:last-child {
+  margin-bottom: 0;
+}
+
+.md-canvas strong {
+  font-weight: 700;
+}
+
+.md-canvas em {
+  font-style: italic;
+}
+
+.md-canvas img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 0.5em 0;
+}
+
+.md-canvas img.ProseMirror-selectednode {
+  outline: 2px solid var(--river);
+  outline-offset: 2px;
+}
+
+.md-canvas ul,
+.md-canvas ol {
+  padding-left: 1.4em;
+}
+
+.md-canvas ul {
+  list-style: disc;
+}
+
+.md-canvas ol {
+  list-style: decimal;
+}
+
+.md-canvas li {
+  margin: 0.25em 0;
+}
+
+.md-canvas li > p {
+  margin: 0;
+}
+
+.md-canvas blockquote {
+  padding-left: 16px;
+  border-left: 3px solid var(--line);
+  color: var(--muted);
+  font-style: italic;
+}
+
+.md-canvas a {
+  color: var(--river-deep);
+  text-decoration: underline;
+}
+
+.md-canvas code {
+  font-family: var(--font-mono), "SFMono-Regular", Menlo, monospace;
+  font-size: 0.9em;
+  background: var(--surface-muted);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+
+.md-canvas .ProseMirror-focused {
+  outline: none;
+}

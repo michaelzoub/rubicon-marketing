@@ -17,6 +17,7 @@ import {
 } from "@/lib/rubicon/pricing";
 import { parseSections } from "@/lib/rubicon/sections";
 import type { ArticleSectionInput } from "@/lib/rubicon/types";
+import { MarkdownEditor } from "../../_components/markdown-editor";
 import { Card, PageHeader, shortWallet, WalletStatePill } from "../../_components/ui";
 
 interface EditableSection {
@@ -41,7 +42,6 @@ export default function NewArticlePage() {
   const lastParsed = useRef<string>("");
 
   const [pricePerWord, setPricePerWord] = useState("");
-  const [maxPrice, setMaxPrice] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Prefill the schema-required author from the creator display name once.
@@ -66,7 +66,6 @@ export default function NewArticlePage() {
   const includedWords = sections.reduce((sum, s) => sum + s.wordCount, 0);
   const atomicPerWord = pricePerWord ? usdToAtomic(Number(pricePerWord)) : "0";
   const estFullPrice = atomicForWords(atomicPerWord, includedWords);
-  const maxPriceAtomic = maxPrice ? usdToAtomic(Number(maxPrice)) : null;
 
   function buildInput() {
     const sectionInput: ArticleSectionInput[] = sections.map((s, i) => ({
@@ -79,7 +78,7 @@ export default function NewArticlePage() {
       body: content,
       sections: sectionInput,
       pricePerWordAtomic: atomicPerWord,
-      maxArticlePriceAtomic: maxPriceAtomic,
+      maxArticlePriceAtomic: null,
     };
   }
 
@@ -126,12 +125,10 @@ export default function NewArticlePage() {
       {step === 2 && (
         <StepPricing
           pricePerWord={pricePerWord}
-          maxPrice={maxPrice}
           atomicPerWord={atomicPerWord}
           includedWords={includedWords}
           estFullPrice={estFullPrice}
           onPrice={setPricePerWord}
-          onMaxPrice={setMaxPrice}
           onBack={() => setStep(1)}
           onNext={() => setStep(3)}
         />
@@ -234,12 +231,11 @@ function StepAddArticle({
         <Field label="Author">
           <input value={author} onChange={(e) => onAuthor(e.target.value)} placeholder="Author name" className={inputClass} />
         </Field>
-        <Field label="Article content" hint="Paste your article, or upload a Markdown file. Use # headings to define sections.">
-          <textarea
+        <Field label="Editor" hint="Write or paste your article, or upload a Markdown file. Use the heading buttons to start a new section — each heading becomes a section agents can navigate.">
+          <MarkdownEditor
             value={content}
-            onChange={(e) => onContent(e.target.value)}
-            placeholder={"# Section title\n\nYour content…"}
-            className="min-h-[320px] resize-y rounded-lg border border-[var(--line)] p-4 font-serif text-base leading-7 outline-none focus:border-[var(--river)]"
+            onChange={onContent}
+            placeholder="Start writing, or paste your article here…"
           />
         </Field>
         <div className="flex flex-wrap items-center gap-3">
@@ -333,22 +329,18 @@ function StepReviewSections({
 
 function StepPricing({
   pricePerWord,
-  maxPrice,
   atomicPerWord,
   includedWords,
   estFullPrice,
   onPrice,
-  onMaxPrice,
   onBack,
   onNext,
 }: {
   pricePerWord: string;
-  maxPrice: string;
   atomicPerWord: string;
   includedWords: number;
   estFullPrice: string;
   onPrice: (v: string) => void;
-  onMaxPrice: (v: string) => void;
   onBack: () => void;
   onNext: () => void;
 }) {
@@ -368,18 +360,6 @@ function StepPricing({
                 onChange={(e) => onPrice(e.target.value.replace(/[^0-9.]/g, ""))}
                 inputMode="decimal"
                 placeholder="0.0001"
-                className="h-11 w-full rounded-r-lg border-0 px-0 outline-none"
-              />
-            </div>
-          </Field>
-          <Field label="Maximum article price" hint="Optional. A cap on what one agent can be charged. Agents still pay only for words actually read.">
-            <div className="flex items-center rounded-lg border border-[var(--line)] focus-within:border-[var(--river)]">
-              <span className="px-3 text-[var(--muted)]">$</span>
-              <input
-                value={maxPrice}
-                onChange={(e) => onMaxPrice(e.target.value.replace(/[^0-9.]/g, ""))}
-                inputMode="decimal"
-                placeholder="No cap"
                 className="h-11 w-full rounded-r-lg border-0 px-0 outline-none"
               />
             </div>

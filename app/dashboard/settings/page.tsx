@@ -231,7 +231,7 @@ function WalletEditor({
           disabled={working || !ready}
           className="button button-primary inline-flex w-fit items-center gap-2 text-sm disabled:opacity-50"
         >
-          <Wallet size={15} aria-hidden="true" /> {working ? "Connecting…" : "Connect wallet"}
+          <Wallet size={15} aria-hidden="true" /> {working ? "Setting up…" : "Set up wallet"}
         </button>
       )}
 
