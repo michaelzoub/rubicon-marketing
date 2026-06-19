@@ -1,7 +1,6 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import { StreamTheater } from "../_components/stream-theater";
 
@@ -56,7 +55,7 @@ export default function TwitterRecordingPage() {
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_44%,rgba(var(--river-rgb),0.18),transparent_30rem)]" />
 
       <section className="relative mx-auto grid min-h-screen w-full max-w-[1500px] gap-8 px-6 py-6 md:grid-cols-[0.88fr_1.12fr] md:items-center md:px-10 lg:px-14">
-        <div className="flex min-h-[560px] flex-col justify-between">
+        <div className="flex min-h-[560px] flex-col justify-center">
           <div className="relative flex-1">
             <AnimatePresence mode="wait">
               <motion.div
@@ -65,7 +64,7 @@ export default function TwitterRecordingPage() {
                 animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                 exit={{ opacity: 0, y: -18, filter: "blur(7px)" }}
                 transition={{ duration: TRANSITION, ease }}
-                className="absolute inset-x-0 top-0 max-w-[620px]"
+                className="absolute inset-0 flex max-w-[620px] flex-col items-start justify-center"
               >
                 <span className="inline-flex items-center gap-2 rounded-full border border-[var(--river-line)] bg-[var(--river-pale)] px-3.5 py-1.5 text-[0.72rem] font-bold uppercase tracking-[0.18em] text-[var(--river-deep)]">
                   <span className="h-1.5 w-1.5 rounded-full bg-[var(--river-deep)]" aria-hidden="true" />
@@ -79,12 +78,6 @@ export default function TwitterRecordingPage() {
                 </p>
               </motion.div>
             </AnimatePresence>
-          </div>
-
-          <div className="flex items-center justify-end gap-5 border-t border-[var(--faint)] pt-5">
-            <div className="flex items-center gap-2 text-sm font-semibold text-[var(--river-deep)]">
-              rubiconpay.xyz <ArrowRight size={16} aria-hidden="true" />
-            </div>
           </div>
         </div>
 
