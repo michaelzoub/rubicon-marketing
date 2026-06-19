@@ -135,7 +135,7 @@ export function WithdrawDialog({ open, onClose, walletAddress }: Props) {
       aria-label="Withdraw USDC"
     >
       <div
-        className="w-full max-w-md overflow-hidden rounded-[var(--radius-lg)] border border-[var(--line)] bg-white shadow-xl"
+        className="w-full max-w-md overflow-hidden rounded-[var(--radius-lg)] border border-[var(--line)] bg-white"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b border-[var(--faint)] px-5 py-4">

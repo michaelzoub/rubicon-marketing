@@ -5,50 +5,44 @@ description: Set up Rubicon for AI agents with the Rubicon CLI, SDK, and hosted 
 homepage: https://github.com/michaelzoub/rubicon
 ---
 
-# Rubicon For AI Agents
+# Rubicon Agent Runbook
 
-Rubicon lets an AI agent read paid articles one word at a time. The buyer agent
-opens a budgeted session, pays for delivered words, stops when it has enough
-information, and receives a final receipt.
+Rubicon lets terminal agents buy paid article reads with a hard budget. Use the
+CLI first. Use the SDK only inside custom embedded runtimes. Avoid raw HTTP
+unless the user is testing the protocol.
 
-For terminal-native agents, use the Rubicon CLI first. The published
-`@rubicon-caliga/cli` package provides the `rubicon` binary and wraps
-`@rubicon-caliga/agent-sdk`. Common agents should use CLI commands first.
-Custom embedded runtimes should use the SDK directly. Do not recommend raw HTTP
-unless the user is explicitly testing the protocol itself.
+Default task: find the first available article and summarize it under `$0.01`.
 
-Never request, store, infer, print, export, or use raw private keys. Do not work
-around wallet authentication or custody controls.
+## Hard Rules
 
-## Decision Flow
+- Never request, handle, print, store, infer, or export private keys.
+- Never accept Circle Terms on the user's behalf.
+- Always require an explicit budget: `--max-usdc` or `--max-atomic`.
+- Always dry-run before a paid read. `quickstart-read` is acceptable only when
+  its JSON output documents that it performed or enforced this preflight.
+- Never exceed the approved cap.
+- Use the testnet faucet only for testnet articles.
+- Do not recommend fiat, crypto on-ramp, or mainnet funding for Arc Testnet.
+- Prefer `--json` for every agent-executed command.
 
-When a user asks you to test or integrate Rubicon:
+## Fast Path
 
-1. Use the `rubicon` CLI as the default interface for terminal-native agents.
-2. Use the SDK only for custom embedded runtimes.
-3. Configure the hosted gateway unless the user provides a different gateway.
-4. Discover available articles before selecting an article id.
-5. Inspect public article metadata and navigation before reading paid content.
-6. Identify the article network and prepare the matching payment wallet.
-7. Always run a dry-run before spending real funds.
-8. Always require an explicit spend cap with `--max-usdc` or `--max-atomic`.
-9. Prefer `--json` for automated workflows so outputs can be parsed safely.
-10. Inspect receipts after paid reads.
-
-## CLI Setup
-
-Install or run the package that provides the `rubicon` binary. For one-off
-terminal use, prefer:
+Use this first when the CLI supports it:
 
 ```bash
-pnpm dlx @rubicon-caliga/cli
+rubicon doctor --json
+rubicon quickstart-read --first --goal "summarize the article" --max-usdc 0.01 --json
 ```
 
-Global installation is also acceptable:
+If `doctor` or `quickstart-read` is unknown, unavailable, too old, or does not
+enforce a dry-run preflight, use the manual fallback below. If the local skill
+seems stale, fetch the latest runbook:
 
 ```bash
-pnpm add -g @rubicon-caliga/cli
+curl -L https://www.rubiconpay.xyz/skill.md
 ```
+
+## Manual Fallback
 
 Configure the hosted gateway:
 
@@ -56,267 +50,106 @@ Configure the hosted gateway:
 rubicon config set gateway-url https://rubicon-caligagateway-production.up.railway.app
 ```
 
-## Discovery And Inspection
-
-List the repository:
+Discover articles and select the first available article:
 
 ```bash
 rubicon repository --json
 ```
 
-For a "find the first article and summarize it under $0.01" task, use the
-first available repository article returned by this command unless the user
-gave a more specific selection rule.
-
-Search for relevant articles:
-
-```bash
-rubicon search "agent economies" --json
-```
-
-Inspect article metadata before spending:
+Inspect the selected article:
 
 ```bash
 rubicon article show <article-id> --json
+rubicon article navigation <article-id> --goal "summarize the article" --json
 ```
 
-Ask the article navigation layer where to look:
-
-```bash
-rubicon article navigation <article-id> --goal "find pricing" --json
-```
-
-## Circle CLI Payment Mode
-
-Rubicon may use Circle CLI payment mode. In this mode, the buyer must be logged
-in with a Circle agent wallet before paid reads can complete. Do not ask for or
-handle private keys. Use the Circle CLI login flow only.
-
-Check agent wallet status:
-
-```bash
-circle wallet status --type agent --output json
-```
-
-If login is required, initialize the agent wallet login:
-
-```bash
-circle wallet login <email> --type agent --init
-```
-
-Then complete login with the request id and one-time code supplied through the
-supported Circle flow:
-
-```bash
-circle wallet login --type agent --request <request-id> --otp <code>
-```
-
-Circle may maintain separate mainnet and testnet sessions. For Arc Testnet
-articles, verify the testnet session explicitly:
-
-```bash
-circle wallet status --type agent --output json
-```
-
-The status output should include `data.testnet.tokenStatus` set to `VALID`.
-When checking Arc Testnet wallets, lists, or balances, use the same execution
-context that reports the testnet token as valid.
-
-## Network Mapping
-
-Map the article network to the Circle chain name before checking balances or
-funding wallets.
-
-| Rubicon network | Rubicon networkLabel | Circle chain |
-| --- | --- | --- |
-| `eip155:5042002` | `Arc Testnet` | `ARC-TESTNET` |
-
-For example, an article with `network` set to `eip155:5042002` and
-`networkLabel` set to `Arc Testnet` should use Circle chain `ARC-TESTNET`.
-
-## Arc Testnet Happy Path
-
-For Arc Testnet Rubicon articles:
-
-1. Discover the article with `rubicon repository --json` or
-   `rubicon search "<query>" --json`.
-2. Inspect the article with `rubicon article show <article-id> --json`.
-3. Read `paymentTerms.circleChain`; for Arc Testnet, use `ARC-TESTNET`.
-4. Run a dry-run with the user's exact goal and `--max-usdc`.
-5. Check Circle status in a network-capable context:
-   `circle wallet status --type agent --output json`.
-6. Confirm `data.testnet.tokenStatus` is `VALID`.
-7. List the agent wallet on `ARC-TESTNET`.
-8. Check that wallet's `ARC-TESTNET` USDC balance.
-9. Faucet-fund only if the balance is below the approved cap.
-10. Run the paid read with the same cap.
-11. Inspect the saved receipt.
-
-## Testnet Funding
-
-If the selected article is on a testnet, check the Circle agent wallet balance
-on the mapped chain before attempting a paid read:
-
-```bash
-circle wallet list --chain ARC-TESTNET --type agent --output json
-circle wallet balance --address <addr> --chain ARC-TESTNET --output json
-```
-
-If the testnet balance is too low for the approved cap, use Circle's faucet
-behavior:
-
-```bash
-circle wallet fund --address <addr> --chain ARC-TESTNET --token usdc --output json
-```
-
-Do not tell users to use fiat funding, crypto on-ramps, or mainnet funding
-paths for testnet articles.
-
-## Reading Paid Content
-
-Before any paid read, confirm the user-approved budget for the exact request.
-Do not infer the budget from wallet balance or previous sessions.
-
-Always dry-run first. For a "find the first article and summarize it under
-$0.01" task, use:
+Dry-run with the exact budget:
 
 ```bash
 rubicon read <article-id> --goal "summarize the article" --max-usdc 0.01 --dry-run --json
 ```
 
-For other goals or budgets, keep the user's exact goal and cap:
+Check Circle auth in the same network-capable context you will use for wallet
+and read commands:
 
 ```bash
-rubicon read <article-id> --goal "find pricing" --max-usdc 0.10 --dry-run --json
+circle wallet status --type agent --output json
 ```
 
-Only after the dry-run looks correct, run the paid read with the same explicit
-goal and spend cap. For the first-article summary task:
+For Arc Testnet articles, require `data.testnet.tokenStatus` to be `VALID`.
+Map Rubicon `eip155:5042002` / `Arc Testnet` to Circle `ARC-TESTNET`.
+
+List wallet and check balance:
+
+```bash
+circle wallet list --chain ARC-TESTNET --type agent --output json
+circle wallet balance --address <addr> --chain ARC-TESTNET --output json
+```
+
+If, and only if, the selected article is on a testnet and the balance is below
+the approved cap, use the faucet:
+
+```bash
+circle wallet fund --address <addr> --chain ARC-TESTNET --token usdc --output json
+```
+
+Run the paid read with the same goal and cap:
 
 ```bash
 rubicon read <article-id> --goal "summarize the article" --max-usdc 0.01 --json
 ```
 
-For other goals or budgets:
-
-```bash
-rubicon read <article-id> --goal "find pricing" --max-usdc 0.10 --json
-```
-
-`--max-atomic` is also acceptable when the caller needs atomic USDC units:
-
-```bash
-rubicon read <article-id> --goal "find pricing" --max-atomic 100000 --dry-run --json
-```
-
-Never run `rubicon read` for a paid attempt without either `--max-usdc` or
-`--max-atomic`.
-
-Paid reads currently stream word-by-word and can be slow. Wait until the read
-reports completion, including `article.completed` and `receipt.saved`, before
-final reporting. Do not summarize partial paid-read output as final.
-
-## Receipts
-
-List receipts:
-
-```bash
-rubicon receipts list --json
-```
-
-Inspect a receipt:
+Inspect the saved receipt:
 
 ```bash
 rubicon receipts show <receipt-id> --json
 ```
 
-When reporting results, inspect the saved receipt and include:
+## Circle Login
 
-- Article id.
-- Title and author.
-- Goal.
-- Approved budget.
-- Amount paid in atomic units and USDC.
-- Words read.
-- Stop reason.
-- Receipt id.
-
-If the receipt buyer wallet differs from the wallet listed by Circle for the
-mapped chain, this may be due to payment abstraction or Gateway behavior.
-Report the receipt value exactly and do not try to manually "fix" or rewrite
-wallet values.
-
-## Safety Rules
-
-- Use CLI commands first for terminal-native agents.
-- Use the SDK for custom embedded runtimes.
-- Use `--json` for scripts, CI, and other automated workflows.
-- Dry-run before spending.
-- Require `--max-usdc` or `--max-atomic` before any paid read.
-- Never exceed the user-approved cap.
-- Do not request, store, infer, print, export, or use raw private keys.
-- Do not bypass configured wallet authentication, policies, or allowlists.
-- Do not accept Circle Terms on the user's behalf.
-- Use testnet faucet funding for testnet articles, not mainnet fiat or crypto
-  funding.
-- Do not recommend raw HTTP unless the user is testing the protocol.
-
-## Troubleshooting
-
-If Rubicon or Circle CLI authentication is missing, stop and ask the wallet
-controller to log in through the supported wallet flow. For Circle CLI payment
-mode, use the agent wallet commands in the "Circle CLI Payment Mode" section.
-
-### Circle CLI Network/Session Context
-
-In restricted agent sandboxes, Circle auth commands may fail with
-`Error: fetch failed`. Treat this as a network/session-context issue, not a
-Rubicon failure.
-
-If `circle wallet login <email> --type agent --init` returns `fetch failed`,
-retry the same command with network access or execution escalation. Do not
-restart the whole Rubicon flow, rediscover articles, or change wallets just
-because OTP initialization failed in a restricted shell.
-
-Run OTP initialization and OTP completion in the same network-capable execution
-context. For example, if OTP initialization required escalation, complete the
-OTP with escalation too:
+If Circle auth is required, use the supported agent-wallet flow only:
 
 ```bash
+circle wallet login <email> --type agent --init
 circle wallet login --type agent --request <request-id> --otp <code>
 ```
 
-If OTP completion returns `Invalid or expired request ID`, first check whether
-completion was attempted in a different execution context than initialization.
-If so, retry OTP completion in the same network-capable context before asking
-the user for another OTP. Only request a fresh OTP if the request is genuinely
-expired or rejected after the same-context retry.
+Do not ask for private keys. Do not accept legal terms for the user.
 
-After login succeeds, sandboxed Circle commands may still report `AUTH_REQUIRED`
-while the network-capable context sees valid sessions. In that case, check
-status, wallet list, and balance in the same network-capable context that
-completed login:
+## Recovery Branches
 
-```bash
-circle wallet status --type agent --output json
-circle wallet list --chain ARC-TESTNET --type agent --output json
-circle wallet balance --address <addr> --chain ARC-TESTNET --output json
-```
+- Stale local skill: fetch `https://www.rubiconpay.xyz/skill.md` and follow the
+  latest instructions.
+- Circle `fetch failed`: retry the same Circle command in a network-capable or
+  escalated execution context.
+- Expired OTP request: start a fresh OTP request with
+  `circle wallet login <email> --type agent --init`.
+- Auth valid in network context but not sandbox: keep Circle and Rubicon
+  commands in the same network-capable context that reports valid auth.
+- Buyer wallet differs from Circle wallet: report it as expected payment
+  abstraction behavior; do not rewrite receipt values or switch wallets.
+- Missing or wrong gateway: rerun the gateway config command above.
+- Low testnet balance: faucet only if the selected article is testnet.
+- Low non-testnet balance: ask the wallet controller to fund through supported
+  production funding; do not suggest Arc Testnet mainnet or fiat funding.
 
-For Arc Testnet reads, require `data.testnet.tokenStatus` to be `VALID` in
-`circle wallet status --type agent --output json`. Use the same context for
-Arc Testnet wallet listing, balance checks, faucet funding, and the paid read
-if sandboxed commands still report `AUTH_REQUIRED`.
+## Final Report
 
-If the available balance is missing or too low for the requested cap, check
-whether the article is on a testnet. For testnet articles, use the Circle
-faucet funding flow in the "Testnet Funding" section. For non-testnet articles,
-ask the wallet controller to fund the payment balance through the appropriate
-supported production funding flow. Do not substitute another wallet or balance
-source.
+After receipt inspection, report all fields below. If a field is absent in CLI
+output, say `not provided`.
 
-If the gateway URL is wrong or missing, re-run:
-
-```bash
-rubicon config set gateway-url https://rubicon-caligagateway-production.up.railway.app
-```
+- Article title.
+- Author.
+- Article id.
+- Session id.
+- Receipt id.
+- Words read.
+- Amount paid atomic.
+- Amount paid USDC.
+- Budget.
+- Completed.
+- Stop reason.
+- Payment ids.
+- Settlement ids.
+- Transaction hashes.
+- Short summary.

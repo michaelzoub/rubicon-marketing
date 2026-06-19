@@ -123,11 +123,28 @@ type WordPaymentRow = {
   created_at: string;
 };
 
+// Columns read for the global payment-activity feed (grouped per session).
+type PaymentActivityRow = Pick<
+  WordPaymentRow,
+  | "id"
+  | "article_id"
+  | "session_id"
+  | "amount_atomic"
+  | "creator_amount_atomic"
+  | "rubicon_fee_atomic"
+  | "transfer_id"
+  | "settlement_id"
+  | "settlement_ids"
+  | "created_at"
+>;
+
 // Circle Gateway nanopayments settle to a Gateway settlement/transfer UUID, not
 // an on-chain ERC-20 transfer hash. Treat a payment as settled when any of
 // transfer_id / settlement_id / settlement_ids is present, mirroring the
 // gateway's own persistence (apps/gateway/src/repositories/postgres.ts).
-function settlementReferenceOf(payment: WordPaymentRow): string | null {
+function settlementReferenceOf(
+  payment: Pick<WordPaymentRow, "transfer_id" | "settlement_id" | "settlement_ids">,
+): string | null {
   return payment.transfer_id ?? payment.settlement_id ?? payment.settlement_ids?.[0] ?? null;
 }
 
@@ -694,24 +711,70 @@ export function createRubiconClient({ supabaseUrl, supabaseAnonKey, getToken, ge
 
     async getPaymentActivity(): Promise<PaymentActivity[]> {
       const identity = requireIdentity(getIdentity);
-      const address = await loadWalletAddress(identity.id);
-      if (!address) return [];
-      const transfers = await fetchGatewayTransfers(address);
-      // x402 transfers carry no article/session/fee metadata, so the per-row
-      // article and word counts aren't available here — the settlement record
-      // only knows the wallet it paid. Rubicon takes no fee, so gross == net.
-      return transfers.map((transfer) => ({
-        id: transfer.id,
-        date: transfer.createdAt,
-        articleId: "",
-        articleTitle: "—",
-        wordsRead: 1,
-        grossAmount: transfer.amount,
-        platformFee: "0",
-        creatorAmount: transfer.amount,
-        status: paymentStatusFromTransfer(transfer.status),
-        settlementReference: transfer.id,
-      }));
+
+      // Article attribution lives in word_payments (the gateway-written per-word
+      // ledger), which carries article_id / session_id / amounts. The Circle
+      // Gateway transfer ledger has no article metadata, so it's used only to
+      // resolve settlement *status*, joined on the settlement reference.
+      const [payments, articles, address] = await Promise.all([
+        must(
+          supabase
+            .from("word_payments")
+            .select("id, article_id, session_id, amount_atomic, creator_amount_atomic, rubicon_fee_atomic, transfer_id, settlement_id, settlement_ids, created_at")
+            .eq("creator_id", identity.id)
+            .order("created_at", { ascending: false })
+            .returns<PaymentActivityRow[]>(),
+        ),
+        must(
+          supabase
+            .from("articles")
+            .select("id, title")
+            .eq("creator_id", identity.id)
+            .returns<Array<{ id: string; title: string }>>(),
+        ),
+        loadWalletAddress(identity.id),
+      ]);
+
+      if (payments.length === 0) return [];
+
+      // Best-effort: the activity feed is DB-sourced, so a Circle outage only
+      // costs us status granularity (we fall back to reference presence below).
+      const transfers = address ? await fetchGatewayTransfers(address).catch(() => []) : [];
+      const statusByTransfer = new Map(transfers.map((t) => [t.id, paymentStatusFromTransfer(t.status)]));
+      const titleById = new Map(articles.map((a) => [a.id, a.title]));
+
+      // Collapse per-word rows into one activity row per agent read (session),
+      // falling back to the payment id for any row without a session.
+      const groups = new Map<string, PaymentActivityRow[]>();
+      for (const payment of payments) {
+        const key = payment.session_id || payment.id;
+        const group = groups.get(key);
+        if (group) group.push(payment);
+        else groups.set(key, [payment]);
+      }
+
+      return [...groups.values()]
+        .map((group) => {
+          const first = group[0];
+          const reference = group.map(settlementReferenceOf).find((ref) => ref) ?? null;
+          // Reference present but unknown to the Gateway ledger ⇒ treat as settled
+          // (the gateway only writes a reference once a transfer is recorded).
+          const status: PaymentStatus = reference ? statusByTransfer.get(reference) ?? "settled" : "pending";
+          const date = group.reduce((latest, p) => (p.created_at > latest ? p.created_at : latest), first.created_at);
+          return {
+            id: first.session_id || first.id,
+            date,
+            articleId: first.article_id,
+            articleTitle: titleById.get(first.article_id) ?? "—",
+            wordsRead: group.length,
+            grossAmount: sumAtomic(group.map((p) => p.amount_atomic)),
+            platformFee: sumAtomic(group.map((p) => p.rubicon_fee_atomic)),
+            creatorAmount: sumAtomic(group.map((p) => p.creator_amount_atomic)),
+            status,
+            settlementReference: reference,
+          };
+        })
+        .sort((a, b) => (a.date < b.date ? 1 : -1));
     },
   };
 }

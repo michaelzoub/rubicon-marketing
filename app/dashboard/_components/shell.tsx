@@ -57,11 +57,11 @@ function AuthGate({ children }: { children: ReactNode }) {
 
 function Layout({ children }: { children: ReactNode }) {
   return (
-    <div className="dashboard-theme min-h-screen bg-[var(--surface-muted)] lg:grid lg:grid-cols-[256px_1fr]">
+    <div className="dashboard-theme dashboard-canvas min-h-screen bg-[var(--surface-muted)] lg:grid lg:grid-cols-[256px_1fr]">
       <Sidebar />
       <main className="min-w-0">
         <MobileBar />
-        <div className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8">{children}</div>
+        <div className="mx-auto w-full max-w-5xl px-5 py-8 sm:px-8 lg:py-10">{children}</div>
       </main>
     </div>
   );
@@ -76,7 +76,7 @@ function Sidebar() {
       : user?.email?.address ?? (user?.wallet?.address ? `${user.wallet.address.slice(0, 6)}…` : "Creator");
 
   return (
-    <aside className="sticky top-0 hidden h-screen flex-col border-r border-[var(--line)] bg-white lg:flex">
+    <aside className="dashboard-sidebar sticky top-0 hidden h-screen flex-col border-r border-[var(--line)] bg-white lg:flex">
       <Link href="/" className="flex items-center gap-2 px-6 py-5 font-semibold">
         <Waves size={20} strokeWidth={1.9} className="text-[var(--river)]" aria-hidden="true" />
         Rubicon
@@ -97,7 +97,7 @@ function Sidebar() {
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  className={`dashboard-nav-link flex items-center gap-3 rounded-full px-3 py-2 text-sm font-medium transition-colors ${
                     active ? "bg-[var(--river-pale)] text-[var(--river-deep)]" : "text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)]"
                   }`}
                 >
@@ -112,11 +112,11 @@ function Sidebar() {
       <div className="border-t border-[var(--faint)] p-3">
         <a
           href="/#developers"
-          className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)]"
+          className="dashboard-nav-link flex items-center gap-3 rounded-full px-3 py-2 text-sm font-medium text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)]"
         >
           <BookOpen size={17} aria-hidden="true" /> Developer docs
         </a>
-        <div className="mt-1 flex items-center justify-between gap-2 rounded-lg px-3 py-2">
+        <div className="mt-1 flex items-center justify-between gap-2 rounded-full px-3 py-2">
           <span className="mono truncate text-xs text-[var(--muted)]">{identity}</span>
           <button type="button" onClick={() => logout()} className="text-[var(--muted)] hover:text-[var(--ink)]" aria-label="Sign out">
             <LogOut size={16} aria-hidden="true" />
@@ -147,7 +147,7 @@ function MobileBar() {
             <Link
               key={item.href}
               href={item.href}
-              className={`whitespace-nowrap rounded-lg px-3 py-1.5 text-sm font-medium ${
+              className={`whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium ${
                 active ? "bg-[var(--river-pale)] text-[var(--river-deep)]" : "text-[var(--muted)]"
               }`}
             >

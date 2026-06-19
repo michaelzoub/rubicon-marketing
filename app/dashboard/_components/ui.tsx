@@ -30,7 +30,7 @@ export function PageHeader({
 }
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-xl border border-[var(--line)] bg-white ${className}`}>{children}</div>;
+  return <div className={`dashboard-card rounded-[22px] border border-[var(--line)] bg-white ${className}`}>{children}</div>;
 }
 
 export function CardHeader({ title, action }: { title: string; action?: ReactNode }) {
@@ -56,7 +56,7 @@ export function StatTile({ label, value, hint }: { label: string; value: ReactNo
 
 export function LoadingState({ label = "Loading…" }: { label?: string }) {
   return (
-    <div className="flex items-center justify-center gap-3 rounded-xl border border-[var(--faint)] bg-white px-6 py-16 text-sm text-[var(--muted)]">
+    <div className="dashboard-card flex items-center justify-center gap-3 rounded-[22px] border border-[var(--faint)] bg-white px-6 py-16 text-sm text-[var(--muted)]">
       <Loader2 size={18} className="animate-spin text-[var(--river)]" aria-hidden="true" />
       {label}
     </div>
@@ -75,8 +75,8 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col items-center rounded-xl border border-dashed border-[var(--line)] bg-white px-6 py-16 text-center">
-      <span className="grid h-12 w-12 place-items-center rounded-full bg-[var(--river-pale)] text-[var(--river)]">
+    <div className="dashboard-card flex flex-col items-center rounded-[22px] border border-dashed border-[var(--line)] bg-white px-6 py-16 text-center">
+      <span className="grid h-12 w-12 place-items-center rounded-[18px] border border-[var(--river-line)] bg-[var(--river-pale)] text-[var(--river)]">
         {icon ?? <Inbox size={22} aria-hidden="true" />}
       </span>
       <h3 className="mt-4 text-lg font-semibold">{title}</h3>

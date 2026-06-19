@@ -1,12 +1,12 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Bot, Check, Coins, ScanSearch, Sparkles, User } from "lucide-react";
+import { Check, CircuitBoard, Coins, Fingerprint, ScanText, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 const PRICE_PER_WORD = 0.00001;
-const FIRST_STOP = 50;
-const TARGET_WORDS = 96;
+const FIRST_STOP = 34;
+const DEEP_STOP = 42;
 const ease = [0.16, 1, 0.3, 1] as const;
 
 type Phase = "ask" | "route" | "stream" | "followup" | "routeDeeper" | "streamDeeper" | "answer";
@@ -18,18 +18,32 @@ const ARTICLE_SECTIONS = [
   {
     header: SECTION_HEADER,
     words:
-      "each token is projected into query key and value vectors and attention scores are computed as the scaled dot product between every query and key so the model can weigh how much each word attends to the others the resulting weights blend the value vectors into a context aware representation",
+      "modern transformer models begin by converting every token into three learned vectors called queries keys and values the query asks what this position needs the keys describe what every other position can offer and the values carry the information that may be copied forward attention scores compare each query with every key then a softmax turns those comparisons into weights so the model can blend the most useful value vectors into a context aware representation instead of reading a sentence as a rigid left to right chain",
   },
   {
     header: DEEP_HEADER,
     words:
-      "longer context windows let the model read more tokens at once but the attention cost grows quadratically so engineers cache key and value tensors reuse past computation and add positional encodings that help the network track order across thousands of tokens without recomputing every previous step",
+      "longer context windows let an agent inspect more source material before answering but vanilla attention becomes expensive because every token may compare itself with every other token production systems work around that cost by caching key and value tensors chunking documents around likely evidence using retrieval to jump to promising passages and applying positional methods that preserve order across thousands of tokens the practical tradeoff is not simply bigger windows it is deciding when the next paid words are worth the latency and spend",
+  },
+  {
+    header: "Metered Reading Behavior",
+    words:
+      "a buyer agent does not need to license an entire article when the task only requires a definition a caveat or a single supporting quote Rubicon streams words from the seller agent records the exact count settles tiny payments as text is delivered and lets the buyer stop the moment the answer has enough evidence",
   },
 ];
 
 const ARTICLE_WORDS = ARTICLE_SECTIONS.flatMap((section, sectionIndex) =>
   section.words.split(" ").map((word) => ({ word, sectionIndex })),
 );
+const SECTION_WORDS = ARTICLE_SECTIONS.map((section) => section.words.split(" "));
+const SECTION_STARTS = SECTION_WORDS.reduce<number[]>((starts, words, index) => {
+  starts.push(index === 0 ? 0 : starts[index - 1] + SECTION_WORDS[index - 1].length);
+  return starts;
+}, []);
+const sectionRange = (sectionIndex: number, start: number, end: number) =>
+  Array.from({ length: end - start }, (_, index) => SECTION_STARTS[sectionIndex] + start + index);
+const READ_SEQUENCE = [...sectionRange(0, 0, FIRST_STOP), ...sectionRange(1, 0, DEEP_STOP)];
+const TARGET_WORDS = READ_SEQUENCE.length;
 
 let packetSeq = 0;
 let paymentSeq = 0;
@@ -60,7 +74,7 @@ export function StreamTheater() {
       const tick = () => {
         n += 1;
         setWords(n);
-        const word = ARTICLE_WORDS[(n - 1) % ARTICLE_WORDS.length].word;
+        const word = ARTICLE_WORDS[READ_SEQUENCE[n - 1] ?? 0].word;
         const id = ++packetSeq;
         setPackets([{ id, word }]);
         // remove packet after it finishes its glide across the channel
@@ -139,23 +153,25 @@ export function StreamTheater() {
   const routing = phase === "route" || phase === "routeDeeper";
   const asking = phase === "ask" || phase === "followup";
   const done = phase === "answer";
-  const collectedWords = ARTICLE_WORDS.slice(0, Math.min(words, ARTICLE_WORDS.length)).map((item) => item.word);
+  const readWordSet = new Set(READ_SEQUENCE.slice(0, words));
+  const collectedWords = READ_SEQUENCE.slice(0, Math.min(words, TARGET_WORDS)).map((index) => ARTICLE_WORDS[index].word);
   const visibleCollectedWords = collectedWords.slice(-14);
-  const highlightIndex = Math.max(0, Math.min(words - 1, ARTICLE_WORDS.length - 1));
+  const highlightIndex = READ_SEQUENCE[Math.max(0, Math.min(words - 1, TARGET_WORDS - 1))] ?? 0;
 
   return (
     <div className="stream-theater card-soft relative min-h-[560px] w-full min-w-0 overflow-hidden p-5 sm:p-6">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(ellipse_at_50%_0%,rgba(36,127,214,0.14),transparent_68%)]" aria-hidden="true" />
+      <div className="stream-chrome" aria-hidden="true" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(ellipse_at_50%_0%,rgba(36,127,214,0.18),transparent_68%)]" aria-hidden="true" />
       <div className="relative flex items-center justify-between gap-4 border-b border-[var(--faint)] pb-4">
-        <div className="flex items-center gap-2.5">
+        <div className="flex min-w-0 items-center gap-2.5">
           <span
             className={`status-dot h-2.5 w-2.5 rounded-full ${done ? "bg-[var(--green)]" : "bg-[var(--river)]"}`}
             style={{ boxShadow: `0 0 0 4px ${done ? "rgba(88,213,155,0.14)" : "rgba(36,127,214,0.14)"}` }}
           />
-          <span className="text-sm font-semibold">{done ? "Session settled" : "Live agent session"}</span>
+          <span className="truncate text-sm font-semibold">{done ? "Session settled" : "Live agent session"}</span>
         </div>
-        <span className="mono shrink-0 text-[0.68rem] uppercase tracking-[0.14em] text-[var(--muted)]">
-          rbcn://how-attention-works
+        <span className="mono hidden shrink-0 text-[0.68rem] uppercase tracking-[0.22em] text-[var(--muted)] sm:inline">
+          RBCN://HOW-ATTENTION-WORKS
         </span>
       </div>
 
@@ -171,7 +187,7 @@ export function StreamTheater() {
           {/* buyer agent (left) */}
           <Agent
             side="left"
-            icon={<User size={19} strokeWidth={1.9} aria-hidden="true" />}
+            icon={<Fingerprint size={21} strokeWidth={1.75} aria-hidden="true" />}
             name="Buyer agent"
             sub={done ? "answer received" : phase === "streamDeeper" ? "searching section" : streaming ? "receiving" : asking ? "asking" : "searching section"}
             active={phase === "ask" || phase === "followup" || done}
@@ -181,7 +197,7 @@ export function StreamTheater() {
           {/* seller agent (right) */}
           <Agent
             side="right"
-            icon={<Bot size={19} strokeWidth={1.9} aria-hidden="true" />}
+            icon={<CircuitBoard size={21} strokeWidth={1.75} aria-hidden="true" />}
             name="Seller agent"
             sub={streaming ? "streaming words" : routing ? "routing" : "listening"}
             active={streaming || routing}
@@ -196,7 +212,7 @@ export function StreamTheater() {
                 initial={{ left: "72%", opacity: 0, scale: 0.92 }}
                 animate={{ left: "28%", opacity: [0, 1, 1, 0], scale: 1 }}
                 transition={{ duration: 1.0, ease, times: [0, 0.18, 0.8, 1] }}
-                className="mono pointer-events-none absolute top-[30px] z-10 w-[116px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--river-line)] bg-[var(--surface)] px-2.5 py-1 text-center text-[0.62rem] text-[var(--river-deep)] shadow-[0_10px_22px_-16px_rgba(36,127,214,0.8)]"
+                className="mono pointer-events-none absolute top-[30px] z-10 w-[116px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--river-line)] bg-[var(--surface)] px-2.5 py-1 text-center text-[0.62rem] text-[var(--river-deep)]"
               >
                 {p.word}
               </motion.div>
@@ -212,7 +228,7 @@ export function StreamTheater() {
                 animate={{ left: "72%", opacity: [0, 0.7, 0.7, 0], scale: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.7, ease, times: [0, 0.25, 0.8, 1] }}
-                className="mono pointer-events-none absolute top-[42px] z-20 flex -translate-x-1/2 -translate-y-1/2 items-center gap-0.5 rounded-full border border-[rgba(88,213,155,0.5)] bg-[var(--surface)] px-1.5 py-[1px] text-[0.5rem] font-medium text-[var(--green)] shadow-[0_0_8px_-2px_var(--green)]"
+                className="mono pointer-events-none absolute top-[42px] z-20 flex -translate-x-1/2 -translate-y-1/2 items-center gap-0.5 rounded-full border border-[rgba(88,213,155,0.5)] bg-[var(--surface)] px-1.5 py-[1px] text-[0.5rem] font-medium text-[var(--green)]"
                 aria-hidden="true"
               >
                 <Coins size={8} aria-hidden="true" />
@@ -226,36 +242,36 @@ export function StreamTheater() {
           <AnimatePresence>
             {(phase === "ask" || phase === "route" || phase === "stream") && (
               <Bubble key="ask" side="left">
-                Where does the article explain how <span className="text-[var(--ink)]">attention</span> works?
+                Explain self-attention in practical terms and stop once the mechanism is clear.
               </Bubble>
             )}
             {(phase === "route" || phase === "stream") && (
-              <Bubble key="route" side="right" tone="seller" icon={<ScanSearch size={13} aria-hidden="true" />}>
-                Found it — section <span className="font-medium">“{SECTION_HEADER}.”</span> Streaming paid words.
+              <Bubble key="route" side="right" tone="seller" icon={<ScanText size={13} aria-hidden="true" />}>
+                Opening <span className="font-medium">“{SECTION_HEADER}.”</span> Streaming until the mechanism is clear.
               </Bubble>
             )}
             {(phase === "followup" || phase === "routeDeeper" || phase === "streamDeeper") && (
               <Bubble key="followup" side="left">
-                Does it cover long-context tradeoffs?
+                Now check whether it covers long-context cost and when more paid text is worth it.
               </Bubble>
             )}
             {(phase === "routeDeeper" || phase === "streamDeeper") && (
-              <Bubble key="route-deeper" side="right" tone="seller" icon={<ScanSearch size={13} aria-hidden="true" />}>
-                Searching header <span className="font-medium">“{DEEP_HEADER}.”</span> Continue there.
+              <Bubble key="route-deeper" side="right" tone="seller" icon={<ScanText size={13} aria-hidden="true" />}>
+                Opening <span className="font-medium">“{DEEP_HEADER}.”</span> Continuing from the section start.
               </Bubble>
             )}
             {done && (
               <Bubble key="answer" side="left" tone="answer" icon={<Sparkles size={13} aria-hidden="true" />}>
-                Got the explanation. Stopping the stream — I have enough.
+                Answer grounded. Stopping before the full article is read.
               </Bubble>
             )}
           </AnimatePresence>
         </div>
 
-        <div className="mt-3 min-w-0 overflow-hidden rounded-[24px] border border-[var(--faint)] bg-[rgba(25,25,28,0.82)] shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
+        <div className="mt-3 min-w-0 overflow-hidden rounded-[24px] border border-[var(--faint)] bg-[rgba(25,25,28,0.82)]">
           <div
             ref={articleRef}
-            className="article-scroll h-[128px] overflow-y-auto px-3.5 py-3 text-sm leading-6 text-[var(--quiet)]"
+            className="article-scroll h-[154px] overflow-y-auto px-3.5 py-3 text-sm leading-6 text-[var(--quiet)]"
             aria-label="Streaming article excerpt"
           >
             {ARTICLE_SECTIONS.map((section, sectionIndex) => {
@@ -270,7 +286,7 @@ export function StreamTheater() {
                     {sectionWords.map((word, index) => {
                       const globalIndex = offset + index;
                       const active = streaming && globalIndex === highlightIndex;
-                      const delivered = globalIndex < words;
+                      const delivered = readWordSet.has(globalIndex);
                       return (
                         <motion.span
                           key={`${section.header}-${word}-${index}`}
@@ -306,8 +322,8 @@ export function StreamTheater() {
               );
             })}
           </div>
-          <div className="mono h-[74px] border-t border-[var(--faint)] px-3.5 py-2 text-[0.66rem] leading-5 text-[var(--muted)]">
-            {visibleCollectedWords.length > 0 ? visibleCollectedWords.join(" ") : "Where does the article explain how attention works?"}
+          <div className="mono h-[54px] border-t border-[var(--faint)] px-3.5 py-2 text-[0.66rem] leading-5 text-[var(--muted)]">
+            {visibleCollectedWords.length > 0 ? visibleCollectedWords.join(" ") : "Awaiting a precise query from the buyer agent."}
           </div>
         </div>
       </div>
@@ -383,7 +399,7 @@ function Agent({
       <motion.div
         animate={active ? { scale: 1, boxShadow: `0 0 0 6px ${color}1f` } : { scale: 0.94, boxShadow: `0 0 0 0px ${color}00` }}
         transition={{ duration: 0.6, ease }}
-        className="grid h-[60px] w-[60px] place-items-center rounded-[20px] text-white"
+        className="agent-token grid h-[60px] w-[60px] place-items-center text-white"
         style={{ background: `linear-gradient(145deg, ${color}, var(--river))` }}
       >
         {icon}
