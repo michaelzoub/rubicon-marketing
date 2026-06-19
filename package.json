@@ -13,6 +13,7 @@
     "@privy-io/react-auth": "^3.31.0",
     "@supabase/supabase-js": "^2.108.2",
     "@tailwindcss/postcss": "^4.1.10",
+    "@tiptap/core": "^3.27.1",
     "@tiptap/extension-image": "^3.27.1",
     "@tiptap/extensions": "^3.27.1",
     "@tiptap/pm": "^3.27.1",
