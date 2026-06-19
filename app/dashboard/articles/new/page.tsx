@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import {
   ArrowLeft,
   ArrowRight,
@@ -43,6 +44,7 @@ export default function NewArticlePage() {
 
   const [pricePerWord, setPricePerWord] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [savedDraftId, setSavedDraftId] = useState<string | null>(null);
 
   // Prefill the schema-required author from the creator display name once.
   const prefilledAuthor = useRef(false);
@@ -84,9 +86,22 @@ export default function NewArticlePage() {
 
   async function submit(publish: boolean) {
     setSubmitError(null);
+    setSavedDraftId(null);
     try {
       const article = await createArticle.run(buildInput());
-      if (publish) await publishArticle.run(article.id);
+      if (publish) {
+        try {
+          await publishArticle.run(article.id);
+        } catch (err) {
+          setSavedDraftId(article.id);
+          setSubmitError(
+            err instanceof Error
+              ? `Draft saved, but publishing failed: ${err.message}`
+              : "Draft saved, but publishing failed. Try publishing it from the article page.",
+          );
+          return;
+        }
+      }
       router.push(`/dashboard/articles/${article.id}`);
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "Could not save the article.");
@@ -145,6 +160,7 @@ export default function NewArticlePage() {
           walletVerified={wallet.data?.verified ?? false}
           submitting={submitting}
           error={submitError}
+          savedDraftId={savedDraftId}
           onBack={() => setStep(2)}
           onSaveDraft={() => submit(false)}
           onPublish={() => submit(true)}
@@ -403,6 +419,7 @@ function StepPublish({
   walletVerified,
   submitting,
   error,
+  savedDraftId,
   onBack,
   onSaveDraft,
   onPublish,
@@ -416,6 +433,7 @@ function StepPublish({
   walletVerified: boolean;
   submitting: boolean;
   error: string | null;
+  savedDraftId: string | null;
   onBack: () => void;
   onSaveDraft: () => void;
   onPublish: () => void;
@@ -451,7 +469,16 @@ function StepPublish({
         </p>
       )}
 
-      {error && <p className="mt-4 rounded-lg border border-[#e3a2a0] bg-[#fff1f0] px-4 py-3 text-sm text-[#8d2f2d]">{error}</p>}
+      {error && (
+        <div className="mt-4 rounded-lg border border-[#e3a2a0] bg-[#fff1f0] px-4 py-3 text-sm text-[#8d2f2d]">
+          <p>{error}</p>
+          {savedDraftId && (
+            <Link href={`/dashboard/articles/${savedDraftId}`} className="mt-2 inline-flex font-medium underline underline-offset-2">
+              Open saved draft
+            </Link>
+          )}
+        </div>
+      )}
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--faint)] pt-5">
         <button type="button" onClick={onBack} className="button button-secondary">

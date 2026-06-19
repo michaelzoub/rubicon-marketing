@@ -8,7 +8,7 @@
  */
 import { usePrivy } from "@privy-io/react-auth";
 import { useMemo } from "react";
-import { createRubiconClient, type RubiconClient } from "./client";
+import { createRubiconClient, RubiconError, toUserFacingRubiconError, type RubiconClient } from "./client";
 
 export const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
 export const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
@@ -62,11 +62,13 @@ async function getSupabaseToken(privyToken: string | null): Promise<string | nul
     headers: {
       Authorization: `Bearer ${privyToken}`,
     },
+  }).catch((err: unknown) => {
+    throw toUserFacingRubiconError(err, "Could not verify your session.");
   });
 
   if (!response.ok) {
     supabaseTokenCache = null;
-    return null;
+    throw new RubiconError("auth", response.status, "supabase_token_failed", "Your session could not be verified. Sign in again.");
   }
 
   const body = (await response.json()) as { token?: string; expiresAt?: number };

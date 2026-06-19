@@ -2,12 +2,11 @@
 
 import { useEffect, useMemo, useRef } from "react";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
-import { Extension } from "@tiptap/core";
-import { TextSelection } from "@tiptap/pm/state";
 import StarterKit from "@tiptap/starter-kit";
 import { Placeholder } from "@tiptap/extensions";
 import Image from "@tiptap/extension-image";
 import { Markdown } from "tiptap-markdown";
+import { HeadingEnter, SectionDecorations } from "./editor-extensions";
 import {
   Bold,
   Heading,
@@ -24,31 +23,10 @@ function getMarkdown(editor: Editor): string {
 }
 
 // A "section" is a heading plus the blocks that follow it until the next
-// heading. The transparent box drawn around each section is pure CSS: top-level
-// blocks render as DOM siblings under .md-canvas, and globals.css uses :has()
-// to find the section boundaries (see the .md-canvas > * box rules there).
+// heading. Top-level ProseMirror nodes are DOM siblings, so we decorate those
+// nodes with explicit section classes instead of asking CSS to infer structure
+// from adjacent selectors.
 const HEADING_RE = /^#{1,3}\s+\S/;
-
-// Enter inside a heading starts a fresh body paragraph below it instead of
-// ProseMirror's default split, which keeps the heading type when the cursor is
-// mid-text and silently spawns a second heading (i.e. a new section box).
-const HeadingEnter = Extension.create({
-  name: "headingEnter",
-  addKeyboardShortcuts() {
-    return {
-      Enter: ({ editor }) =>
-        editor.commands.command(({ tr, state, dispatch }) => {
-          if (state.selection.$from.parent.type.name !== "heading") return false;
-          if (!state.selection.empty) tr.deleteSelection();
-          const after = tr.selection.$from.after();
-          tr.insert(after, state.schema.nodes.paragraph.create());
-          tr.setSelection(TextSelection.create(tr.doc, after + 1));
-          dispatch?.(tr.scrollIntoView());
-          return true;
-        }),
-    };
-  },
-});
 
 export function MarkdownEditor({
   value,
@@ -71,6 +49,7 @@ export function MarkdownEditor({
         Image.configure({ inline: false, allowBase64: true }),
         Markdown.configure({ transformPastedText: true, transformCopiedText: true }),
         HeadingEnter,
+        SectionDecorations,
       ],
       [placeholder],
     ),

@@ -6,7 +6,7 @@
  * fake or local data — when Rubicon is unreachable, the UI says so.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { RubiconError, type RubiconClient } from "./client";
+import { RubiconError, toUserFacingRubiconError, type RubiconClient } from "./client";
 import { getSupabasePublicKeyIssue, useRubiconClient } from "./auth";
 
 export type QueryStatus = "loading" | "success" | "error";
@@ -71,7 +71,7 @@ export function useRubiconQuery<T>(
       })
       .catch((err) => {
         if (!active) return;
-        setError(err instanceof RubiconError ? err : new RubiconError("backend", 0, "unknown", "Unexpected error."));
+        setError(toUserFacingRubiconError(err));
         setStatus("error");
       });
 
@@ -109,7 +109,7 @@ export function useRubiconMutation<TArgs extends unknown[], TResult>(
       try {
         return await mutator(client, ...args);
       } catch (err) {
-        const rubiconErr = err instanceof RubiconError ? err : new RubiconError("backend", 0, "unknown", "Unexpected error.");
+        const rubiconErr = toUserFacingRubiconError(err);
         setError(rubiconErr);
         throw rubiconErr;
       } finally {

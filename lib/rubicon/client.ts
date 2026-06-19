@@ -38,6 +38,12 @@ export class RubiconError extends Error {
   }
 }
 
+const NETWORK_ERROR_MESSAGE = "Network request failed. Check your connection and try again.";
+
+function isNetworkFailureMessage(message: string) {
+  return /load failed|failed to fetch|networkerror|network request failed|fetch failed/i.test(message);
+}
+
 export interface CreatorIdentity {
   id: string;
   username: string;
@@ -172,6 +178,8 @@ function paymentStatusFromTransfer(status: GatewayTransfer["status"]): PaymentSt
 async function fetchGatewayTransfers(address: string): Promise<GatewayTransfer[]> {
   const res = await fetch(`/api/onchain/x402-transfers?address=${encodeURIComponent(address)}`, {
     headers: { accept: "application/json" },
+  }).catch((err: unknown) => {
+    throw toUserFacingRubiconError(err, "Could not load Gateway settlement records.");
   });
   if (!res.ok) {
     throw new RubiconError("backend", res.status, "gateway_transfers_failed", "Could not load Gateway settlement records.");
@@ -183,8 +191,22 @@ async function fetchGatewayTransfers(address: string): Promise<GatewayTransfer[]
 function toRubiconError(error: { code?: string; message?: string } | null, fallback = "Supabase request failed."): RubiconError {
   const code = error?.code ?? "supabase_error";
   const message = error?.message ?? fallback;
+  if (isNetworkFailureMessage(message)) {
+    return new RubiconError("network", 0, "network_error", NETWORK_ERROR_MESSAGE);
+  }
   const kind: RubiconErrorKind = code === "PGRST116" ? "not_found" : code.startsWith("23") ? "validation" : "backend";
   return new RubiconError(kind, 0, code, message);
+}
+
+export function toUserFacingRubiconError(err: unknown, fallback = "Unexpected error."): RubiconError {
+  if (err instanceof RubiconError) return err;
+  if (err instanceof TypeError && isNetworkFailureMessage(err.message)) {
+    return new RubiconError("network", 0, "network_error", NETWORK_ERROR_MESSAGE);
+  }
+  if (err instanceof Error && isNetworkFailureMessage(err.message)) {
+    return new RubiconError("network", 0, "network_error", NETWORK_ERROR_MESSAGE);
+  }
+  return new RubiconError("backend", 0, "unknown", fallback);
 }
 
 function requireIdentity(getIdentity: () => CreatorIdentity | null): CreatorIdentity {
@@ -256,14 +278,18 @@ function mapArticle(
 }
 
 async function must<T>(promise: PromiseLike<{ data: T | null; error: { code?: string; message?: string } | null }>): Promise<NonNullable<T>> {
-  const { data, error } = await promise;
+  const { data, error } = await Promise.resolve(promise).catch((err: unknown) => {
+    throw toUserFacingRubiconError(err, "Supabase request failed.");
+  });
   if (error) throw toRubiconError(error);
   if (data === null) throw new RubiconError("not_found", 404, "not_found", "Requested data was not found.");
   return data as NonNullable<T>;
 }
 
 async function maybe<T>(promise: PromiseLike<{ data: T | null; error: { code?: string; message?: string } | null }>): Promise<T | null> {
-  const { data, error } = await promise;
+  const { data, error } = await Promise.resolve(promise).catch((err: unknown) => {
+    throw toUserFacingRubiconError(err, "Supabase request failed.");
+  });
   if (error && error.code !== "PGRST116") throw toRubiconError(error);
   return data;
 }

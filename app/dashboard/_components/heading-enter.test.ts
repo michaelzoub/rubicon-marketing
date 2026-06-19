@@ -1,27 +1,8 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from "vitest";
-import { Editor, Extension } from "@tiptap/core";
+import { Editor } from "@tiptap/core";
 import StarterKit from "@tiptap/starter-kit";
-import { TextSelection } from "@tiptap/pm/state";
-
-// Mirror of the HeadingEnter extension shipped in markdown-editor.tsx.
-const HeadingEnter = Extension.create({
-  name: "headingEnter",
-  addKeyboardShortcuts() {
-    return {
-      Enter: ({ editor }) =>
-        editor.commands.command(({ tr, state, dispatch }) => {
-          if (state.selection.$from.parent.type.name !== "heading") return false;
-          if (!state.selection.empty) tr.deleteSelection();
-          const after = tr.selection.$from.after();
-          tr.insert(after, state.schema.nodes.paragraph.create());
-          tr.setSelection(TextSelection.create(tr.doc, after + 1));
-          dispatch?.(tr.scrollIntoView());
-          return true;
-        }),
-    };
-  },
-});
+import { HeadingEnter } from "./editor-extensions";
 
 function makeEditor(withFix: boolean) {
   const element = document.createElement("div");

@@ -589,21 +589,18 @@ a {
   pointer-events: none;
 }
 
-/* Top-level blocks render as joined segments of a per-section box. Borders sit
-   on every block; zero vertical margins keep the side borders continuous, while
-   the box ends (a heading, the block before a heading, and the first/last
-   block) add the rounded caps and the spacing between sections. */
-.md-canvas > * {
+/* Top-level blocks render as joined segments of a per-section box. The editor
+   decorates each block with explicit section boundary classes, which keeps the
+   canvas stable while headings are inserted, deleted, or split. */
+.md-canvas > .md-block {
   margin: 0;
   padding: 0.3em 18px;
   border-left: 1px solid var(--line);
   border-right: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.68);
 }
 
-/* Box top: any heading (starts a section) or the very first block (lead-in). */
-.md-canvas > :is(h1, h2, h3),
-.md-canvas > :first-child {
+.md-canvas > .md-section-start {
   margin-top: 18px;
   padding-top: 0.6em;
   border-top: 1px solid var(--line);
@@ -611,11 +608,7 @@ a {
   border-top-right-radius: 12px;
 }
 
-/* Box bottom: the last block, or the block just before the next heading.
-   Spacing between sections comes from the next box's top margin, so no bottom
-   margin here — that keeps the dead zone between boxes small. */
-.md-canvas > :last-child,
-.md-canvas > *:has(+ :is(h1, h2, h3)) {
+.md-canvas > .md-section-end {
   margin-bottom: 0;
   padding-bottom: 0.7em;
   border-bottom: 1px solid var(--line);
@@ -623,22 +616,28 @@ a {
   border-bottom-right-radius: 12px;
 }
 
-.md-canvas > :first-child {
+.md-canvas > .md-block:first-child {
   margin-top: 0;
 }
 
-.md-canvas > :last-child {
+.md-canvas > .md-block:last-child {
   margin-bottom: 0;
 }
 
 /* The heading reads as the section's header band inside the box. */
-.md-canvas > :is(h1, h2, h3) {
+.md-canvas > .md-heading-block {
   font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   font-weight: 700;
   font-size: 1.25rem;
   line-height: 1.35;
   color: var(--ink);
   background: var(--surface-muted);
+  border-bottom: 1px solid rgba(219, 224, 235, 0.78);
+  box-shadow: inset 4px 0 0 var(--river);
+}
+
+.md-canvas > .md-lead-block {
+  background: rgba(255, 255, 255, 0.82);
 }
 
 .md-canvas strong {
