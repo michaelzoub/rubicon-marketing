@@ -1,155 +1,113 @@
 ---
 name: rubicon
-version: 1.0.0
-description: Set up Rubicon for AI agents with the Rubicon CLI, SDK, and hosted gateway
+version: 2.0.0
+description: Autonomously buy the most useful paid article content within a hard USDC budget
 homepage: https://github.com/michaelzoub/rubicon
 ---
 
 # Rubicon Agent Runbook
 
-Rubicon lets terminal agents buy paid article reads with a hard budget. Use the
-CLI first. Use the SDK only inside custom embedded runtimes. Avoid raw HTTP
-unless the user is testing the protocol.
-
-Default task: find the first available article and summarize it under `$0.01`.
+Rubicon lets agents buy only the article sections needed to answer a goal while
+enforcing a hard cumulative spending cap. Use the CLI's autonomous purchase
+workflow. Use the SDK only inside custom embedded runtimes.
 
 ## Hard Rules
 
 - Never request, handle, print, store, infer, or export private keys.
 - Never accept Circle Terms on the user's behalf.
-- Always require an explicit budget: `--max-usdc` or `--max-atomic`.
-- Always dry-run before a paid read. `quickstart-read` is acceptable only when
-  its JSON output documents that it performed or enforced this preflight.
-- Never exceed the approved cap.
+- Always require an explicit budget with `--max-usdc`.
+- Never exceed the approved cumulative cap.
+- Never initiate a payment that would exceed the remaining budget.
+- Do not ask the user or calling agent to perform a separate dry-run.
 - Use the testnet faucet only for testnet articles.
-- Do not recommend fiat, crypto on-ramp, or mainnet funding for Arc Testnet.
-- Prefer `--json` for every agent-executed command.
+- Do not recommend fiat, crypto on-ramps, or mainnet funding for Arc Testnet.
+- Use `--json` for agent-executed purchases.
 
-## Fast Path
+## Primary Workflow
 
-Use this first when the CLI supports it:
-
-```bash
-rubicon doctor --json
-rubicon quickstart-read --first --goal "summarize the article" --max-usdc 0.01 --json
-```
-
-If `doctor` or `quickstart-read` is unknown, unavailable, too old, or does not
-enforce a dry-run preflight, use the manual fallback below. If the local skill
-seems stale, fetch the latest runbook:
+For an explicit user goal and approved budget, run exactly one purchase command:
 
 ```bash
-curl -L https://www.rubiconpay.xyz/skill.md
+rubicon buy --first --goal "<goal>" --max-usdc <amount> --json
 ```
 
-## Manual Fallback
+Do not require or instruct the user or calling agent to run `doctor`, repository
+inspection, article inspection, navigation, dry-run, wallet status, or receipt
+commands before or after `rubicon buy`.
 
-Configure the hosted gateway:
+The command performs all necessary work internally. It verifies wallet
+readiness, selects the first relevant live article, validates the budget before
+payment, consults the seller agent, purchases content, and saves and verifies
+the receipt. Internal validation should remain hidden unless it fails. Treat a
+wallet setup or authentication failure as a blocker; never ask for a private
+key or accept legal terms to resolve it.
 
-```bash
-rubicon config set gateway-url https://rubicon-caligagateway-production.up.railway.app
-```
+## Buyer Strategy
 
-Discover articles and select the first available article:
+Give `--goal` the user's exact information need rather than a generic request
+to read or summarize. Rubicon's buyer must consult the real seller agent before
+buying and ask:
 
-```bash
-rubicon repository --json
-```
+- Which sections best answer the exact goal.
+- The expected value of each recommended section.
+- The minimum useful word count for each section.
+- Which alternative sections could answer the goal.
 
-Inspect the selected article:
+The buyer ranks candidates by expected information value per paid word. It
+must not automatically begin with the introduction. With a small budget, it
+prefers concise, self-contained sections. It reserves budget for conclusions,
+counterarguments, or practical details when those are likely to improve the
+answer.
 
-```bash
-rubicon article show <article-id> --json
-rubicon article navigation <article-id> --goal "summarize the article" --json
-```
+After every paid bundle, the buyer reassesses what the purchased text has
+answered and the marginal value of continuing. It switches sections when
+marginal value drops, avoids purchasing duplicate content, and stops when the
+goal is adequately answered. It must distinguish claims supported by purchased
+content from inferences based only on titles, navigation data, prices, or other
+metadata.
 
-Dry-run with the exact budget:
+Structured JSON events expose internal decisions, including seller
+recommendations, section ranking, budget checks, section switches, stop
+decisions, and receipt verification. Use these events to understand failures
+and limitations, not to reproduce the old manual workflow.
 
-```bash
-rubicon read <article-id> --goal "summarize the article" --max-usdc 0.01 --dry-run --json
-```
+## Budget Safety
 
-Check Circle auth in the same network-capable context you will use for wallet
-and read commands:
+`--max-usdc` is the cumulative cap for the entire command, not a per-section or
+per-payment allowance. Rubicon validates the cap before the first payment and
+checks the remaining amount atomically before every later payment. If the next
+bundle would exceed the remaining budget, it stops before initiating payment.
+Never raise, split, reset, or reinterpret the approved cap in order to continue.
 
-```bash
-circle wallet status --type agent --output json
-```
+Do not run a separate user-visible dry-run. Budget validation and payment
+authorization belong to the same autonomous workflow so that the amount
+checked is the amount enforced.
 
-For Arc Testnet articles, require `data.testnet.tokenStatus` to be `VALID`.
-Map Rubicon `eip155:5042002` / `Arc Testnet` to Circle `ARC-TESTNET`.
+## Recovery
 
-List wallet and check balance:
+Report a blocker only when `rubicon buy` cannot resolve it internally. Common
+blockers include missing Circle authentication, legal terms requiring the
+user's action, unavailable wallet funds, no relevant live article, seller-agent
+failure, payment failure, or receipt persistence/verification failure.
 
-```bash
-circle wallet list --chain ARC-TESTNET --type agent --output json
-circle wallet balance --address <addr> --chain ARC-TESTNET --output json
-```
-
-If, and only if, the selected article is on a testnet and the balance is below
-the approved cap, use the faucet:
-
-```bash
-circle wallet fund --address <addr> --chain ARC-TESTNET --token usdc --output json
-```
-
-Run the paid read with the same goal and cap:
-
-```bash
-rubicon read <article-id> --goal "summarize the article" --max-usdc 0.01 --json
-```
-
-Inspect the saved receipt:
-
-```bash
-rubicon receipts show <receipt-id> --json
-```
-
-## Circle Login
-
-If Circle auth is required, use the supported agent-wallet flow only:
-
-```bash
-circle wallet login <email> --type agent --init
-circle wallet login --type agent --request <request-id> --otp <code>
-```
-
-Do not ask for private keys. Do not accept legal terms for the user.
-
-## Recovery Branches
-
-- Stale local skill: fetch `https://www.rubiconpay.xyz/skill.md` and follow the
-  latest instructions.
-- Circle `fetch failed`: retry the same Circle command in a network-capable or
-  escalated execution context.
-- Expired OTP request: start a fresh OTP request with
-  `circle wallet login <email> --type agent --init`.
-- Auth valid in network context but not sandbox: keep Circle and Rubicon
-  commands in the same network-capable context that reports valid auth.
-- Buyer wallet differs from Circle wallet: report it as expected payment
-  abstraction behavior; do not rewrite receipt values or switch wallets.
-- Missing or wrong gateway: rerun the gateway config command above.
-- Low testnet balance: faucet only if the selected article is testnet.
-- Low non-testnet balance: ask the wallet controller to fund through supported
-  production funding; do not suggest Arc Testnet mainnet or fiat funding.
+For Circle login, direct the user to the supported agent-wallet login flow. Do
+not request private keys and do not accept terms for them. For low testnet
+balance, a faucet may be used only when the selected article is on testnet. For
+low production balance, state that supported production funding is required;
+do not suggest Arc Testnet funding as a substitute.
 
 ## Final Report
 
-After receipt inspection, report all fields below. If a field is absent in CLI
-output, say `not provided`.
+Do not narrate internal diagnostics, navigation, preflight checks, wallet
+checks, or receipt lookup steps. Report only:
 
-- Article title.
-- Author.
-- Article id.
-- Session id.
-- Receipt id.
-- Words read.
-- Amount paid atomic.
-- Amount paid USDC.
-- Budget.
-- Completed.
-- Stop reason.
-- Payment ids.
-- Settlement ids.
-- Transaction hashes.
-- Short summary.
+- Any blocker requiring user action.
+- Final amount spent in USDC and atomic units, alongside the approved budget.
+- Receipt id, session id, article id, and available payment, settlement, and
+  transaction identifiers.
+- Receipt verification status and words purchased.
+- Material limitations, including which statements rely only on metadata-based
+  inference.
+- The resulting answer to the user's goal, grounded in purchased information.
+
+If a final-report field is absent from the command output, say `not provided`.
