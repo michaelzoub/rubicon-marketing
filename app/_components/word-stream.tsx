@@ -7,7 +7,7 @@ import { useEffect, useRef, useState } from "react";
 const PRICE_PER_WORD = 0.00001;
 const ease = [0.16, 1, 0.3, 1] as const;
 
-// "Small article": streamed one word at a time, one payment per word — the slow baseline.
+// "Small article": streamed one word at a time, one payment per word, the slow baseline.
 const PERWORD_TARGET = 24;
 // "Large article": the gateway bundles consecutive words into one chunk released by a
 // single payment. BUNDLE_SIZE words land per payment, so the text fills in far quicker.
@@ -31,7 +31,7 @@ type Phase = "perword" | "gap" | "bundled" | "done";
  * Two-phase demonstration of how Rubicon meters reads.
  *
  *  1. Per-word streaming (small article): every word is delivered and paid for
- *     individually — deliberately metronomic, one payment tick per word.
+ *     individually, deliberately metronomic, one payment tick per word.
  *  2. Bundled reads (large article): the gateway bundles a contiguous run of
  *     words into a single chunk released by ONE payment, so more words land per
  *     payment and the text fills in noticeably faster.
@@ -84,7 +84,7 @@ function WordStreamAnimated() {
           t.push(setTimeout(() => setPhase("done"), 900));
           return;
         }
-        // a whole block of words arrives per tick — far more text per payment
+        // a whole block of words arrives per tick, far more text per payment
         t.push(setTimeout(tick, b < 2 ? 540 : 380));
       };
       t.push(setTimeout(tick, 520));
@@ -122,7 +122,7 @@ function WordStreamAnimated() {
       </div>
 
       <div className="px-5 py-4">
-        {/* mode caption — switches between the per-word baseline and the bundled speedup */}
+        {/* mode caption, switches between the per-word baseline and the bundled speedup */}
         <div className="mb-4 flex h-[40px] items-center">
           <AnimatePresence mode="wait" initial={false}>
             {bundled ? (
@@ -136,7 +136,7 @@ function WordStreamAnimated() {
               >
                 <span className="flex items-center gap-2 text-sm font-semibold text-[var(--ink)]">
                   <Layers size={15} className="text-[var(--river-deep)]" aria-hidden="true" />
-                  Bundled reads — {BUNDLE_SIZE} words, 1 payment
+                  Bundled reads · {BUNDLE_SIZE} words, 1 payment
                 </span>
                 <span className="mono flex shrink-0 items-center gap-1 rounded-full border border-[rgba(88,213,155,0.4)] bg-[rgba(88,213,155,0.1)] px-2 py-0.5 text-[0.62rem] font-medium text-[var(--green)]">
                   <Zap size={11} aria-hidden="true" /> ×{BUNDLE_SIZE} faster
@@ -195,7 +195,7 @@ function WordStreamAnimated() {
                   <CheckCircle2 size={16} aria-hidden="true" /> {BUNDLE_COUNT * BUNDLE_SIZE} words delivered in {BUNDLE_COUNT} payments
                 </div>
                 <div className="mt-1 text-xs text-[var(--green)]">
-                  Same per-word price — bundling just cut the payment round-trips.
+                  Same per-word price. Bundling just cut the payment round-trips.
                 </div>
               </motion.div>
             )}
@@ -306,7 +306,7 @@ function WordStreamStatic() {
           <div className="flex items-center gap-2 text-sm font-semibold text-[var(--ink)]">
             <Coins size={15} className="text-[var(--river-deep)]" aria-hidden="true" /> Per-word streaming
           </div>
-          <p className="mt-1 text-xs text-[var(--muted)]">Small article — one payment per word.</p>
+          <p className="mt-1 text-xs text-[var(--muted)]">Small article · one payment per word.</p>
           <dl className="mono mt-3 grid gap-1 text-xs">
             <Row k="Words read" v={String(compareWords)} />
             <Row k="Payments" v={String(compareWords)} />
@@ -323,7 +323,7 @@ function WordStreamStatic() {
               <Zap size={11} aria-hidden="true" /> ×{BUNDLE_SIZE} faster
             </span>
           </div>
-          <p className="mt-1 text-xs text-[var(--muted)]">Large article — {BUNDLE_SIZE} words per payment.</p>
+          <p className="mt-1 text-xs text-[var(--muted)]">Large article · {BUNDLE_SIZE} words per payment.</p>
           <dl className="mono mt-3 grid gap-1 text-xs">
             <Row k="Words read" v={String(compareWords)} />
             <Row k="Payments" v={String(bundledPayments)} />
@@ -333,7 +333,7 @@ function WordStreamStatic() {
       </div>
 
       <p className="border-t border-[var(--faint)] px-5 py-3 text-xs text-[var(--muted)]">
-        Same words read, same total paid — bundling only cuts the payment round-trips.
+        Same words read, same total paid. Bundling only cuts the payment round-trips.
       </p>
     </div>
   );

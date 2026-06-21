@@ -9,7 +9,7 @@
 
 type GlyphProps = { size?: number; className?: string };
 
-/** Buyer agent — a reading lens collecting an incoming stream of words. */
+/** Buyer agent, a reading lens collecting an incoming stream of words. */
 export function BuyerGlyph({ size = 22, className }: GlyphProps) {
   return (
     <svg
@@ -35,7 +35,7 @@ export function BuyerGlyph({ size = 22, className }: GlyphProps) {
   );
 }
 
-/** Seller agent — a stored article releasing words outward, one line at a time. */
+/** Seller agent, a stored article releasing words outward, one line at a time. */
 export function SellerGlyph({ size = 22, className }: GlyphProps) {
   return (
     <svg

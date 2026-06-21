@@ -13,7 +13,7 @@ const STEPS = [
     key: "publish",
     tag: "Step 01",
     title: "Publish",
-    copy: "Add an article, review the sections Rubicon detects, and set your price per word. No paywall, no bundle — you decide what each word is worth.",
+    copy: "Add an article, review the sections Rubicon detects, and set your price per word. No paywall, no bundle. You decide what each word is worth.",
     visual: PublishVisual,
   },
   {
@@ -27,7 +27,7 @@ const STEPS = [
     key: "earn",
     tag: "Step 03",
     title: "You earn",
-    copy: "Every delivered word is attributed to your article and settled in USDC straight to your receiving wallet — exact usage, zero platform fee.",
+    copy: "Every delivered word is attributed to your article and settled in USDC straight to your receiving wallet. Exact usage, zero platform fee.",
     visual: EarnVisual,
   },
 ] as const;
@@ -64,7 +64,7 @@ export function HowItWorks() {
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
         >
-          {/* left — the visual that goes with the active step */}
+          {/* left: the visual that goes with the active step */}
           <div className="hiw-stage order-2 lg:order-1">
             <AnimatePresence mode="wait">
               <motion.div
@@ -80,7 +80,7 @@ export function HowItWorks() {
             </AnimatePresence>
           </div>
 
-          {/* right — vertically stacked steps */}
+          {/* right: vertically stacked steps */}
           <ol className="order-1 flex flex-col lg:order-2">
             {STEPS.map((step, i) => {
               const isActive = i === active;
@@ -125,7 +125,7 @@ export function HowItWorks() {
 
 function Stage({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="hiw-panel flex h-full min-h-[420px] flex-col">
+    <div className="hiw-panel flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-[var(--faint)] px-5 py-3.5">
         <span className="mono text-[0.66rem] uppercase tracking-[0.16em] text-[var(--muted)]">{label}</span>
         <span className="flex items-center gap-1.5 text-[0.66rem] text-[var(--river-deep)]">

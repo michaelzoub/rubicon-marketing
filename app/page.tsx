@@ -241,94 +241,46 @@ function Hero() {
 }
 
 function CreatorValue() {
-  const controls = ["Price per word", "Article availability", "Navigable sections", "Receiving wallet"];
+  const cards = [
+    {
+      icon: <Coins size={20} aria-hidden="true" />,
+      title: "Earn from agent traffic",
+      copy: "Make premium research readable by AI systems without giving away the full article. Every read is a sale, settled in USDC.",
+      footer: "0% platform fee",
+    },
+    {
+      icon: <Settings2 size={20} aria-hidden="true" />,
+      title: "Stay in control",
+      copy: "You set the price, the availability, and exactly which sections agents are allowed to navigate.",
+      footer: "Your terms, always",
+    },
+    {
+      icon: <BadgeCheck size={20} aria-hidden="true" />,
+      title: "Get paid for exact usage",
+      copy: "Read 137 words, earn for 137 words. Never an arbitrary bundle or a full-article purchase.",
+      footer: "Word-for-word attribution",
+    },
+  ];
   return (
     <StackPanel id="creators" className="section stack-panel stack-panel-base bg-[var(--background)]">
       <motion.div {...fade} className="container">
         <p className="eyebrow">For creators</p>
         <h2 className="mt-4 section-title">Built around what creators actually want.</h2>
 
-        <div className="mt-12 grid gap-5 lg:grid-cols-2 lg:grid-rows-2">
-          {/* feature — earn from agent traffic */}
-          <div className="card-soft flex flex-col p-7 lg:row-span-2">
-            <span className="grid h-11 w-11 place-items-center rounded-xl bg-[var(--river-pale)] text-[var(--river-deep)]">
-              <Coins size={22} aria-hidden="true" />
-            </span>
-            <h3 className="mt-6 text-2xl font-semibold tracking-[-0.01em]">Earn from agent traffic</h3>
-            <p className="mt-3 max-w-md leading-7 text-[var(--muted)]">
-              Make premium research readable by AI systems without giving away the complete article. Every read is a
-              micro-sale, settled in USDC.
-            </p>
-
-            {/* revenue split visual */}
-            <div className="mt-auto pt-8">
-              <div className="flex items-end justify-between">
-                <div>
-                  <div className="mono text-4xl font-bold tracking-[-0.02em] text-[var(--ink)]">100%</div>
-                  <div className="mt-1 text-sm text-[var(--muted)]">of every read goes to you</div>
-                </div>
-                <span className="mono flex items-center gap-1.5 rounded-full border border-[rgba(88,213,155,0.4)] bg-[rgba(88,213,155,0.1)] px-2.5 py-1 text-xs font-medium text-[var(--green)]">
-                  0% platform fee
-                </span>
-              </div>
-              <div className="mt-4 flex h-2.5 overflow-hidden rounded-full bg-[var(--surface-muted)]">
-                <span className="h-full w-full rounded-full bg-[var(--river-deep)]" />
-              </div>
-              <div className="mono mt-2 flex justify-between text-[0.66rem] uppercase tracking-[0.1em] text-[var(--quiet)]">
-                <span>Creator payout</span>
-                <span>Rubicon · 0%</span>
-              </div>
-            </div>
-          </div>
-
-          {/* stay in control */}
-          <div className="card-soft flex flex-col p-7">
-            <div className="flex items-center gap-3">
+        <div className="mt-12 grid gap-5 md:grid-cols-3">
+          {cards.map((card) => (
+            <div key={card.title} className="card-soft flex flex-col p-7">
               <span className="grid h-10 w-10 place-items-center rounded-lg bg-[var(--river-pale)] text-[var(--river-deep)]">
-                <Settings2 size={20} aria-hidden="true" />
+                {card.icon}
               </span>
-              <h3 className="text-xl font-semibold">Stay in control</h3>
-            </div>
-            <p className="mt-3 leading-7 text-[var(--muted)]">
-              You set the terms — price, availability, and exactly which sections agents can navigate.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-2">
-              {controls.map((c) => (
-                <span
-                  key={c}
-                  className="inline-flex items-center gap-1.5 rounded-full border border-[var(--faint)] bg-[var(--surface)] px-3 py-1.5 text-[0.78rem] text-[var(--ink)]"
-                >
-                  <Check size={12} className="text-[var(--river-deep)]" aria-hidden="true" />
-                  {c}
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* exact usage */}
-          <div className="card-soft flex flex-col p-7">
-            <div className="flex items-center gap-3">
-              <span className="grid h-10 w-10 place-items-center rounded-lg bg-[var(--river-pale)] text-[var(--river-deep)]">
-                <BadgeCheck size={20} aria-hidden="true" />
-              </span>
-              <h3 className="text-xl font-semibold">Get paid for exact usage</h3>
-            </div>
-            <p className="mt-3 leading-7 text-[var(--muted)]">
-              Read 137 words, earn for 137 words — never an arbitrary bundle or full-article purchase.
-            </p>
-            <div className="mt-5 rounded-xl border border-[var(--faint)] bg-[var(--surface)] p-4">
-              <div className="flex items-baseline justify-between">
-                <span className="mono text-sm text-[var(--muted)]">
-                  <span className="text-lg font-bold text-[var(--ink)]">137</span> words read
-                </span>
-                <span className="mono text-base font-bold text-[var(--river-deep)]">$0.00137</span>
+              <h3 className="mt-5 text-xl font-semibold">{card.title}</h3>
+              <p className="mt-2 leading-7 text-[var(--muted)]">{card.copy}</p>
+              <div className="mono mt-6 flex items-center gap-2 border-t border-[var(--faint)] pt-4 text-[0.72rem] uppercase tracking-[0.1em] text-[var(--river-deep)]">
+                <Check size={13} aria-hidden="true" />
+                {card.footer}
               </div>
-              <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--surface-muted)]">
-                <span className="block h-full w-[68%] rounded-full bg-[var(--river-deep)]" />
-              </div>
-              <div className="mono mt-2 text-[0.66rem] text-[var(--quiet)]">attributed word-for-word to your article</div>
             </div>
-          </div>
+          ))}
         </div>
       </motion.div>
     </StackPanel>
@@ -383,11 +335,11 @@ function StreamDemoSection() {
       <motion.div {...fade} className="container grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
         <div>
           <p className="eyebrow">Word-level metering</p>
-          <h2 className="mt-4 section-title">Pay per word — bundled into one payment at scale.</h2>
+          <h2 className="mt-4 section-title">Pay per word, bundled into one payment at scale.</h2>
           <p className="section-copy mt-5">
             Short reads stream and settle one word at a time. For large articles, the gateway bundles a contiguous run
-            of words into a single chunk released by one payment — fewer round-trips, faster delivery, and you still
-            earn for exactly the words that were read.
+            of words into a single chunk released by one payment, so there are fewer round-trips and faster delivery.
+            Either way, you earn for exactly the words that were read.
           </p>
           <div className="mt-6 grid gap-3 text-sm">
             {[
@@ -429,12 +381,12 @@ function Settlement() {
           <h2 className="mt-4 section-title">How thousands of micropayments actually clear.</h2>
           <p className="section-copy mt-5">
             A single word can cost a fraction of a cent. Card rails would lose that to fees, so Rubicon settles every
-            word as a USDC <strong>nanopayment</strong>—a transfer small enough to move per word, instantly, without a
+            word as a USDC <strong>nanopayment</strong>: a transfer small enough to move per word, instantly, without a
             fee swallowing the payment.
           </p>
           <p className="section-copy mt-4">
             It runs on Circle’s stablecoin infrastructure and Arc, Circle’s USDC-native chain where stablecoins are the
-            gas. That’s what makes paying for one word—then another, thousands of times over—economically real.
+            gas. That makes paying for one word, then another, thousands of times over, economically real.
           </p>
         </div>
         <div className="card-soft grid gap-5 p-7">

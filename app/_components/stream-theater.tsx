@@ -358,7 +358,7 @@ export function StreamTheater() {
                 className="flex h-full items-center justify-between gap-3 rounded-xl border border-[rgba(88,213,155,0.34)] bg-[rgba(88,213,155,0.1)] px-3.5"
               >
                 <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-[var(--ink)]">
-                  <Check size={15} aria-hidden="true" /> Answer found — agent stopped
+                  <Check size={15} aria-hidden="true" /> Answer found · agent stopped
                 </span>
                 <span className="mono flex shrink-0 items-center gap-1.5 text-xs text-[var(--green)]">
                   <Coins size={13} aria-hidden="true" /> creator earned ${paid}
@@ -387,7 +387,7 @@ function Agent({
   active: boolean;
   tint: "buyer" | "seller";
 }) {
-  // Solid, fixed token fills — the theater is always dark, so these don't follow
+  // Solid, fixed token fills, the theater is always dark, so these don't follow
   // the theme vars. Two distinct blues read as two distinct agents.
   const color = tint === "buyer" ? "#2f567c" : "#3f7da1";
   const pos = side === "left" ? "left-0 items-start" : "right-0 items-end";

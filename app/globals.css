@@ -403,6 +403,13 @@ a {
 /* ---------- How it works — vertical showcase ---------- */
 .hiw-stage {
   position: relative;
+  height: 500px;
+}
+
+@media (max-width: 1023px) {
+  .hiw-stage {
+    height: 520px;
+  }
 }
 
 .hiw-panel {
