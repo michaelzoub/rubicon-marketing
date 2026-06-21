@@ -2,9 +2,8 @@
 
 import { getEmbeddedConnectedWallet, useCreateWallet, usePrivy, useWallets } from "@privy-io/react-auth";
 import { useEffect, useState } from "react";
-import { ChevronDown, ExternalLink, LogOut, ShieldCheck, Wallet } from "lucide-react";
+import { ChevronDown, LogOut, ShieldCheck, Wallet } from "lucide-react";
 import { useRubiconMutation, useRubiconQuery } from "@/lib/rubicon/hooks";
-import { SUPABASE_URL } from "@/lib/rubicon/auth";
 import { RECEIVING_NETWORK, RECEIVING_NETWORK_LABEL } from "@/lib/chain";
 import {
   Card,
@@ -93,7 +92,7 @@ export default function SettingsPage() {
           </Card>
 
           {/* Developer information */}
-          <DeveloperInfo creatorId={creator.data?.id ?? ""} />
+          <DeveloperInfo creatorId={creator.data?.id ?? ""} privyId={user?.id ?? ""} />
         </>
       )}
     </div>
@@ -244,9 +243,8 @@ function WalletEditor({
   );
 }
 
-function DeveloperInfo({ creatorId }: { creatorId: string }) {
+function DeveloperInfo({ creatorId, privyId }: { creatorId: string; privyId: string }) {
   const [open, setOpen] = useState(false);
-  const supabaseHost = SUPABASE_URL ? new URL(SUPABASE_URL).host : "Not configured";
   return (
     <Card>
       <button type="button" onClick={() => setOpen((v) => !v)} className="flex w-full items-center justify-between px-5 py-4 text-left">
@@ -255,16 +253,8 @@ function DeveloperInfo({ creatorId }: { creatorId: string }) {
       </button>
       {open && (
         <div className="grid gap-3 border-t border-[var(--faint)] p-5 text-sm">
+          <DevRow label="Privy ID" value={<code className="mono">{privyId || "—"}</code>} />
           <DevRow label="Creator ID" value={<code className="mono">{creatorId || "—"}</code>} />
-          <DevRow label="Supabase project" value={<code className="mono">{supabaseHost}</code>} />
-          <DevRow
-            label="Public repository"
-            value={
-              <a href="https://github.com/michaelzoub/rubicon" target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[var(--river-deep)] hover:underline">
-                github.com/michaelzoub/rubicon <ExternalLink size={12} aria-hidden="true" />
-              </a>
-            }
-          />
         </div>
       )}
     </Card>

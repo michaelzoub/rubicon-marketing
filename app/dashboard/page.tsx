@@ -1,14 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { Activity, ArrowRight, CheckCircle2, Circle, Copy, ExternalLink, FileText, Link2, RefreshCw, Wallet2 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Activity, ArrowRight, BarChart3, CheckCircle2, Circle, Copy, ExternalLink, FileText, Link2, PieChart, RefreshCw, Wallet2 } from "lucide-react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useRubiconQuery } from "@/lib/rubicon/hooks";
-import { formatUsd } from "@/lib/rubicon/pricing";
+import { atomicToUsd, formatUsd, formatUsdNumber } from "@/lib/rubicon/pricing";
+import type { Article, PaymentActivity } from "@/lib/rubicon/types";
 import { ACTIVE_CHAIN } from "@/lib/chain";
 import { explorerAddressUrl, formatBalance, useNativeBalance } from "@/lib/onchain";
 import { WithdrawDialog } from "./_components/withdraw-dialog";
+import { CountUp, Donut, DONUT_COLORS, InsightTile, Reveal, TrendChart, type DonutSlice, type TrendBar } from "./_components/charts";
 import {
   ArticleStatePill,
   Card,
@@ -40,6 +42,25 @@ export default function OverviewPage() {
   const hasArticles = (articles.data?.length ?? 0) > 0;
   const hasLive = (articles.data ?? []).some((a) => a.state === "live");
   const onboardingComplete = walletConnected && hasLive;
+
+  const [trendMetric, setTrendMetric] = useState<"earnings" | "words">("earnings");
+
+  const trendBars = useMemo(
+    () => buildTrend(activity.data ?? [], trendMetric),
+    [activity.data, trendMetric],
+  );
+  const hasTrend = useMemo(() => trendBars.some((b) => b.value > 0), [trendBars]);
+
+  const earningsSlices = useMemo(() => buildEarningsSlices(articles.data ?? []), [articles.data]);
+  const hasBreakdown = earningsSlices.length > 0;
+
+  const avgPerRead =
+    (earnings.data?.agentReads ?? 0) > 0
+      ? atomicToUsd(earnings.data?.settledEarnings) / (earnings.data?.agentReads ?? 1)
+      : 0;
+  const wordsAvailable = (articles.data ?? [])
+    .filter((a) => a.state === "live")
+    .reduce((sum, a) => sum + a.totalWords, 0);
 
   return (
     <div className="grid gap-6">
@@ -93,30 +114,111 @@ export default function OverviewPage() {
           )}
 
           {onboardingComplete && (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatTile label="Total earnings" value={formatUsd(earnings.data?.settledEarnings)} />
-              <StatTile label="Words read" value={(earnings.data?.wordsPaidFor ?? 0).toLocaleString()} />
-              <StatTile label="Agent reads" value={(earnings.data?.agentReads ?? 0).toLocaleString()} />
-              <StatTile label="Live articles" value={earnings.data?.liveArticles ?? 0} />
-            </div>
+            <Reveal className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <StatTile
+                label="Total earnings"
+                value={<CountUp value={atomicToUsd(earnings.data?.settledEarnings)} format={formatUsdNumber} />}
+              />
+              <StatTile
+                label="Words read"
+                value={<CountUp value={earnings.data?.wordsPaidFor ?? 0} format={formatInt} />}
+              />
+              <StatTile
+                label="Agent reads"
+                value={<CountUp value={earnings.data?.agentReads ?? 0} format={formatInt} />}
+              />
+              <StatTile
+                label="Live articles"
+                value={<CountUp value={earnings.data?.liveArticles ?? 0} format={formatInt} />}
+              />
+            </Reveal>
           )}
 
           {onboardingComplete && earnings.data?.topArticle && (
-            <Card className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Top article</div>
-                <div className="mt-1 text-lg font-semibold">{earnings.data.topArticle.title}</div>
-              </div>
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <div className="text-lg font-semibold">{formatUsd(earnings.data.topArticle.earnings)}</div>
-                  <div className="text-xs text-[var(--muted)]">earned</div>
+            <Reveal delay={0.05}>
+              <Card className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Top article</div>
+                  <div className="mt-1 text-lg font-semibold">{earnings.data.topArticle.title}</div>
                 </div>
-                <Link href={`/dashboard/articles/${earnings.data.topArticle.id}`} className="button button-secondary text-sm">
-                  View <ArrowRight size={15} aria-hidden="true" />
-                </Link>
-              </div>
-            </Card>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <div className="text-lg font-semibold">{formatUsd(earnings.data.topArticle.earnings)}</div>
+                    <div className="text-xs text-[var(--muted)]">earned</div>
+                  </div>
+                  <Link href={`/dashboard/articles/${earnings.data.topArticle.id}`} className="button button-secondary text-sm">
+                    View <ArrowRight size={15} aria-hidden="true" />
+                  </Link>
+                </div>
+              </Card>
+            </Reveal>
+          )}
+
+          {onboardingComplete && hasTrend && (
+            <Reveal delay={0.1}>
+              <Card className="p-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span className="grid h-9 w-9 place-items-center rounded-[12px] border border-[var(--river-line)] bg-[var(--river-pale)] text-[var(--river)]">
+                      <BarChart3 size={17} aria-hidden="true" />
+                    </span>
+                    <div>
+                      <h2 className="text-base font-semibold">Activity over time</h2>
+                      <p className="text-xs text-[var(--muted)]">Last 14 days</p>
+                    </div>
+                  </div>
+                  <div className="inline-flex rounded-full border border-[var(--line)] bg-[var(--surface-muted)] p-0.5 text-sm">
+                    <SegButton active={trendMetric === "earnings"} onClick={() => setTrendMetric("earnings")}>
+                      Earnings
+                    </SegButton>
+                    <SegButton active={trendMetric === "words"} onClick={() => setTrendMetric("words")}>
+                      Words read
+                    </SegButton>
+                  </div>
+                </div>
+                <div className="mt-6">
+                  <TrendChart
+                    bars={trendBars}
+                    formatValue={trendMetric === "earnings" ? formatUsdNumber : formatInt}
+                  />
+                </div>
+              </Card>
+            </Reveal>
+          )}
+
+          {onboardingComplete && hasBreakdown && (
+            <Reveal delay={0.12}>
+              <Card className="p-5">
+                <div className="flex items-center gap-2.5">
+                  <span className="grid h-9 w-9 place-items-center rounded-[12px] border border-[var(--river-line)] bg-[var(--river-pale)] text-[var(--river)]">
+                    <PieChart size={17} aria-hidden="true" />
+                  </span>
+                  <div>
+                    <h2 className="text-base font-semibold">Earnings breakdown</h2>
+                    <p className="text-xs text-[var(--muted)]">Where your revenue comes from</p>
+                  </div>
+                </div>
+                <div className="mt-6 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                    <InsightTile
+                      value={<CountUp value={avgPerRead} format={formatUsdNumber} />}
+                      caption="Average earned per agent read"
+                    />
+                    <InsightTile
+                      value={<CountUp value={wordsAvailable} format={formatInt} />}
+                      caption="Words live and available to agents"
+                    />
+                  </div>
+                  <div className="rounded-[18px] bg-[var(--surface-muted)] p-5">
+                    <Donut
+                      slices={earningsSlices}
+                      centerValue={formatUsd(earnings.data?.settledEarnings)}
+                      centerLabel="Total earned"
+                    />
+                  </div>
+                </div>
+              </Card>
+            </Reveal>
           )}
 
           <OnchainCard address={wallet.data?.address ?? null} />
@@ -254,7 +356,7 @@ function OnchainCard({ address }: { address: string | null }) {
           />
         </div>
       ) : (
-        <div className="grid gap-px bg-[var(--faint)] sm:grid-cols-3">
+        <div className="grid gap-px overflow-hidden rounded-b-[22px] bg-[var(--faint)] sm:grid-cols-3">
           {/* Wallet address */}
           <div className="bg-white p-5">
             <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Wallet address</div>
@@ -305,6 +407,84 @@ function OnchainCard({ address }: { address: string | null }) {
       )}
     </Card>
   );
+}
+
+function SegButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
+        active ? "bg-white text-[var(--ink)] shadow-[0_1px_3px_rgba(47,125,246,0.18)]" : "text-[var(--muted)] hover:text-[var(--ink)]"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function formatInt(n: number): string {
+  return Math.round(n).toLocaleString();
+}
+
+/** Local YYYY-MM-DD key so day buckets line up with the creator's calendar. */
+function dayKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+/** Buckets payment activity into the trailing 14 days for the trend chart. */
+function buildTrend(activity: PaymentActivity[], metric: "earnings" | "words", days = 14): TrendBar[] {
+  const buckets = new Map<string, { earnings: number; words: number; date: Date }>();
+  const today = new Date();
+  for (let i = days - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(today.getDate() - i);
+    buckets.set(dayKey(d), { earnings: 0, words: 0, date: d });
+  }
+  for (const row of activity) {
+    if (row.status === "failed") continue;
+    const parsed = new Date(row.date);
+    if (Number.isNaN(parsed.getTime())) continue;
+    const bucket = buckets.get(dayKey(parsed));
+    if (!bucket) continue;
+    bucket.earnings += atomicToUsd(row.creatorAmount);
+    bucket.words += row.wordsRead;
+  }
+  return [...buckets.values()].map(({ earnings, words, date }) => {
+    const value = metric === "earnings" ? earnings : words;
+    return {
+      label: date.toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+      fullLabel: date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }),
+      value,
+      detail:
+        metric === "earnings"
+          ? `${formatInt(words)} words`
+          : earnings > 0
+            ? formatUsdNumber(earnings)
+            : undefined,
+    };
+  });
+}
+
+/** Top-earning articles as donut slices, with the remainder folded into "Other". */
+function buildEarningsSlices(articles: Article[]): DonutSlice[] {
+  const earners = articles
+    .map((a) => ({ title: a.title, value: atomicToUsd(a.usage.earnings) }))
+    .filter((a) => a.value > 0)
+    .sort((a, b) => b.value - a.value);
+  if (earners.length === 0) return [];
+
+  const top = earners.slice(0, 4);
+  const rest = earners.slice(4);
+  const slices: DonutSlice[] = top.map((a, i) => ({ label: a.title, value: a.value, color: DONUT_COLORS[i] }));
+  if (rest.length > 0) {
+    slices.push({
+      label: `${rest.length} more`,
+      value: rest.reduce((sum, a) => sum + a.value, 0),
+      color: DONUT_COLORS[4],
+    });
+  }
+  return slices;
 }
 
 function ChecklistItem({

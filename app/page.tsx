@@ -301,7 +301,9 @@ function SellerAgent() {
           </div>
           <div className="seller-route" aria-hidden="true"><span /></div>
           <div className="seller-agent-node">
-            <span className="seller-agent-icon"><SellerGlyph size={26} /></span>
+            <span className="seller-agent-icon">
+              <SellerGlyph size={26} />
+            </span>
             <div><strong>Seller agent</strong><span className="seller-agent-status"><i aria-hidden="true" />Routing query</span></div>
           </div>
           <div className="seller-document">

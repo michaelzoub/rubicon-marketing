@@ -1,0 +1,275 @@
+"use client";
+
+/**
+ * Lightweight, dependency-free data-viz primitives for the dashboard.
+ *
+ * Everything here is pure SVG / flexbox animated with framer-motion (already a
+ * project dependency), so there's no chart library to pull in. All visuals use
+ * the dashboard theme tokens so they stay on-brand in light mode.
+ *
+ * Motion respects `prefers-reduced-motion`: when the user opts out we render the
+ * final state immediately instead of animating.
+ */
+
+import { animate, motion, useReducedMotion } from "framer-motion";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+
+/* ---------- animated number ---------- */
+
+/**
+ * Counts up to `value` whenever it changes. `format` controls how the
+ * in-flight number is rendered (e.g. currency, thousands separators).
+ */
+export function CountUp({
+  value,
+  format,
+  duration = 0.9,
+}: {
+  value: number;
+  format: (n: number) => string;
+  duration?: number;
+}) {
+  const reduce = useReducedMotion();
+  const [display, setDisplay] = useState(value);
+  const from = useRef(value);
+
+  useEffect(() => {
+    if (reduce) {
+      setDisplay(value);
+      from.current = value;
+      return;
+    }
+    const controls = animate(from.current, value, {
+      duration,
+      ease: [0.16, 1, 0.3, 1],
+      onUpdate: (v) => setDisplay(v),
+    });
+    from.current = value;
+    return () => controls.stop();
+  }, [value, duration, reduce]);
+
+  return <>{format(display)}</>;
+}
+
+/* ---------- entrance reveal ---------- */
+
+/** Fades + lifts children into view on mount. `delay` staggers siblings. */
+export function Reveal({
+  children,
+  delay = 0,
+  className = "",
+}: {
+  children: ReactNode;
+  delay?: number;
+  className?: string;
+}) {
+  const reduce = useReducedMotion();
+  return (
+    <motion.div
+      className={className}
+      initial={reduce ? false : { opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/* ---------- trend bars ---------- */
+
+export interface TrendBar {
+  /** Short axis label, e.g. "Jun 12". */
+  label: string;
+  /** Longer label used in the hover tooltip, e.g. "Thu, Jun 12". */
+  fullLabel: string;
+  /** Bar value in display units (already converted from atomic). */
+  value: number;
+  /** Secondary line in the tooltip, e.g. "1,204 words". */
+  detail?: string;
+}
+
+/**
+ * Vertical bar chart for a time series (earnings or reads over time). Bars grow
+ * on mount and lift / brighten on hover, with a floating tooltip.
+ */
+export function TrendChart({
+  bars,
+  formatValue,
+  height = 168,
+}: {
+  bars: TrendBar[];
+  formatValue: (n: number) => string;
+  height?: number;
+}) {
+  const reduce = useReducedMotion();
+  const [active, setActive] = useState<number | null>(null);
+  const max = Math.max(...bars.map((b) => b.value), 0);
+
+  return (
+    <div className="select-none">
+      <div className="relative flex items-end gap-1.5" style={{ height }}>
+        {bars.map((bar, i) => {
+          const pct = max > 0 ? (bar.value / max) * 100 : 0;
+          const isActive = active === i;
+          return (
+            <div
+              key={i}
+              className="group relative flex h-full flex-1 cursor-default items-end"
+              onMouseEnter={() => setActive(i)}
+              onMouseLeave={() => setActive((cur) => (cur === i ? null : cur))}
+            >
+              {/* tooltip */}
+              {isActive && bar.value > 0 && (
+                <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-[var(--line)] bg-white px-2.5 py-1.5 text-center shadow-[0_8px_24px_rgba(47,125,246,0.18)]">
+                  <div className="text-sm font-semibold text-[var(--ink)]">{formatValue(bar.value)}</div>
+                  <div className="mono text-[0.6rem] uppercase tracking-[0.1em] text-[var(--muted)]">{bar.fullLabel}</div>
+                  {bar.detail && <div className="text-[0.7rem] text-[var(--muted)]">{bar.detail}</div>}
+                </div>
+              )}
+              {/* track */}
+              <div className="absolute inset-x-0 bottom-0 top-0 rounded-md bg-[var(--surface-muted)] opacity-0 transition-opacity group-hover:opacity-100" />
+              {/* bar */}
+              <motion.div
+                className="relative w-full rounded-md rounded-b-sm"
+                style={{
+                  minHeight: bar.value > 0 ? 4 : 0,
+                  background: isActive ? "var(--river-deep)" : "var(--river)",
+                }}
+                initial={reduce ? false : { height: 0 }}
+                animate={{ height: `${pct}%` }}
+                transition={{ duration: 0.7, delay: reduce ? 0 : i * 0.025, ease: [0.16, 1, 0.3, 1] }}
+              />
+            </div>
+          );
+        })}
+      </div>
+      {/* axis */}
+      <div className="mt-2.5 flex items-center justify-between text-[0.62rem] text-[var(--muted)]">
+        <span>{bars[0]?.label}</span>
+        <span>{bars[Math.floor(bars.length / 2)]?.label}</span>
+        <span>{bars[bars.length - 1]?.label}</span>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- donut ---------- */
+
+export interface DonutSlice {
+  label: string;
+  value: number;
+  color: string;
+}
+
+/** Brand-friendly slice colors, brightest → faintest. */
+export const DONUT_COLORS = ["#2f7df6", "#5d99f8", "#8fb6fa", "#bcd3fc", "#dde8fe"];
+
+/**
+ * Ring chart with a centered headline. Slices sweep in clockwise on mount and
+ * the hovered slice's legend row highlights.
+ */
+export function Donut({
+  slices,
+  centerValue,
+  centerLabel,
+  size = 168,
+  stroke = 22,
+}: {
+  slices: DonutSlice[];
+  centerValue: string;
+  centerLabel: string;
+  size?: number;
+  stroke?: number;
+}) {
+  const reduce = useReducedMotion();
+  const [active, setActive] = useState<number | null>(null);
+  const total = slices.reduce((sum, s) => sum + s.value, 0);
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+
+  let offsetAcc = 0;
+
+  return (
+    <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-7">
+      <div className="relative shrink-0" style={{ width: size, height: size }}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
+          {/* track */}
+          <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="var(--surface-muted)" strokeWidth={stroke} />
+          {total > 0 &&
+            slices.map((slice, i) => {
+              const fraction = slice.value / total;
+              const dash = fraction * circumference;
+              const gap = circumference - dash;
+              const dashOffset = -offsetAcc * circumference;
+              offsetAcc += fraction;
+              const dim = active !== null && active !== i;
+              return (
+                <motion.circle
+                  key={i}
+                  cx={size / 2}
+                  cy={size / 2}
+                  r={radius}
+                  fill="none"
+                  stroke={slice.color}
+                  strokeWidth={stroke}
+                  strokeLinecap="round"
+                  strokeDasharray={`${dash} ${gap}`}
+                  strokeDashoffset={dashOffset}
+                  initial={reduce ? false : { strokeDasharray: `0 ${circumference}` }}
+                  animate={{ strokeDasharray: `${dash} ${gap}`, opacity: dim ? 0.4 : 1 }}
+                  transition={{ duration: 0.8, delay: reduce ? 0 : 0.1 + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                  onMouseEnter={() => setActive(i)}
+                  onMouseLeave={() => setActive((cur) => (cur === i ? null : cur))}
+                  style={{ cursor: "default" }}
+                />
+              );
+            })}
+        </svg>
+        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+          <div className="text-xl font-semibold tracking-[-0.01em]">{centerValue}</div>
+          <div className="mono text-[0.58rem] uppercase tracking-[0.12em] text-[var(--muted)]">{centerLabel}</div>
+        </div>
+      </div>
+
+      {/* legend */}
+      <ul className="w-full min-w-0 flex-1 space-y-2.5">
+        {slices.map((slice, i) => {
+          const pct = total > 0 ? Math.round((slice.value / total) * 100) : 0;
+          return (
+            <li
+              key={i}
+              className={`flex items-center gap-2.5 rounded-lg px-2 py-1 transition-colors ${active === i ? "bg-[var(--surface-muted)]" : ""}`}
+              onMouseEnter={() => setActive(i)}
+              onMouseLeave={() => setActive((cur) => (cur === i ? null : cur))}
+            >
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: slice.color }} />
+              <span className="min-w-0 flex-1 truncate text-sm text-[var(--ink)]">{slice.label}</span>
+              <span className="mono shrink-0 text-xs font-medium text-[var(--muted)]">{pct}%</span>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+/* ---------- big-number insight tile ---------- */
+
+/** Oversized metric card in the "performance" style — big value, quiet caption. */
+export function InsightTile({
+  value,
+  caption,
+  className = "",
+}: {
+  value: ReactNode;
+  caption: string;
+  className?: string;
+}) {
+  return (
+    <div className={`flex flex-col justify-between rounded-[18px] bg-[var(--surface-muted)] p-5 ${className}`}>
+      <div className="text-3xl font-semibold tracking-[-0.02em] sm:text-[2.1rem]">{value}</div>
+      <div className="mt-2 text-sm text-[var(--muted)]">{caption}</div>
+    </div>
+  );
+}

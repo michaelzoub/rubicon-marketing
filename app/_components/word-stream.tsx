@@ -109,9 +109,7 @@ function WordStreamAnimated() {
   const payments = bundled ? bundleCount : pwCount;
 
   return (
-    <div
-      className="overflow-hidden rounded-2xl bg-[var(--card)] transition-colors duration-500"
-    >
+    <div className="overflow-hidden rounded-2xl bg-[var(--card)] transition-colors duration-500">
       <div className="flex items-center justify-between border-b border-[var(--faint)] bg-[var(--surface-muted)] px-5 py-3">
         <span className="mono text-[0.66rem] uppercase tracking-[0.16em] text-[var(--muted)]">Paid word stream</span>
         <span className={`mono text-xs ${done ? "text-[var(--green)]" : "text-[var(--river-deep)]"}`}>

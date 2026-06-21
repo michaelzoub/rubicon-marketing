@@ -394,7 +394,7 @@ function Agent({
   return (
     <div className={`absolute top-0 flex w-[40%] min-w-0 flex-col gap-2.5 ${pos}`}>
       <div
-        className={`agent-token grid h-[58px] w-[58px] place-items-center text-white transition-shadow duration-500 ${
+        className={`agent-token grid h-[58px] w-[58px] place-items-center rounded-full text-white transition-shadow duration-500 ${
           active ? "is-active" : ""
         }`}
         style={{ backgroundColor: color }}

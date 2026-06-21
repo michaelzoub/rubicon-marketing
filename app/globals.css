@@ -75,17 +75,17 @@ a {
   --quiet: #9a9ba5;
   --faint: rgba(23, 23, 25, 0.08);
   --line: rgba(33, 36, 48, 0.1);
-  --river: #255075;
-  --river-deep: #275d89;
-  --river-rgb: 37, 80, 117;
-  --river-pale: rgba(37, 80, 117, 0.1);
-  --river-line: rgba(37, 80, 117, 0.22);
+  --river: #2f7df6;
+  --river-deep: #1f6ae0;
+  --river-rgb: 47, 125, 246;
+  --river-pale: rgba(47, 125, 246, 0.12);
+  --river-line: rgba(47, 125, 246, 0.3);
   color: var(--ink);
 }
 
 .dashboard-canvas {
   background:
-    radial-gradient(ellipse at 72% -10%, rgba(37, 80, 117, 0.13), transparent 34rem),
+    radial-gradient(ellipse at 72% -10%, rgba(47, 125, 246, 0.13), transparent 34rem),
     linear-gradient(180deg, #fbfcff 0%, var(--surface-muted) 38%, #f8f9ff 100%);
 }
 
@@ -109,7 +109,7 @@ a {
 
 .dashboard-theme .button-secondary:hover {
   background: #ffffff;
-  border-color: rgba(37, 80, 117, 0.24);
+  border-color: rgba(47, 125, 246, 0.34);
 }
 
 button:focus-visible,
@@ -364,7 +364,7 @@ a {
 }
 
 .dashboard-card:hover {
-  border-color: rgba(37, 80, 117, 0.18);
+  border-color: rgba(47, 125, 246, 0.28);
 }
 
 .dashboard-sidebar {
@@ -389,12 +389,35 @@ a {
   background: #16181d;
   border-radius: var(--radius-xl);
   transition:
-    transform 360ms var(--ease-out),
-    background-color 360ms ease;
+    transform 320ms var(--ease-out),
+    background-color 320ms ease,
+    box-shadow 320ms var(--ease-out);
+  will-change: transform;
 }
 
 .card-soft:hover {
   background: #1a1d23;
+  transform: translateY(-3px);
+  box-shadow:
+    0 22px 50px -28px rgba(0, 0, 0, 0.85),
+    inset 0 0 0 1px var(--river-line);
+}
+
+/* Signature glyph tiles "breathe" like the layered product tiles on aave.com.
+   Animates transform only, so utility-set opacity is preserved. */
+.sig-glyph {
+  transform-origin: center;
+  animation: sig-breath 7.5s var(--ease-in-out) infinite;
+}
+
+@keyframes sig-breath {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
 }
 
 /* ---------- How it works — vertical showcase ---------- */
@@ -459,12 +482,7 @@ a {
 
 .agent-token {
   position: relative;
-  border-radius: 15px;
-}
-
-.agent-token svg {
-  position: relative;
-  z-index: 1;
+  border-radius: 999px;
 }
 
 .seller-agent-visual {
@@ -531,7 +549,7 @@ a {
   width: 58px;
   height: 58px;
   place-items: center;
-  border-radius: 15px;
+  border-radius: 999px;
   background: var(--river);
   color: white;
 }

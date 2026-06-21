@@ -126,8 +126,8 @@ function Stage({ label, children }: { label: string; children: React.ReactNode }
   return (
     <div className="hiw-panel flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-[var(--faint)] px-5 py-3.5">
-        <span className="mono text-[0.66rem] uppercase tracking-[0.16em] text-[var(--muted)]">{label}</span>
-        <span className="flex items-center gap-1.5 text-[0.66rem] text-[var(--river-deep)]">
+        <span className="mono text-[0.66rem] uppercase tracking-[0.18em] text-[var(--muted)]">{label}</span>
+        <span className="mono flex items-center gap-1.5 text-[0.6rem] uppercase tracking-[0.12em] text-[var(--river-deep)]">
           <span className="status-dot h-1.5 w-1.5 rounded-full bg-[var(--river-deep)]" /> preview
         </span>
       </div>
@@ -252,7 +252,7 @@ function EarnVisual() {
         <div className="grid flex-1 content-start gap-2">
           {ledger.map((row) => (
             <div key={row.title} className="flex items-center gap-3 rounded-lg bg-[#20242b] px-3.5 py-3">
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-[var(--river)] text-white">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[var(--river)] text-white">
                 <Coins size={15} aria-hidden="true" />
               </span>
               <div className="min-w-0 flex-1">
