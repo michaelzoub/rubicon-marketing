@@ -49,7 +49,7 @@ export default function ArticleDetailPage() {
 
       {article.status === "success" && data && (
         <>
-          <div className="flex flex-col gap-4 border-b border-[var(--faint)] pb-6 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex flex-col gap-4 pb-2 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl font-semibold tracking-[-0.01em] sm:text-3xl">{data.title}</h1>
@@ -91,7 +91,7 @@ export default function ArticleDetailPage() {
           </div>
 
           {(publish.error || pause.error || archive.error) && (
-            <div className="rounded-lg border border-[#e3a2a0] bg-[#fff1f0] px-4 py-3 text-sm text-[#8d2f2d]">
+            <div className="rounded-lg bg-[#fff1f0] px-4 py-3 text-sm text-[#8d2f2d]">
               {(publish.error ?? pause.error ?? archive.error)?.message}
             </div>
           )}
@@ -124,7 +124,7 @@ export default function ArticleDetailPage() {
                   <EmptyState title="No reads yet" description="When agents read, you’ll see which sections they found useful." />
                 </div>
               ) : (
-                <ul className="divide-y divide-[var(--faint)]">
+                <ul className="grid gap-1 p-2">
                   {data.sectionUsage.map((s) => {
                     const max = Math.max(...data.sectionUsage.map((x) => x.wordsRead), 1);
                     return (
@@ -150,7 +150,7 @@ export default function ArticleDetailPage() {
                   <EmptyState title="No sessions yet" description="Each time a buyer agent reads through your seller agent, it appears here." />
                 </div>
               ) : (
-                <ul className="divide-y divide-[var(--faint)]">
+                <ul className="grid gap-1 p-2">
                   {data.sessions.map((session) => (
                     <li key={session.id} className="flex items-center justify-between gap-3 px-5 py-3 text-sm">
                       <div>
@@ -175,7 +175,7 @@ export default function ArticleDetailPage() {
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[640px] text-sm">
                   <thead>
-                    <tr className="border-b border-[var(--faint)] text-left text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
+                    <tr className="text-left text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
                       <th className="px-5 py-3 font-medium">Date</th>
                       <th className="px-5 py-3 font-medium">Words read</th>
                       <th className="px-5 py-3 font-medium">Creator amount</th>
@@ -185,7 +185,7 @@ export default function ArticleDetailPage() {
                   </thead>
                   <tbody>
                     {data.paymentActivity.map((row) => (
-                      <tr key={row.id} className="border-b border-[var(--faint)] last:border-0">
+                      <tr key={row.id} className="transition-colors hover:bg-[var(--surface-muted)]">
                         <td className="px-5 py-3">{formatDate(row.date)}</td>
                         <td className="px-5 py-3">{row.wordsRead.toLocaleString()}</td>
                         <td className="px-5 py-3 font-medium">{formatUsd(row.creatorAmount)}</td>
@@ -233,24 +233,24 @@ function EditPanel({
       <div className="mt-4 grid gap-4">
         <label className="grid gap-2">
           <span className="text-sm font-medium">Article title</span>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} className="h-11 rounded-lg border border-[var(--line)] px-3 outline-none focus:border-[var(--river)]" />
+          <input value={title} onChange={(e) => setTitle(e.target.value)} className="h-11 rounded-lg bg-[var(--surface-muted)] px-3 outline-none transition focus:bg-white focus:ring-2 focus:ring-[var(--river-line)]" />
         </label>
         <label className="grid gap-2">
           <span className="text-sm font-medium">Author</span>
-          <input value={author} onChange={(e) => setAuthor(e.target.value)} className="h-11 rounded-lg border border-[var(--line)] px-3 outline-none focus:border-[var(--river)]" />
+          <input value={author} onChange={(e) => setAuthor(e.target.value)} className="h-11 rounded-lg bg-[var(--surface-muted)] px-3 outline-none transition focus:bg-white focus:ring-2 focus:ring-[var(--river-line)]" />
         </label>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="grid gap-2">
             <span className="text-sm font-medium">Price per word ($)</span>
-            <input value={pricePerWord} onChange={(e) => setPricePerWord(e.target.value.replace(/[^0-9.]/g, ""))} inputMode="decimal" placeholder="0.0001" className="h-11 rounded-lg border border-[var(--line)] px-3 outline-none focus:border-[var(--river)]" />
+            <input value={pricePerWord} onChange={(e) => setPricePerWord(e.target.value.replace(/[^0-9.]/g, ""))} inputMode="decimal" placeholder="0.0001" className="h-11 rounded-lg bg-[var(--surface-muted)] px-3 outline-none transition focus:bg-white focus:ring-2 focus:ring-[var(--river-line)]" />
           </label>
           <label className="grid gap-2">
             <span className="text-sm font-medium">Maximum article price ($)</span>
-            <input value={maxPrice} onChange={(e) => setMaxPrice(e.target.value.replace(/[^0-9.]/g, ""))} inputMode="decimal" placeholder="No cap" className="h-11 rounded-lg border border-[var(--line)] px-3 outline-none focus:border-[var(--river)]" />
+            <input value={maxPrice} onChange={(e) => setMaxPrice(e.target.value.replace(/[^0-9.]/g, ""))} inputMode="decimal" placeholder="No cap" className="h-11 rounded-lg bg-[var(--surface-muted)] px-3 outline-none transition focus:bg-white focus:ring-2 focus:ring-[var(--river-line)]" />
           </label>
         </div>
       </div>
-      {error && <p className="mt-4 rounded-lg border border-[#e3a2a0] bg-[#fff1f0] px-4 py-3 text-sm text-[#8d2f2d]">{error}</p>}
+      {error && <p className="mt-4 rounded-lg bg-[#fff1f0] px-4 py-3 text-sm text-[#8d2f2d]">{error}</p>}
       <div className="mt-5 flex justify-end">
         <button
           type="button"

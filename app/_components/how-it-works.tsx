@@ -127,9 +127,6 @@ function Stage({ label, children }: { label: string; children: React.ReactNode }
     <div className="hiw-panel flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-[var(--faint)] px-5 py-3.5">
         <span className="mono text-[0.66rem] uppercase tracking-[0.18em] text-[var(--muted)]">{label}</span>
-        <span className="mono flex items-center gap-1.5 text-[0.6rem] uppercase tracking-[0.12em] text-[var(--river-deep)]">
-          <span className="status-dot h-1.5 w-1.5 rounded-full bg-[var(--river-deep)]" /> preview
-        </span>
       </div>
       <div className="flex flex-1 flex-col gap-4 p-5">{children}</div>
     </div>

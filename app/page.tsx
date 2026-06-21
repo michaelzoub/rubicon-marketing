@@ -32,6 +32,25 @@ const fade = {
   transition: { duration: 0.8, ease },
 } as const;
 
+// Cards cascade in on scroll, the way the product tiles reveal on aave.com:
+// a parent orchestrates a short stagger, each child rises a beat after the last.
+const cardGrid = {
+  hidden: {},
+  show: { transition: { staggerChildren: 0.11, delayChildren: 0.06 } },
+} as const;
+
+const cardItem = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease } },
+} as const;
+
+const cardGridProps = {
+  variants: cardGrid,
+  initial: "hidden",
+  whileInView: "show",
+  viewport: { once: true, amount: 0.2 },
+} as const;
+
 function StackPanel({
   id,
   className,
@@ -262,9 +281,9 @@ function CreatorValue() {
         <p className="eyebrow">For creators</p>
         <h2 className="mt-4 section-title">Built around what creators actually want.</h2>
 
-        <div className="mt-12 grid gap-5 md:grid-cols-3">
+        <motion.div {...cardGridProps} className="mt-12 grid gap-5 md:grid-cols-3">
           {cards.map((card) => (
-            <div key={card.title} className="card-soft flex flex-col p-7">
+            <motion.div key={card.title} variants={cardItem} className="card-soft flex flex-col p-7">
               <span className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-[var(--river-deep)]">
                 {card.label}
               </span>
@@ -274,9 +293,9 @@ function CreatorValue() {
                 <Check size={13} className="text-[var(--river-deep)]" aria-hidden="true" />
                 {card.footer}
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </motion.div>
     </StackPanel>
   );
@@ -437,17 +456,17 @@ function Agents() {
         <div className="mt-10">
           <AgentSkillSetup />
         </div>
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
+        <motion.div {...cardGridProps} className="mt-6 grid gap-4 md:grid-cols-3">
           {agentCards.map((card) => (
-            <div key={card.title} className="card-soft flex flex-col p-6">
+            <motion.div key={card.title} variants={cardItem} className="card-soft flex flex-col p-6">
               <span className="mono text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[var(--river-deep)]">
                 {card.label}
               </span>
               <h3 className="mt-3 text-lg font-semibold">{card.title}</h3>
               <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{card.copy}</p>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
         <div id="developers" className="mt-10 grid gap-6 scroll-mt-24 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
           <div>
             <p className="eyebrow">For developers</p>

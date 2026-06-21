@@ -179,12 +179,12 @@ function Stepper({ current }: { current: number }) {
         return (
           <li
             key={label}
-            className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm ${
+            className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm ${
               active
-                ? "border-[var(--river)] bg-[var(--river-pale)] text-[var(--river-deep)]"
+                ? "bg-[var(--river-pale)] text-[var(--river-deep)]"
                 : done
-                  ? "border-[#69b88c] bg-[#e8f6ef] text-[#165c3e]"
-                  : "border-[var(--line)] bg-white text-[var(--muted)]"
+                  ? "bg-[#e8f6ef] text-[#165c3e]"
+                  : "bg-[var(--surface-muted)] text-[var(--muted)]"
             }`}
           >
             <span className="mono text-xs">{i + 1}</span>
@@ -207,7 +207,7 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 }
 
 const inputClass =
-  "h-11 rounded-lg border border-[var(--line)] px-3 outline-none focus:border-[var(--river)]";
+  "h-11 rounded-lg bg-[var(--surface-muted)] px-3 outline-none transition focus:bg-white focus:ring-2 focus:ring-[var(--river-line)]";
 
 function StepAddArticle({
   title,
@@ -261,7 +261,7 @@ function StepAddArticle({
           </button>
         </div>
       </div>
-      <div className="mt-6 flex justify-end border-t border-[var(--faint)] pt-5">
+      <div className="mt-6 flex justify-end pt-2">
         <button type="button" onClick={onNext} disabled={!ready} className="button button-primary disabled:opacity-50">
           Review sections <ArrowRight size={16} aria-hidden="true" />
         </button>
@@ -300,7 +300,7 @@ function StepReviewSections({
       </p>
 
       {sections.length === 0 ? (
-        <p className="mt-6 rounded-lg border border-dashed border-[var(--line)] p-6 text-center text-sm text-[var(--muted)]">
+        <p className="mt-6 rounded-lg bg-[var(--surface-muted)] p-6 text-center text-sm text-[var(--muted)]">
           No headings detected. Your article will be offered as a single section. Add Markdown <code className="mono">#</code> headings to split it.
         </p>
       ) : (
@@ -308,7 +308,7 @@ function StepReviewSections({
           {sections.map((section, index) => (
             <li
               key={index}
-              className="grid gap-3 rounded-lg border border-[var(--line)] bg-white p-4 sm:grid-cols-[auto_1fr] sm:items-center"
+              className="grid gap-3 rounded-lg bg-[var(--surface-muted)] p-4 sm:grid-cols-[auto_1fr] sm:items-center"
             >
               <div className="flex flex-col">
                 <button type="button" onClick={() => move(index, -1)} disabled={index === 0} className="text-[var(--muted)] hover:text-[var(--ink)] disabled:opacity-30" aria-label="Move up">
@@ -322,7 +322,7 @@ function StepReviewSections({
                 <input
                   value={section.title}
                   onChange={(e) => update(index, { title: e.target.value })}
-                  className="w-full rounded-md border border-transparent bg-transparent py-1 font-medium outline-none hover:border-[var(--faint)] focus:border-[var(--river)]"
+                  className="w-full rounded-md bg-transparent py-1 font-medium outline-none transition focus:bg-white focus:ring-2 focus:ring-[var(--river-line)]"
                 />
                 <div className="mt-1 text-xs text-[var(--muted)]">{section.wordCount.toLocaleString()} words</div>
               </div>
@@ -331,7 +331,7 @@ function StepReviewSections({
         </ul>
       )}
 
-      <div className="mt-6 flex justify-between border-t border-[var(--faint)] pt-5">
+      <div className="mt-6 flex justify-between pt-2">
         <button type="button" onClick={onBack} className="button button-secondary">
           <ArrowLeft size={16} aria-hidden="true" /> Back
         </button>
@@ -369,7 +369,7 @@ function StepPricing({
       <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_320px]">
         <div className="grid gap-5">
           <Field label="Price per word" hint="Enter the USDC amount per word. Minimum billable value is 0.000001.">
-            <div className="flex items-center rounded-lg border border-[var(--line)] focus-within:border-[var(--river)]">
+            <div className="flex items-center rounded-lg bg-[var(--surface-muted)] focus-within:ring-2 focus-within:ring-[var(--river-line)]">
               <span className="px-3 text-[var(--muted)]">$</span>
               <input
                 value={pricePerWord}
@@ -382,7 +382,7 @@ function StepPricing({
           </Field>
         </div>
 
-        <div className="rounded-xl border border-[var(--line)] bg-[var(--surface-muted)] p-5">
+        <div className="rounded-xl bg-[var(--surface-muted)] p-5">
           <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Pricing preview</div>
           <dl className="mt-4 grid gap-3 text-sm">
             <Row term="Price per word" value={formatUsd(atomicPerWord)} />
@@ -391,13 +391,13 @@ function StepPricing({
             <Row term="Earnings for 1,000 words" value={formatUsd(atomicForWords(atomicPerWord, 1000))} />
             <Row term="Rubicon platform fee" value="0%" />
           </dl>
-          <p className="mt-4 border-t border-[var(--faint)] pt-3 text-xs leading-5 text-[var(--muted)]">
+          <p className="mt-4 rounded-[14px] bg-[var(--surface-muted)] p-3 text-xs leading-5 text-[var(--muted)]">
             Estimates use a preview word count. Billing always reflects the exact words an agent reads, measured by Rubicon.
           </p>
         </div>
       </div>
 
-      <div className="mt-6 flex justify-between border-t border-[var(--faint)] pt-5">
+      <div className="mt-6 flex justify-between pt-2">
         <button type="button" onClick={onBack} className="button button-secondary">
           <ArrowLeft size={16} aria-hidden="true" /> Back
         </button>
@@ -444,7 +444,7 @@ function StepPublish({
       <h2 className="text-lg font-semibold">Review and publish</h2>
       <p className="mt-1 text-sm text-[var(--muted)]">Confirm the details below. You can save a draft or publish it live to agents.</p>
 
-      <dl className="mt-5 grid gap-3 rounded-xl border border-[var(--line)] p-5 text-sm">
+      <dl className="mt-5 grid gap-3 rounded-xl bg-[var(--surface-muted)] p-5 text-sm">
         <Row term="Article title" value={title || "Untitled"} />
         <Row term="Word count" value={includedWords.toLocaleString()} />
         <Row term="Sections" value={sectionCount.toLocaleString()} />
@@ -464,13 +464,13 @@ function StepPublish({
       </dl>
 
       {noWallet && (
-        <p className="mt-4 rounded-lg border border-[#e7c9a3] bg-[#fdf6ec] px-4 py-3 text-sm text-[#7b4e12]">
+        <p className="mt-4 rounded-lg bg-[#fdf6ec] px-4 py-3 text-sm text-[#7b4e12]">
           You can save this as a draft now. Connect a receiving wallet in Settings before publishing so payments have somewhere to go.
         </p>
       )}
 
       {error && (
-        <div className="mt-4 rounded-lg border border-[#e3a2a0] bg-[#fff1f0] px-4 py-3 text-sm text-[#8d2f2d]">
+        <div className="mt-4 rounded-lg bg-[#fff1f0] px-4 py-3 text-sm text-[#8d2f2d]">
           <p>{error}</p>
           {savedDraftId && (
             <Link href={`/dashboard/articles/${savedDraftId}`} className="mt-2 inline-flex font-medium underline underline-offset-2">
@@ -480,7 +480,7 @@ function StepPublish({
         </div>
       )}
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 border-t border-[var(--faint)] pt-5">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 pt-2">
         <button type="button" onClick={onBack} className="button button-secondary">
           <ArrowLeft size={16} aria-hidden="true" /> Back
         </button>
@@ -499,7 +499,7 @@ function StepPublish({
 
 function Row({ term, value, hint }: { term: string; value: React.ReactNode; hint?: string }) {
   return (
-    <div className="grid grid-cols-[1fr_auto] items-baseline gap-4 border-b border-[var(--faint)] pb-3 last:border-0 last:pb-0">
+    <div className="grid grid-cols-[1fr_auto] items-baseline gap-4 rounded-[14px] px-3 py-2 even:bg-[var(--surface-muted)]">
       <dt className="text-[var(--muted)]">{term}</dt>
       <dd className="text-right font-medium">
         {value}

@@ -291,18 +291,18 @@ export function StreamTheater() {
                               ? {
                                   color: "var(--ink)",
                                   backgroundColor: "rgba(var(--river-rgb), 0.24)",
-                                  borderColor: "rgba(var(--river-rgb), 0.42)",
+                                  // borderColor: "rgba(var(--river-rgb), 0.42)",
                                 }
                               : delivered
                                 ? {
                                     color: "var(--river-deep)",
                                     backgroundColor: "rgba(var(--river-rgb), 0.11)",
-                                    borderColor: "rgba(var(--river-rgb), 0.2)",
+                                    // borderColor: "rgba(var(--river-rgb), 0.2)",
                                   }
                                 : {
                                     color: "var(--quiet)",
                                     backgroundColor: "rgba(255, 255, 255, 0)",
-                                    borderColor: "rgba(255, 255, 255, 0)",
+                                    // borderColor: "rgba(255, 255, 255, 0)",
                                   }
                           }
                           transition={{ duration: 0.24, ease }}

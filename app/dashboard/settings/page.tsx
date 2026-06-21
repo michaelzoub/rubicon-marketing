@@ -44,7 +44,7 @@ export default function SettingsPage() {
                   creator.refetch();
                 }}
               />
-              <div className="flex items-center justify-between border-t border-[var(--faint)] pt-4">
+              <div className="flex items-center justify-between rounded-[16px] bg-[var(--surface-muted)] p-4">
                 <span className="text-sm text-[var(--muted)]">Sign out of this device.</span>
                 <button type="button" onClick={() => logout()} className="button button-secondary text-sm">
                   <LogOut size={15} aria-hidden="true" /> Sign out
@@ -56,13 +56,13 @@ export default function SettingsPage() {
           {/* Creator identity */}
           <Card>
             <CardHeader title="Creator identity" />
-            <div className="divide-y divide-[var(--faint)]">
+            <div className="grid gap-2 p-3">
               <div className="flex items-center justify-between gap-4 p-5">
                 <div>
                   <div className="font-medium">Username</div>
                   <div className="mt-0.5 text-sm text-[var(--muted)]">@{creator.data?.username}</div>
                 </div>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-[#69b88c] bg-[#e8f6ef] px-2.5 py-0.5 text-xs font-medium text-[#165c3e]">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#e8f6ef] px-2.5 py-0.5 text-xs font-medium text-[#165c3e]">
                   <ShieldCheck size={13} aria-hidden="true" /> Active
                 </span>
               </div>
@@ -99,7 +99,7 @@ export default function SettingsPage() {
   );
 }
 
-const inputClass = "h-11 rounded-lg border border-[var(--line)] px-3 outline-none focus:border-[var(--river)]";
+const inputClass = "h-11 rounded-lg bg-[var(--surface-muted)] px-3 outline-none transition focus:bg-white focus:ring-2 focus:ring-[var(--river-line)]";
 
 function AccountName({
   initial,
@@ -210,7 +210,7 @@ function WalletEditor({
       </div>
 
       {address ? (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-[var(--surface-muted)] px-4 py-3">
           <div className="grid gap-0.5 min-w-0">
             <span className="mono truncate text-sm">{address}</span>
             <span className="text-xs text-[var(--muted)]">
@@ -234,8 +234,8 @@ function WalletEditor({
         </button>
       )}
 
-      {shownError && <p className="rounded-lg border border-[#e3a2a0] bg-[#fff1f0] px-4 py-3 text-sm text-[#8d2f2d]">{shownError}</p>}
-      <p className="rounded-lg border border-[var(--faint)] bg-[var(--surface-muted)] px-4 py-3 text-xs leading-5 text-[var(--muted)]">
+      {shownError && <p className="rounded-lg bg-[#fff1f0] px-4 py-3 text-sm text-[#8d2f2d]">{shownError}</p>}
+      <p className="rounded-lg bg-[var(--surface-muted)] px-4 py-3 text-xs leading-5 text-[var(--muted)]">
         Payments for your articles are routed directly to this wallet. Rubicon never takes custody of your funds. Your
         wallet is created and secured by Privy when you sign in.
       </p>
@@ -252,7 +252,7 @@ function DeveloperInfo({ creatorId, privyId }: { creatorId: string; privyId: str
         <ChevronDown size={18} className={`text-[var(--muted)] transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
       </button>
       {open && (
-        <div className="grid gap-3 border-t border-[var(--faint)] p-5 text-sm">
+        <div className="grid gap-3 bg-[var(--surface-muted)] p-5 text-sm">
           <DevRow label="Privy ID" value={<code className="mono">{privyId || "—"}</code>} />
           <DevRow label="Creator ID" value={<code className="mono">{creatorId || "—"}</code>} />
         </div>
@@ -263,7 +263,7 @@ function DeveloperInfo({ creatorId, privyId }: { creatorId: string; privyId: str
 
 function DevRow({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="grid grid-cols-[160px_1fr] items-baseline gap-4 border-b border-[var(--faint)] pb-3 last:border-0 last:pb-0">
+    <div className="grid grid-cols-[160px_1fr] items-baseline gap-4 rounded-[14px] px-3 py-2 even:bg-[var(--surface-muted)]">
       <span className="text-[var(--muted)]">{label}</span>
       <span className="min-w-0 break-words">{value}</span>
     </div>

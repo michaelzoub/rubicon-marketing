@@ -74,7 +74,7 @@ export default function EarningsPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[820px] text-sm">
               <thead>
-                <tr className="border-b border-[var(--faint)] text-left text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
+                <tr className="text-left text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
                   <th className="px-5 py-3 font-medium">Date</th>
                   <th className="px-5 py-3 font-medium">Article</th>
                   <th className="px-5 py-3 font-medium">Words read</th>
@@ -87,7 +87,7 @@ export default function EarningsPage() {
               </thead>
               <tbody>
                 {activity.data!.map((row) => (
-                  <tr key={row.id} className="border-b border-[var(--faint)] last:border-0">
+                  <tr key={row.id} className="transition-colors hover:bg-[var(--surface-muted)]">
                     <td className="px-5 py-3 whitespace-nowrap">{formatDate(row.date)}</td>
                     <td className="px-5 py-3"><span className="block max-w-[200px] truncate">{row.articleTitle}</span></td>
                     <td className="px-5 py-3">{row.wordsRead.toLocaleString()}</td>

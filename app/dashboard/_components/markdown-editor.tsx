@@ -75,14 +75,14 @@ export function MarkdownEditor({
   const sectionCount = value.split(/\r?\n/).filter((line) => HEADING_RE.test(line)).length;
 
   return (
-    <div className="overflow-hidden rounded-xl border border-[var(--line)] bg-[var(--surface-muted)]">
+    <div className="overflow-hidden rounded-xl bg-[var(--surface-muted)]">
       <Toolbar editor={editor} />
 
       <div className="p-4">
         <EditorContent editor={editor} />
       </div>
 
-      <div className="flex items-center justify-between border-t border-[var(--line)] bg-white px-4 py-2 text-xs text-[var(--muted)]">
+      <div className="flex items-center justify-between bg-[var(--surface-muted)] px-4 py-2 text-xs text-[var(--muted)]">
         <span>
           {sectionCount} {sectionCount === 1 ? "section" : "sections"}
         </span>
@@ -107,7 +107,7 @@ function Toolbar({ editor }: { editor: Editor | null }) {
   };
 
   return (
-    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-1 border-b border-[var(--line)] bg-white px-3 py-2">
+    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-1 bg-[var(--surface-muted)] px-3 py-2">
       <ToolButton
         label="Section heading"
         disabled={disabled}

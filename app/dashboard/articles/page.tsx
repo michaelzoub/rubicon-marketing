@@ -8,7 +8,6 @@ import { useRubiconMutation, useRubiconQuery } from "@/lib/rubicon/hooks";
 import { formatUsd } from "@/lib/rubicon/pricing";
 import {
   ArticleStatePill,
-  Card,
   EmptyState,
   ErrorState,
   formatRelative,
@@ -57,59 +56,60 @@ export default function ArticlesPage() {
       )}
 
       {(publish.error || pause.error) && (
-        <div className="rounded-lg border border-[#e3a2a0] bg-[#fff1f0] px-4 py-3 text-sm text-[#8d2f2d]">
+        <div className="rounded-lg bg-[#fff1f0] px-4 py-3 text-sm text-[#8d2f2d]">
           {(publish.error ?? pause.error)?.message}
         </div>
       )}
 
       {articles.status === "success" && (articles.data?.length ?? 0) > 0 && (
-        <div className="grid gap-3">
+        <ul className="grid gap-2 p-2">
           {articles.data!.map((article) => (
-            <Card key={article.id} className="p-5">
-              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Link href={`/dashboard/articles/${article.id}`} className="truncate text-lg font-semibold hover:underline">
-                      {article.title}
-                    </Link>
-                    <ArticleStatePill state={article.state} />
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-[var(--muted)]">
-                    <span>{formatUsd(article.pricePerWordAtomic)} / word</span>
-                    <span>{article.usage.wordsRead.toLocaleString()} words read</span>
-                    <span>{article.usage.agentReads.toLocaleString()} agent reads</span>
-                    <span className="font-medium text-[var(--ink)]">{formatUsd(article.usage.earnings)} earned</span>
-                    <span>Last read {formatRelative(article.usage.lastReadAt)}</span>
-                  </div>
-                </div>
-
-                <div className="flex shrink-0 items-center gap-2">
-                  <Link href={`/dashboard/articles/${article.id}`} className="button button-secondary text-sm">
-                    <Pencil size={15} aria-hidden="true" /> Edit
+            <li
+              key={article.id}
+              className="flex flex-col gap-4 py-5 first:pt-0 lg:flex-row lg:items-center lg:justify-between"
+            >
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link href={`/dashboard/articles/${article.id}`} className="truncate text-lg font-semibold hover:underline">
+                    {article.title}
                   </Link>
-                  {article.state !== "archived" && article.state !== "deleted" && (
-                    <button
-                      type="button"
-                      onClick={() => toggle(article)}
-                      disabled={busyId === article.id}
-                      className="button button-secondary text-sm disabled:opacity-50"
-                    >
-                      {article.state === "live" ? (
-                        <>
-                          <Pause size={15} aria-hidden="true" /> Pause
-                        </>
-                      ) : (
-                        <>
-                          <Play size={15} aria-hidden="true" /> Publish
-                        </>
-                      )}
-                    </button>
-                  )}
+                  <ArticleStatePill state={article.state} />
+                </div>
+                <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-[var(--muted)]">
+                  <span>{formatUsd(article.pricePerWordAtomic)} / word</span>
+                  <span>{article.usage.wordsRead.toLocaleString()} words read</span>
+                  <span>{article.usage.agentReads.toLocaleString()} agent reads</span>
+                  <span className="font-medium text-[var(--ink)]">{formatUsd(article.usage.earnings)} earned</span>
+                  <span>Last read {formatRelative(article.usage.lastReadAt)}</span>
                 </div>
               </div>
-            </Card>
+
+              <div className="flex shrink-0 items-center gap-2">
+                <Link href={`/dashboard/articles/${article.id}`} className="button button-secondary text-sm">
+                  <Pencil size={15} aria-hidden="true" /> Edit
+                </Link>
+                {article.state !== "archived" && article.state !== "deleted" && (
+                  <button
+                    type="button"
+                    onClick={() => toggle(article)}
+                    disabled={busyId === article.id}
+                    className="button button-secondary text-sm disabled:opacity-50"
+                  >
+                    {article.state === "live" ? (
+                      <>
+                        <Pause size={15} aria-hidden="true" /> Pause
+                      </>
+                    ) : (
+                      <>
+                        <Play size={15} aria-hidden="true" /> Publish
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

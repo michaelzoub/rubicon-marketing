@@ -159,7 +159,7 @@ export default function OverviewPage() {
               <Card className="p-5">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-2.5">
-                    <span className="grid h-9 w-9 place-items-center rounded-[12px] border border-[var(--river-line)] bg-[var(--river-pale)] text-[var(--river)]">
+                    <span className="grid h-9 w-9 place-items-center rounded-[12px] bg-[var(--river-pale)] text-[var(--river)]">
                       <BarChart3 size={17} aria-hidden="true" />
                     </span>
                     <div>
@@ -167,7 +167,7 @@ export default function OverviewPage() {
                       <p className="text-xs text-[var(--muted)]">Last 14 days</p>
                     </div>
                   </div>
-                  <div className="inline-flex rounded-full border border-[var(--line)] bg-[var(--surface-muted)] p-0.5 text-sm">
+                  <div className="inline-flex rounded-full bg-[var(--surface-muted)] p-0.5 text-sm">
                     <SegButton active={trendMetric === "earnings"} onClick={() => setTrendMetric("earnings")}>
                       Earnings
                     </SegButton>
@@ -190,7 +190,7 @@ export default function OverviewPage() {
             <Reveal delay={0.12}>
               <Card className="p-5">
                 <div className="flex items-center gap-2.5">
-                  <span className="grid h-9 w-9 place-items-center rounded-[12px] border border-[var(--river-line)] bg-[var(--river-pale)] text-[var(--river)]">
+                  <span className="grid h-9 w-9 place-items-center rounded-[12px] bg-[var(--river-pale)] text-[var(--river)]">
                     <PieChart size={17} aria-hidden="true" />
                   </span>
                   <div>
@@ -244,9 +244,9 @@ export default function OverviewPage() {
               </div>
             )}
             {activity.status === "success" && (activity.data?.length ?? 0) > 0 && (
-              <ul className="divide-y divide-[var(--faint)]">
+              <ul className="grid gap-1 px-2 pb-2">
                 {activity.data!.slice(0, 5).map((row) => (
-                  <li key={row.id} className="flex items-center justify-between gap-4 px-5 py-4">
+                  <li key={row.id} className="flex items-center justify-between gap-4 rounded-[16px] px-3 py-4 hover:bg-[var(--surface-muted)]">
                     <div className="min-w-0">
                       <div className="truncate font-medium">{row.articleTitle}</div>
                       <div className="text-xs text-[var(--muted)]">
@@ -282,10 +282,10 @@ export default function OverviewPage() {
                 />
               </div>
             ) : (
-              <ul className="divide-y divide-[var(--faint)]">
+              <ul className="grid gap-1 px-2 pb-2">
                 {(articles.data ?? []).slice(0, 4).map((a) => (
                   <li key={a.id}>
-                    <Link href={`/dashboard/articles/${a.id}`} className="flex items-center justify-between gap-4 px-5 py-4 hover:bg-[var(--surface-muted)]">
+                    <Link href={`/dashboard/articles/${a.id}`} className="flex items-center justify-between gap-4 rounded-[16px] px-3 py-4 hover:bg-[var(--surface-muted)]">
                       <div className="min-w-0">
                         <div className="truncate font-medium">{a.title}</div>
                         <div className="text-xs text-[var(--muted)]">{a.usage.wordsRead.toLocaleString()} words read</div>
@@ -356,9 +356,9 @@ function OnchainCard({ address }: { address: string | null }) {
           />
         </div>
       ) : (
-        <div className="grid gap-px overflow-hidden rounded-b-[22px] bg-[var(--faint)] sm:grid-cols-3">
+        <div className="grid gap-2 px-3 pb-3 sm:grid-cols-3">
           {/* Wallet address */}
-          <div className="bg-white p-5">
+          <div className="rounded-[16px] bg-[var(--surface-muted)] p-5">
             <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Wallet address</div>
             <div className="mt-2 flex items-center gap-2">
               <span className="mono text-sm font-medium">{shortWallet(address)}</span>
@@ -378,7 +378,7 @@ function OnchainCard({ address }: { address: string | null }) {
           </div>
 
           {/* Network */}
-          <div className="bg-white p-5">
+          <div className="rounded-[16px] bg-[var(--surface-muted)] p-5">
             <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Network</div>
             <div className="mt-2 flex items-center gap-2 text-sm font-medium">
               <Link2 size={15} className="text-[var(--river)]" aria-hidden="true" /> {ACTIVE_CHAIN.name}
@@ -387,7 +387,7 @@ function OnchainCard({ address }: { address: string | null }) {
           </div>
 
           {/* Balance */}
-          <div className="bg-white p-5">
+          <div className="rounded-[16px] bg-[var(--surface-muted)] p-5">
             <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Balance</div>
             <div className="mt-2 text-2xl font-semibold tracking-[-0.01em]">
               {balance.status === "loading" ? (
@@ -501,7 +501,7 @@ function ChecklistItem({
   cta?: string;
 }) {
   return (
-    <li className="flex items-start gap-3 rounded-lg border border-[var(--faint)] p-4">
+    <li className="flex items-start gap-3 rounded-lg bg-[var(--surface-muted)] p-4">
       {done ? (
         <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-[var(--green)]" aria-hidden="true" />
       ) : (

@@ -19,7 +19,7 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-4 border-b border-[var(--faint)] pb-6 sm:flex-row sm:items-end sm:justify-between">
+    <div className="flex flex-col gap-4 pb-2 sm:flex-row sm:items-end sm:justify-between">
       <div>
         <h1 className="text-2xl font-semibold tracking-[-0.01em] sm:text-3xl">{title}</h1>
         {description && <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">{description}</p>}
@@ -30,12 +30,12 @@ export function PageHeader({
 }
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`dashboard-card rounded-[22px] border border-[var(--line)] bg-white ${className}`}>{children}</div>;
+  return <div className={`dashboard-card rounded-[22px] bg-white ${className}`}>{children}</div>;
 }
 
 export function CardHeader({ title, action }: { title: string; action?: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-[var(--faint)] px-5 py-4">
+    <div className="flex items-center justify-between gap-3 px-5 pb-3 pt-5">
       <h2 className="text-base font-semibold">{title}</h2>
       {action}
     </div>
@@ -56,7 +56,7 @@ export function StatTile({ label, value, hint }: { label: string; value: ReactNo
 
 export function LoadingState({ label = "Loading…" }: { label?: string }) {
   return (
-    <div className="dashboard-card flex items-center justify-center gap-3 rounded-[22px] border border-[var(--faint)] bg-white px-6 py-16 text-sm text-[var(--muted)]">
+    <div className="dashboard-card flex items-center justify-center gap-3 rounded-[22px] bg-white px-6 py-16 text-sm text-[var(--muted)]">
       <Loader2 size={18} className="animate-spin text-[var(--river)]" aria-hidden="true" />
       {label}
     </div>
@@ -75,8 +75,8 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="dashboard-card flex flex-col items-center rounded-[22px] border border-dashed border-[var(--line)] bg-white px-6 py-16 text-center">
-      <span className="grid h-12 w-12 place-items-center rounded-[18px] border border-[var(--river-line)] bg-[var(--river-pale)] text-[var(--river)]">
+    <div className="dashboard-card flex flex-col items-center rounded-[22px] bg-white px-6 py-16 text-center">
+      <span className="grid h-12 w-12 place-items-center rounded-[18px] bg-[var(--river-pale)] text-[var(--river)]">
         {icon ?? <Inbox size={22} aria-hidden="true" />}
       </span>
       <h3 className="mt-4 text-lg font-semibold">{title}</h3>
@@ -90,7 +90,7 @@ export function ErrorState({ error, onRetry }: { error: RubiconError; onRetry?: 
   const isAuth = error.kind === "auth";
   const isConfig = error.code === "not_configured";
   return (
-    <div className="flex flex-col items-center rounded-xl border border-[#e7c9a3] bg-[#fdf6ec] px-6 py-14 text-center">
+    <div className="flex flex-col items-center rounded-xl bg-[#fdf6ec] px-6 py-14 text-center">
       <span className="grid h-12 w-12 place-items-center rounded-full bg-[#f6e6cf] text-[#9a6516]">
         {isAuth ? <LogIn size={22} aria-hidden="true" /> : <AlertTriangle size={22} aria-hidden="true" />}
       </span>
@@ -110,16 +110,16 @@ export function ErrorState({ error, onRetry }: { error: RubiconError; onRetry?: 
 /* ---------- pills ---------- */
 
 const stateStyles: Record<ArticleState, string> = {
-  draft: "border-[var(--line)] bg-[var(--surface-muted)] text-[var(--muted)]",
-  live: "border-[#69b88c] bg-[#e8f6ef] text-[#165c3e]",
-  paused: "border-[#e0b15f] bg-[#fff8ed] text-[#7b4e12]",
-  archived: "border-[var(--line)] bg-white text-[var(--muted)]",
-  deleted: "border-[#e3a2a0] bg-[#fff1f0] text-[#8d2f2d]",
+  draft: "bg-[#eceef4] text-[#5f6470]",
+  live: "bg-[#dff5e9] text-[#176342]",
+  paused: "bg-[#fff0d5] text-[#80520f]",
+  archived: "bg-[#eceef4] text-[#5f6470]",
+  deleted: "bg-[#fde4e2] text-[#963b37]",
 };
 
 export function ArticleStatePill({ state }: { state: ArticleState }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium ${stateStyles[state]}`}>
+    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${stateStyles[state]}`}>
       <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
       {ARTICLE_STATE_LABELS[state]}
     </span>
@@ -127,14 +127,14 @@ export function ArticleStatePill({ state }: { state: ArticleState }) {
 }
 
 const paymentStyles: Record<PaymentStatus, string> = {
-  settled: "border-[#69b88c] bg-[#e8f6ef] text-[#165c3e]",
-  pending: "border-[#e0b15f] bg-[#fff8ed] text-[#7b4e12]",
-  failed: "border-[#e3a2a0] bg-[#fff1f0] text-[#8d2f2d]",
+  settled: "bg-[#dff5e9] text-[#176342]",
+  pending: "bg-[#fff0d5] text-[#80520f]",
+  failed: "bg-[#fde4e2] text-[#963b37]",
 };
 
 export function PaymentStatusPill({ status }: { status: PaymentStatus }) {
   return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium capitalize ${paymentStyles[status]}`}>
+    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold capitalize ${paymentStyles[status]}`}>
       {status}
     </span>
   );
@@ -143,10 +143,10 @@ export function PaymentStatusPill({ status }: { status: PaymentStatus }) {
 export function WalletStatePill({ verified }: { verified: boolean }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${
+      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
         verified
-          ? "border-[#69b88c] bg-[#e8f6ef] text-[#165c3e]"
-          : "border-[var(--line)] bg-[var(--surface-muted)] text-[var(--muted)]"
+          ? "bg-[#e8f6ef] text-[#165c3e]"
+          : "bg-[var(--surface-muted)] text-[var(--muted)]"
       }`}
     >
       {verified ? "Verified" : "Unverified"}

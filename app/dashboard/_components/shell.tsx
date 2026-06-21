@@ -76,7 +76,7 @@ function Sidebar() {
       : user?.email?.address ?? (user?.wallet?.address ? `${user.wallet.address.slice(0, 6)}…` : "Creator");
 
   return (
-    <aside className="dashboard-sidebar sticky top-0 hidden h-screen flex-col border-r border-[var(--line)] bg-white lg:flex">
+    <aside className="dashboard-sidebar sticky top-0 hidden h-screen flex-col bg-white lg:flex">
       <Link href="/" className="flex items-center gap-2 px-6 py-5 font-semibold">
         <Waves size={20} strokeWidth={1.9} className="text-[var(--river)]" aria-hidden="true" />
         Rubicon
@@ -109,7 +109,7 @@ function Sidebar() {
         </ul>
       </nav>
 
-      <div className="border-t border-[var(--faint)] p-3">
+      <div className="p-3">
         <a
           href="/#developers"
           className="dashboard-nav-link flex items-center gap-3 rounded-full px-3 py-2 text-sm font-medium text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)]"
@@ -131,7 +131,7 @@ function MobileBar() {
   const pathname = usePathname();
   const { logout } = usePrivy();
   return (
-    <div className="sticky top-0 z-30 border-b border-[var(--line)] bg-white/90 backdrop-blur lg:hidden">
+    <div className="sticky top-0 z-30 bg-white/90 shadow-[0_8px_24px_-20px_rgba(20,35,60,0.3)] backdrop-blur lg:hidden">
       <div className="flex items-center justify-between px-5 py-3">
         <Link href="/" className="flex items-center gap-2 font-semibold">
           <Waves size={18} className="text-[var(--river)]" aria-hidden="true" /> Rubicon
@@ -176,9 +176,9 @@ function ConfigNotice() {
       </span>
       <h1 className="mt-5 text-2xl font-semibold">Connect creator login</h1>
       <p className="mt-2 max-w-md text-sm leading-6 text-[var(--muted)]">
-        Set <code className="mono rounded border border-[var(--line)] bg-white px-1.5 py-0.5">NEXT_PUBLIC_PRIVY_APP_ID</code>,{" "}
-        <code className="mono rounded border border-[var(--line)] bg-white px-1.5 py-0.5">NEXT_PUBLIC_SUPABASE_URL</code>, and{" "}
-        <code className="mono rounded border border-[var(--line)] bg-white px-1.5 py-0.5">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> to enable
+        Set <code className="mono rounded bg-[var(--surface-muted)] px-1.5 py-0.5">NEXT_PUBLIC_PRIVY_APP_ID</code>,{" "}
+        <code className="mono rounded bg-[var(--surface-muted)] px-1.5 py-0.5">NEXT_PUBLIC_SUPABASE_URL</code>, and{" "}
+        <code className="mono rounded bg-[var(--surface-muted)] px-1.5 py-0.5">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> to enable
         sign-in and load live data.
       </p>
       <Link href="/" className="mt-6 text-sm text-[var(--muted)] hover:text-[var(--ink)]">
