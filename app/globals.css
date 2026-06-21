@@ -11,11 +11,11 @@
   --quiet: #727780;
   --faint: rgba(255, 255, 255, 0.08);
   --line: rgba(255, 255, 255, 0.15);
-  --river: #3f7098;
-  --river-deep: #91b9dc;
-  --river-rgb: 63, 112, 152;
-  --river-pale: rgba(63, 112, 152, 0.2);
-  --river-line: rgba(103, 158, 204, 0.34);
+  --river: #2f80ed;
+  --river-deep: #7fb4ff;
+  --river-rgb: 47, 128, 237;
+  --river-pale: rgba(47, 128, 237, 0.22);
+  --river-line: rgba(110, 165, 255, 0.42);
   --green: #58d59b;
   --amber: #e0b76d;
   --red: #f07878;
@@ -261,21 +261,20 @@ a {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  border: 1px solid rgba(102, 216, 202, 0.34);
+  border: 0;
   border-radius: 999px;
-  background: rgba(var(--river-rgb), 0.3);
-  color: #f7f7f8;
+  background: var(--river);
+  color: #ffffff;
   font-weight: 700;
   letter-spacing: -0.01em;
   padding: 0 1.05rem;
   transition:
     transform var(--duration-med) var(--ease-out),
-    border-color 280ms ease,
     background-color var(--duration-med) var(--ease-out);
 }
 
 .explore-pill:hover {
-  border-color: rgba(102, 216, 202, 0.58);
+  background: #3d8bff;
   transform: translateY(-1px);
 }
 
@@ -338,14 +337,13 @@ a {
 }
 
 .button-secondary {
-  border: 1px solid var(--faint);
-  background: rgba(255, 255, 255, 0.045);
+  border: 0;
+  background: rgba(255, 255, 255, 0.06);
   color: var(--ink);
 }
 
 .button-secondary:hover {
-  background: var(--hovered);
-  border-color: var(--line);
+  background: rgba(255, 255, 255, 0.1);
   transform: translateY(-2px);
 }
 
@@ -387,17 +385,16 @@ a {
 }
 
 .card-soft {
-  border: 1px solid var(--faint);
-  background: var(--card);
-  border-radius: var(--radius-lg);
+  border: 0;
+  background: #16181d;
+  border-radius: var(--radius-xl);
   transition:
     transform 360ms var(--ease-out),
-    border-color 360ms ease,
     background-color 360ms ease;
 }
 
 .card-soft:hover {
-  border-color: var(--line);
+  background: #1a1d23;
 }
 
 /* ---------- How it works — vertical showcase ---------- */
@@ -414,10 +411,9 @@ a {
 
 .hiw-panel {
   overflow: hidden;
-  border: 1px solid var(--faint);
-  border-radius: var(--radius-lg);
-  background: #121418;
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.3);
+  border: 0;
+  border-radius: var(--radius-xl);
+  background: #16181d;
 }
 
 .hiw-step {
@@ -457,36 +453,13 @@ a {
 
 .stream-theater {
   isolation: isolate;
-  border-color: rgba(255, 255, 255, 0.13);
-  background: #121418;
-  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.32);
-}
-
-.stream-theater::before {
-  content: "";
-  position: absolute;
-  inset: 13px;
-  z-index: -1;
-  border: 1px solid rgba(255, 255, 255, 0.055);
-  border-radius: calc(var(--radius-lg) - 10px);
-  pointer-events: none;
+  border: 0;
+  background: #16181d;
 }
 
 .agent-token {
   position: relative;
   border-radius: 15px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
-    0 8px 20px rgba(0, 0, 0, 0.4);
-}
-
-.agent-token.is-active {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
-    0 8px 22px rgba(0, 0, 0, 0.45),
-    0 0 0 4px rgba(145, 185, 220, 0.14);
 }
 
 .agent-token svg {
@@ -498,9 +471,9 @@ a {
   position: relative;
   min-height: 510px;
   overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-lg);
-  background: #121418;
+  border: 0;
+  border-radius: var(--radius-xl);
+  background: #16181d;
   padding: 28px;
 }
 
@@ -510,9 +483,9 @@ a {
   gap: 10px;
   width: fit-content;
   max-width: 88%;
-  border: 1px solid var(--line);
+  border: 0;
   border-radius: 999px;
-  background: var(--surface);
+  background: #20242b;
   padding: 10px 14px;
   color: var(--muted);
   font-size: 0.78rem;
@@ -559,13 +532,8 @@ a {
   height: 58px;
   place-items: center;
   border-radius: 15px;
-  background: #3f7da1;
+  background: var(--river);
   color: white;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
-    0 8px 20px rgba(0, 0, 0, 0.4),
-    0 0 0 4px rgba(145, 185, 220, 0.12);
 }
 
 .seller-agent-node div { display: grid; justify-items: start; gap: 6px; min-width: 96px; }
@@ -598,9 +566,9 @@ a {
   bottom: 28px;
   left: 28px;
   overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: #17191e;
+  border: 0;
+  border-radius: 14px;
+  background: #1b1e24;
 }
 
 .seller-document-head { display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--faint); padding: 12px 15px; }
@@ -640,11 +608,10 @@ a {
   z-index: 3;
   display: grid;
   gap: 3px;
-  border: 1px solid var(--river-line);
-  border-radius: 9px;
-  background: #1b2026;
+  border: 0;
+  border-radius: 12px;
+  background: #20262e;
   padding: 9px 12px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
   animation: seller-result 4.6s var(--ease-in-out) infinite;
 }
 .seller-result span { color: var(--river-deep); font-family: var(--font-mono), monospace; font-size: 0.55rem; text-transform: uppercase; }

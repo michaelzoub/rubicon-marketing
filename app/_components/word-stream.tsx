@@ -110,9 +110,7 @@ function WordStreamAnimated() {
 
   return (
     <div
-      className={`overflow-hidden rounded-2xl border bg-[var(--card)] transition-colors duration-500 ${
-        done ? "border-[rgba(88,213,155,0.38)]" : bundled ? "border-[var(--river-line)]" : "border-[var(--line)]"
-      }`}
+      className="overflow-hidden rounded-2xl bg-[var(--card)] transition-colors duration-500"
     >
       <div className="flex items-center justify-between border-b border-[var(--faint)] bg-[var(--surface-muted)] px-5 py-3">
         <span className="mono text-[0.66rem] uppercase tracking-[0.16em] text-[var(--muted)]">Paid word stream</span>
@@ -138,7 +136,7 @@ function WordStreamAnimated() {
                   <Layers size={15} className="text-[var(--river-deep)]" aria-hidden="true" />
                   Bundled reads · {BUNDLE_SIZE} words, 1 payment
                 </span>
-                <span className="mono flex shrink-0 items-center gap-1 rounded-full border border-[rgba(88,213,155,0.4)] bg-[rgba(88,213,155,0.1)] px-2 py-0.5 text-[0.62rem] font-medium text-[var(--green)]">
+                <span className="mono flex shrink-0 items-center gap-1 rounded-full bg-[rgba(88,213,155,0.14)] px-2 py-0.5 text-[0.62rem] font-medium text-[var(--green)]">
                   <Zap size={11} aria-hidden="true" /> ×{BUNDLE_SIZE} faster
                 </span>
               </motion.div>
@@ -189,7 +187,7 @@ function WordStreamAnimated() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.35, ease }}
-                className="flex h-full flex-col justify-center rounded-lg border border-[rgba(88,213,155,0.38)] bg-[rgba(88,213,155,0.1)] px-4"
+                className="flex h-full flex-col justify-center rounded-lg bg-[rgba(88,213,155,0.14)] px-4"
               >
                 <div className="flex items-center gap-2 text-sm font-semibold text-[var(--ink)]">
                   <CheckCircle2 size={16} aria-hidden="true" /> {BUNDLE_COUNT * BUNDLE_SIZE} words delivered in {BUNDLE_COUNT} payments
@@ -226,7 +224,7 @@ function PerWordLedger({ count }: { count: number }) {
           initial={i === 0 ? { opacity: 0, y: -6 } : false}
           animate={{ opacity: 1 - i * 0.12, y: 0 }}
           transition={{ duration: 0.28, ease }}
-          className="mono flex items-center justify-between rounded-md border border-[var(--faint)] bg-[var(--surface)] px-3 py-1.5 text-xs"
+          className="mono flex items-center justify-between rounded-md bg-[#20242b] px-3 py-1.5 text-xs"
         >
           <span className="flex items-center gap-1.5 text-[var(--ink)]">
             <Coins size={11} className="text-[var(--river-deep)]" aria-hidden="true" />
@@ -265,7 +263,7 @@ function BundledLedger({ count }: { count: number }) {
             initial={i === 0 ? { opacity: 0, x: 18, scale: 0.96 } : false}
             animate={{ opacity: 1 - i * 0.16, x: 0, scale: 1 }}
             transition={{ duration: 0.34, ease }}
-            className="rounded-lg border border-[var(--river-line)] bg-[var(--river-pale)] px-3 py-2"
+            className="rounded-lg bg-[var(--river-pale)] px-3 py-2"
           >
             <div className="mono flex items-center justify-between text-[0.62rem] text-[var(--muted)]">
               <span>
@@ -295,14 +293,14 @@ function WordStreamStatic() {
   const bundledPayments = compareWords / BUNDLE_SIZE;
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--card)]">
+    <div className="overflow-hidden rounded-2xl bg-[var(--card)]">
       <div className="flex items-center justify-between border-b border-[var(--faint)] bg-[var(--surface-muted)] px-5 py-3">
         <span className="mono text-[0.66rem] uppercase tracking-[0.16em] text-[var(--muted)]">Paid word stream</span>
         <span className="mono text-xs text-[var(--river-deep)]">two modes</span>
       </div>
 
       <div className="grid gap-3 px-5 py-4 sm:grid-cols-2">
-        <div className="rounded-lg border border-[var(--line)] bg-[var(--surface)] p-4">
+        <div className="rounded-lg bg-[#20242b] p-4">
           <div className="flex items-center gap-2 text-sm font-semibold text-[var(--ink)]">
             <Coins size={15} className="text-[var(--river-deep)]" aria-hidden="true" /> Per-word streaming
           </div>
@@ -314,12 +312,12 @@ function WordStreamStatic() {
           </dl>
         </div>
 
-        <div className="rounded-lg border border-[var(--river-line)] bg-[var(--river-pale)] p-4">
+        <div className="rounded-lg bg-[var(--river-pale)] p-4">
           <div className="flex items-center justify-between gap-2">
             <span className="flex items-center gap-2 text-sm font-semibold text-[var(--ink)]">
               <Layers size={15} className="text-[var(--river-deep)]" aria-hidden="true" /> Bundled reads
             </span>
-            <span className="mono flex items-center gap-1 rounded-full border border-[rgba(88,213,155,0.4)] bg-[rgba(88,213,155,0.1)] px-2 py-0.5 text-[0.62rem] font-medium text-[var(--green)]">
+            <span className="mono flex items-center gap-1 rounded-full bg-[rgba(88,213,155,0.14)] px-2 py-0.5 text-[0.62rem] font-medium text-[var(--green)]">
               <Zap size={11} aria-hidden="true" /> ×{BUNDLE_SIZE} faster
             </span>
           </div>

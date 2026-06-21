@@ -3,18 +3,13 @@
 import { motion } from "framer-motion";
 import {
   ArrowRight,
-  BadgeCheck,
   BookOpen,
   Check,
-  Coins,
   Copy,
-  FileText,
   Github,
   Link2,
   LockKeyhole,
-  MessageSquare,
   Search,
-  Settings2,
   Waves,
 } from "lucide-react";
 import Link from "next/link";
@@ -108,7 +103,7 @@ function CodeShowcase() {
           </button>
         ))}
       </div>
-      <div className="mt-6 overflow-hidden rounded-lg border border-[var(--line)] bg-[#1d1d1f]">
+      <div className="mt-6 overflow-hidden rounded-xl bg-[#1d1d1f]">
         <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.06)] px-5 py-3">
           <div className="flex items-center gap-3">
             <span className="h-2.5 w-2.5 rounded-full bg-[#f58bb2]" />
@@ -142,7 +137,7 @@ function AgentSkillSetup() {
   };
 
   return (
-    <div className="setup-skill-panel rounded-lg border border-[var(--river-line)] p-6 md:p-7">
+    <div className="setup-skill-panel rounded-xl p-6 md:p-7">
       <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <div className="flex items-center gap-2 text-base font-semibold">
@@ -157,7 +152,7 @@ function AgentSkillSetup() {
           {copied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />} {copied ? "Copied" : "Copy prompt"}
         </button>
       </div>
-      <code className="mono mt-5 block overflow-x-auto rounded-md border border-[var(--river-line)] bg-[rgba(0,0,0,0.28)] px-4 py-4 text-sm leading-7 text-[var(--ink)]">
+      <code className="mono mt-5 block overflow-x-auto rounded-lg bg-[rgba(0,0,0,0.28)] px-4 py-4 text-sm leading-7 text-[var(--ink)]">
         {setupSkillPrompt}
       </code>
     </div>
@@ -243,19 +238,19 @@ function Hero() {
 function CreatorValue() {
   const cards = [
     {
-      icon: <Coins size={20} aria-hidden="true" />,
+      label: "Revenue",
       title: "Earn from agent traffic",
       copy: "Make premium research readable by AI systems without giving away the full article. Every read is a sale, settled in USDC.",
       footer: "0% platform fee",
     },
     {
-      icon: <Settings2 size={20} aria-hidden="true" />,
+      label: "Control",
       title: "Stay in control",
       copy: "You set the price, the availability, and exactly which sections agents are allowed to navigate.",
       footer: "Your terms, always",
     },
     {
-      icon: <BadgeCheck size={20} aria-hidden="true" />,
+      label: "Attribution",
       title: "Get paid for exact usage",
       copy: "Read 137 words, earn for 137 words. Never an arbitrary bundle or a full-article purchase.",
       footer: "Word-for-word attribution",
@@ -270,13 +265,13 @@ function CreatorValue() {
         <div className="mt-12 grid gap-5 md:grid-cols-3">
           {cards.map((card) => (
             <div key={card.title} className="card-soft flex flex-col p-7">
-              <span className="grid h-10 w-10 place-items-center rounded-lg bg-[var(--river-pale)] text-[var(--river-deep)]">
-                {card.icon}
+              <span className="text-[0.72rem] font-semibold uppercase tracking-[0.14em] text-[var(--river-deep)]">
+                {card.label}
               </span>
-              <h3 className="mt-5 text-xl font-semibold">{card.title}</h3>
-              <p className="mt-2 leading-7 text-[var(--muted)]">{card.copy}</p>
-              <div className="mono mt-6 flex items-center gap-2 border-t border-[var(--faint)] pt-4 text-[0.72rem] uppercase tracking-[0.1em] text-[var(--river-deep)]">
-                <Check size={13} aria-hidden="true" />
+              <h3 className="mt-3 text-xl font-semibold">{card.title}</h3>
+              <p className="mt-3 leading-7 text-[var(--muted)]">{card.copy}</p>
+              <div className="mono mt-auto flex items-center gap-2 pt-6 text-[0.72rem] uppercase tracking-[0.1em] text-[var(--quiet)]">
+                <Check size={13} className="text-[var(--river-deep)]" aria-hidden="true" />
                 {card.footer}
               </div>
             </div>
@@ -311,7 +306,6 @@ function SellerAgent() {
           </div>
           <div className="seller-document">
             <div className="seller-document-head">
-              <div><FileText size={15} /> Premium research</div>
               <LockKeyhole size={14} className="text-[var(--muted)]" />
             </div>
             <div className="seller-section"><span>01</span><div><strong>Market overview</strong><i /></div></div>
@@ -362,7 +356,7 @@ function StreamDemoSection() {
 function BrandChip({ name, src }: { name: string; src: string }) {
   const [failed, setFailed] = useState(false);
   return (
-    <div className="flex h-16 items-center justify-center rounded-xl border border-[var(--faint)] bg-[var(--surface-muted)] px-5">
+    <div className="flex h-16 items-center justify-center rounded-xl bg-[#16181d] px-5">
       {failed ? (
         <span className="text-lg font-semibold tracking-[-0.01em]">{name}</span>
       ) : (
@@ -414,17 +408,17 @@ function Settlement() {
 function Agents() {
   const agentCards = [
     {
-      icon: <MessageSquare size={18} aria-hidden="true" />,
+      label: "01 · Connect",
       title: "Start from chat",
       copy: "Copy the prompt into Codex or another agent. The skill setup happens in the agent's own workflow.",
     },
     {
-      icon: <Coins size={18} aria-hidden="true" />,
+      label: "02 · Fund",
       title: "Cap every read",
       copy: "Set the buyer wallet and maximum spend before paid words stream.",
     },
     {
-      icon: <Check size={18} aria-hidden="true" />,
+      label: "03 · Read",
       title: "Stop when answered",
       copy: "The agent pays word by word and can stop before buying the full article.",
     },
@@ -443,9 +437,11 @@ function Agents() {
         </div>
         <div className="mt-6 grid gap-4 md:grid-cols-3">
           {agentCards.map((card) => (
-            <div key={card.title} className="card-soft p-5">
-              <span className="grid h-9 w-9 place-items-center rounded-lg bg-[var(--river-pale)] text-[var(--river)]">{card.icon}</span>
-              <h3 className="mt-4 text-lg font-semibold">{card.title}</h3>
+            <div key={card.title} className="card-soft flex flex-col p-6">
+              <span className="mono text-[0.68rem] font-semibold uppercase tracking-[0.14em] text-[var(--river-deep)]">
+                {card.label}
+              </span>
+              <h3 className="mt-3 text-lg font-semibold">{card.title}</h3>
               <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{card.copy}</p>
             </div>
           ))}
@@ -458,7 +454,7 @@ function Agents() {
               Wire Rubicon into your own agent loop, set a spend cap, and stream paid words when your workflow needs
               them.
             </p>
-            <div className="mono mt-5 rounded-lg border border-[var(--river-line)] bg-[var(--river-pale)] px-4 py-3 text-sm text-[var(--river-deep)]">
+            <div className="mono mt-5 rounded-lg bg-[var(--river-pale)] px-4 py-3 text-sm text-[var(--river-deep)]">
               npm install @rubicon-caliga/agent-sdk
             </div>
           </div>

@@ -207,7 +207,7 @@ export function StreamTheater() {
                 initial={{ left: "72%", opacity: 0, scale: 0.92 }}
                 animate={{ left: "28%", opacity: [0, 1, 1, 0], scale: 1 }}
                 transition={{ duration: 1.0, ease, times: [0, 0.18, 0.8, 1] }}
-                className="mono pointer-events-none absolute top-[30px] z-10 w-[116px] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--river-line)] bg-[var(--surface)] px-2.5 py-1 text-center text-[0.62rem] text-[var(--river-deep)]"
+                className="mono pointer-events-none absolute top-[30px] z-10 w-[116px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#262b33] px-2.5 py-1 text-center text-[0.62rem] text-[var(--river-deep)]"
               >
                 {p.word}
               </motion.div>
@@ -223,7 +223,7 @@ export function StreamTheater() {
                 animate={{ left: "72%", opacity: [0, 0.7, 0.7, 0], scale: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.7, ease, times: [0, 0.25, 0.8, 1] }}
-                className="mono pointer-events-none absolute top-[42px] z-20 flex -translate-x-1/2 -translate-y-1/2 items-center gap-0.5 rounded-full border border-[rgba(88,213,155,0.5)] bg-[var(--surface)] px-1.5 py-[1px] text-[0.5rem] font-medium text-[var(--green)]"
+                className="mono pointer-events-none absolute top-[42px] z-20 flex -translate-x-1/2 -translate-y-1/2 items-center gap-0.5 rounded-full bg-[rgba(88,213,155,0.18)] px-1.5 py-[1px] text-[0.5rem] font-medium text-[var(--green)]"
                 aria-hidden="true"
               >
                 <Coins size={8} aria-hidden="true" />
@@ -263,7 +263,7 @@ export function StreamTheater() {
           </AnimatePresence>
         </div>
 
-        <div className="mt-3 min-w-0 overflow-hidden rounded-[24px] border border-[var(--faint)] bg-[rgba(25,25,28,0.82)]">
+        <div className="mt-3 min-w-0 overflow-hidden rounded-[24px] bg-[rgba(25,25,28,0.82)]">
           <div
             ref={articleRef}
             className="article-scroll h-[154px] overflow-y-auto px-3.5 py-3 text-sm leading-6 text-[var(--quiet)]"
@@ -355,7 +355,7 @@ export function StreamTheater() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.5, ease }}
-                className="flex h-full items-center justify-between gap-3 rounded-xl border border-[rgba(88,213,155,0.34)] bg-[rgba(88,213,155,0.1)] px-3.5"
+                className="flex h-full items-center justify-between gap-3 rounded-xl bg-[rgba(88,213,155,0.14)] px-3.5"
               >
                 <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-[var(--ink)]">
                   <Check size={15} aria-hidden="true" /> Answer found · agent stopped
@@ -404,10 +404,10 @@ function Agent({
       <div className={`flex min-w-0 max-w-full flex-col gap-1.5 ${side === "right" ? "items-end" : "items-start"}`}>
         <div className="text-[0.8rem] font-semibold leading-tight text-[var(--ink)]">{name}</div>
         <span
-          className={`mono inline-flex items-center gap-1.5 rounded-md border px-1.5 py-[3px] text-[0.55rem] uppercase tracking-[0.1em] transition-colors duration-300 ${
+          className={`mono inline-flex items-center gap-1.5 rounded-md px-1.5 py-[3px] text-[0.55rem] uppercase tracking-[0.1em] transition-colors duration-300 ${
             active
-              ? "border-[rgba(145,185,220,0.4)] bg-[rgba(63,125,161,0.16)] text-[var(--river-deep)]"
-              : "border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.02)] text-[var(--muted)]"
+              ? "bg-[rgba(63,125,161,0.22)] text-[var(--river-deep)]"
+              : "bg-[rgba(255,255,255,0.05)] text-[var(--muted)]"
           }`}
         >
           <span
@@ -434,17 +434,17 @@ function Bubble({
 }) {
   const styles =
     tone === "seller"
-      ? "border-[var(--river-line)] bg-[var(--river-pale)] text-[var(--ink)]"
+      ? "bg-[var(--river-pale)] text-[var(--ink)]"
       : tone === "answer"
-        ? "border-[rgba(88,213,155,0.34)] bg-[rgba(88,213,155,0.1)] text-[var(--ink)]"
-        : "border-[var(--faint)] bg-[var(--surface-muted)] text-[var(--ink)]";
+        ? "bg-[rgba(88,213,155,0.14)] text-[var(--ink)]"
+        : "bg-[#20242b] text-[var(--ink)]";
   return (
     <motion.div
       initial={{ opacity: 0, y: 10, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       exit={{ opacity: 0, y: -6, scale: 0.97 }}
       transition={{ duration: 0.45, ease }}
-      className={`flex max-w-[92%] items-start gap-2 rounded-2xl border px-3.5 py-2 text-[0.78rem] leading-5 ${styles} ${
+      className={`flex max-w-[92%] items-start gap-2 rounded-2xl px-3.5 py-2 text-[0.78rem] leading-5 ${styles} ${
         side === "right" ? "ml-auto rounded-br-sm" : "mr-auto rounded-bl-sm"
       }`}
     >
