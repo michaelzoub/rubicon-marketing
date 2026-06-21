@@ -1,0 +1,76 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "palm",
+  "name": "Rubicon",
+  "description": "Developer documentation for Rubicon pay-per-word article streams.",
+  "colors": {
+    "primary": "#3F7098",
+    "light": "#91B9DC",
+    "dark": "#255075"
+  },
+  "appearance": {
+    "default": "dark",
+    "strict": true
+  },
+  "fonts": {
+    "heading": {
+      "family": "Hanken Grotesk"
+    },
+    "body": {
+      "family": "Hanken Grotesk"
+    }
+  },
+  "styling": {
+    "eyebrows": "breadcrumbs",
+    "codeblocks": "system"
+  },
+  "navbar": {
+    "links": [
+      {
+        "type": "github",
+        "href": "https://github.com/michaelzoub/rubicon"
+      },
+      {
+        "label": "Explore articles",
+        "href": "https://www.rubiconpay.xyz/explore"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Publish",
+      "href": "https://www.rubiconpay.xyz/dashboard"
+    }
+  },
+  "navigation": {
+    "groups": [
+      {
+        "group": "Get started",
+        "icon": "play",
+        "pages": ["index", "quickstart"]
+      },
+      {
+        "group": "Build with Rubicon",
+        "icon": "code",
+        "pages": ["sdk/agent-sdk", "sdk/core", "cli"]
+      },
+      {
+        "group": "Concepts",
+        "icon": "layers",
+        "pages": ["concepts/payments", "concepts/receipts", "service-discovery"]
+      },
+      {
+        "group": "Reference",
+        "icon": "braces",
+        "pages": ["reference/http-api"]
+      }
+    ]
+  },
+  "footer": {
+    "socials": {
+      "github": "https://github.com/michaelzoub/rubicon"
+    }
+  },
+  "seo": {
+    "indexing": "all"
+  }
+}

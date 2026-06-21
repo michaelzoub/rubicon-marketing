@@ -1,0 +1,60 @@
+---
+title: "Quickstart"
+description: "Run a budgeted article read with the TypeScript SDK."
+icon: "rocket"
+---
+
+## Install the SDK
+
+```bash
+npm install @rubicon-caliga/agent-sdk
+```
+
+## Create a client
+
+```ts
+import Rubicon from "@rubicon-caliga/agent-sdk";
+
+const rubicon = new Rubicon({
+  baseUrl: process.env.RUBICON_GATEWAY_URL,
+  authorization: `Bearer ${process.env.RUBICON_AGENT_API_KEY}`,
+});
+```
+
+## Run a read
+
+```ts
+const receipt = await rubicon.run({
+  articleId: "live-article-id",
+  goal: "Find the resale-fee clause",
+  maxSpendAtomic: "20000",
+  maxWords: 200,
+  stopWhen: ({ text }) => /resale fee/i.test(text),
+  onWord: (word) => process.stdout.write(`${word} `),
+});
+
+console.log({
+  wordsRead: receipt.wordsRead,
+  amountPaidAtomic: receipt.amountPaidAtomic,
+  stopReason: receipt.stopReason,
+  settlementIds: receipt.settlementIds,
+});
+```
+
+<Warning>
+The default `StaticPaymentEngine` is for a development gateway. Configure a Circle payment engine before using real funds.
+</Warning>
+
+## Stop conditions
+
+| Option | Purpose |
+| --- | --- |
+| `maxSpendAtomic` | Hard USDC spend ceiling |
+| `maxWords` | Maximum delivered word count |
+| `stopWhen` | Application-specific completion check |
+| `sectionId` | Begin at a known section |
+| `goal` | Ask the seller agent to choose a section |
+
+<Card title="Handle every stream event" icon="radio" href="/sdk/agent-sdk#stream-events">
+Use `read()` when your runtime needs explicit control over seller messages, bundles, usage, and completion.
+</Card>

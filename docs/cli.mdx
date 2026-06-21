@@ -1,0 +1,60 @@
+---
+title: "CLI"
+description: "Discover, navigate, and read articles from a terminal."
+icon: "terminal"
+---
+
+```bash
+npm install --global @rubicon-caliga/cli
+```
+
+## Verify configuration
+
+```bash
+rubicon doctor --json
+rubicon config show
+```
+
+## Discover content
+
+```bash
+rubicon repository
+rubicon search "stablecoin settlement"
+rubicon article show <article-id>
+```
+
+## Navigate and read
+
+```bash
+rubicon article navigation <article-id> \
+  --goal "Find the fee terms"
+
+rubicon read <article-id> \
+  --max-usdc 0.10 \
+  --goal "Find the fee terms" \
+  --summary
+```
+
+<Tip>
+Add `--json` for coding agents and scripts. Use `--dry-run` to inspect the budget, recommended section, and estimated maximum before starting a paid read.
+</Tip>
+
+## Useful flags
+
+| Flag | Effect |
+| --- | --- |
+| `--max-usdc` | Human-readable hard budget |
+| `--max-atomic` | Atomic USDC hard budget |
+| `--max-words` | Stop after a word limit |
+| `--section` | Start at a known section |
+| `--stop-after-section` | End at the selected section boundary |
+| `--chunk-words` | Requested bundle size |
+| `--stream-mode` | `bundled` or legacy `word` mode |
+| `--summary` | Print the final receipt summary only |
+
+## Receipts
+
+```bash
+rubicon receipts list --limit 10 --summary
+rubicon receipts show <receipt-id> --summary
+```

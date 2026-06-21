@@ -1,0 +1,37 @@
+---
+title: "Payments"
+description: "Choose a development or Circle-backed payment engine."
+icon: "circle-dollar-sign"
+---
+
+## Payment engines
+
+<CardGroup cols={1}>
+  <Card title="StaticPaymentEngine" icon="flask-conical">
+    Development-only engine for a dev-mode gateway. No real funds settle.
+  </Card>
+  <Card title="CircleCliGatewayPaymentEngine" icon="terminal">
+    Signs Circle and Arc authorizations through the Circle CLI without exposing a raw private key to the SDK.
+  </Card>
+  <Card title="CircleAgentWalletEngine" icon="wallet-cards">
+    API-backed custody with Circle Developer-Controlled Wallets.
+  </Card>
+</CardGroup>
+
+```ts
+import Rubicon, {
+  CircleCliGatewayPaymentEngine,
+} from "@rubicon-caliga/agent-sdk";
+
+const rubicon = new Rubicon({
+  baseUrl: process.env.RUBICON_GATEWAY_URL,
+  paymentEngine: new CircleCliGatewayPaymentEngine({
+    agentWalletAddress: process.env.CIRCLE_AGENT_WALLET_ADDRESS as `0x${string}`,
+    chain: "ARC-TESTNET",
+  }),
+});
+```
+
+<Warning>
+Circle Agent Wallets used for EIP-3009 authorization must be EOA wallets. Smart-contract-account signatures are not supported by the exact x402 scheme.
+</Warning>

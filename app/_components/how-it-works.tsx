@@ -1,0 +1,314 @@
+"use client";
+
+import { AnimatePresence, motion } from "framer-motion";
+import { Check, Coins, FileText, Minus, Plus, Wallet } from "lucide-react";
+import { useEffect, useState } from "react";
+import { BuyerGlyph, SellerGlyph } from "./agent-glyphs";
+
+const ease = [0.16, 1, 0.3, 1] as const;
+const AUTO_ADVANCE_MS = 5200;
+
+const STEPS = [
+  {
+    key: "publish",
+    tag: "Step 01",
+    title: "Publish",
+    copy: "Add an article, review the sections Rubicon detects, and set your price per word. No paywall, no bundle — you decide what each word is worth.",
+    visual: PublishVisual,
+  },
+  {
+    key: "read",
+    tag: "Step 02",
+    title: "Agents read",
+    copy: "Your seller agent guides buyer agents to the right section and releases each word only as it is paid for. Agents stop the moment they have enough.",
+    visual: ReadVisual,
+  },
+  {
+    key: "earn",
+    tag: "Step 03",
+    title: "You earn",
+    copy: "Every delivered word is attributed to your article and settled in USDC straight to your receiving wallet — exact usage, zero platform fee.",
+    visual: EarnVisual,
+  },
+] as const;
+
+export function HowItWorks() {
+  const [active, setActive] = useState(0);
+  const [paused, setPaused] = useState(false);
+
+  useEffect(() => {
+    if (paused) return;
+    const t = setTimeout(() => setActive((a) => (a + 1) % STEPS.length), AUTO_ADVANCE_MS);
+    return () => clearTimeout(t);
+  }, [active, paused]);
+
+  const ActiveVisual = STEPS[active].visual;
+
+  return (
+    <section
+      id="product"
+      className="section stack-panel stack-panel-muted border-y border-[var(--faint)] bg-[var(--surface-muted)]"
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: "-80px" }}
+        transition={{ duration: 0.6, ease }}
+        className="container"
+      >
+        <p className="eyebrow">How it works</p>
+        <h2 className="mt-4 section-title">From publish to paid, one word at a time.</h2>
+
+        <div
+          className="mt-12 grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+        >
+          {/* left — the visual that goes with the active step */}
+          <div className="hiw-stage order-2 lg:order-1">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={STEPS[active].key}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.4, ease }}
+                className="h-full"
+              >
+                <ActiveVisual />
+              </motion.div>
+            </AnimatePresence>
+          </div>
+
+          {/* right — vertically stacked steps */}
+          <ol className="order-1 flex flex-col lg:order-2">
+            {STEPS.map((step, i) => {
+              const isActive = i === active;
+              return (
+                <li key={step.key} className={i > 0 ? "border-t border-[var(--faint)]" : undefined}>
+                  <button
+                    type="button"
+                    onClick={() => setActive(i)}
+                    aria-pressed={isActive}
+                    className={`hiw-step group w-full text-left transition-opacity duration-300 ${
+                      isActive ? "opacity-100" : "opacity-55 hover:opacity-80"
+                    }`}
+                  >
+                    <span className={`hiw-rail ${isActive ? "is-active" : ""}`} aria-hidden="true" />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline gap-2.5">
+                        <h3
+                          className={`text-xl font-semibold tracking-[-0.01em] transition-colors duration-300 ${
+                            isActive ? "text-[var(--ink)]" : "text-[var(--muted)] group-hover:text-[var(--ink)]"
+                          }`}
+                        >
+                          {step.title}
+                        </h3>
+                        <span className="mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--quiet)]">
+                          {step.tag}
+                        </span>
+                      </div>
+                      <p className="mt-2.5 leading-7 text-[var(--muted)]">{step.copy}</p>
+                    </div>
+                  </button>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
+      </motion.div>
+    </section>
+  );
+}
+
+/* ---------------- step visuals ---------------- */
+
+function Stage({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="hiw-panel flex h-full min-h-[420px] flex-col">
+      <div className="flex items-center justify-between border-b border-[var(--faint)] px-5 py-3.5">
+        <span className="mono text-[0.66rem] uppercase tracking-[0.16em] text-[var(--muted)]">{label}</span>
+        <span className="flex items-center gap-1.5 text-[0.66rem] text-[var(--river-deep)]">
+          <span className="status-dot h-1.5 w-1.5 rounded-full bg-[var(--river-deep)]" /> preview
+        </span>
+      </div>
+      <div className="flex flex-1 flex-col gap-4 p-5">{children}</div>
+    </div>
+  );
+}
+
+function PublishVisual() {
+  const sections = ["Self-Attention Mechanism", "Scaling the Context Window", "Metered Reading Behavior"];
+  return (
+    <Stage label="Publish · new article">
+      <div>
+        <div className="mono mb-1.5 text-[0.62rem] uppercase tracking-[0.12em] text-[var(--quiet)]">Article title</div>
+        <div className="rounded-lg border border-[var(--line)] bg-[var(--surface)] px-3.5 py-2.5 text-sm font-medium text-[var(--ink)]">
+          The Self-Attention Mechanism
+        </div>
+      </div>
+
+      <div>
+        <div className="mono mb-2 text-[0.62rem] uppercase tracking-[0.12em] text-[var(--quiet)]">
+          Sections detected
+        </div>
+        <div className="grid gap-1.5">
+          {sections.map((s, i) => (
+            <div
+              key={s}
+              className="flex items-center gap-2.5 rounded-lg border border-[var(--faint)] bg-[var(--surface)] px-3 py-2 text-[0.82rem]"
+            >
+              <span className="mono text-[0.62rem] text-[var(--quiet)]">{String(i + 1).padStart(2, "0")}</span>
+              <span className="flex-1 truncate text-[var(--ink)]">{s}</span>
+              <span className="grid h-4 w-4 place-items-center rounded-full bg-[rgba(88,213,155,0.16)] text-[var(--green)]">
+                <Check size={11} aria-hidden="true" />
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-auto">
+        <div className="flex items-center justify-between rounded-lg border border-[var(--river-line)] bg-[var(--river-pale)] px-3.5 py-3">
+          <div>
+            <div className="text-sm font-semibold text-[var(--ink)]">Price per word</div>
+            <div className="mono text-[0.66rem] text-[var(--muted)]">Charged in USDC</div>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <span className="grid h-7 w-7 place-items-center rounded-md border border-[var(--line)] text-[var(--muted)]">
+              <Minus size={13} aria-hidden="true" />
+            </span>
+            <span className="mono text-base font-bold text-[var(--river-deep)]">$0.00001</span>
+            <span className="grid h-7 w-7 place-items-center rounded-md border border-[var(--line)] text-[var(--muted)]">
+              <Plus size={13} aria-hidden="true" />
+            </span>
+          </div>
+        </div>
+        <div className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-[var(--ink)] py-2.5 text-sm font-semibold text-[var(--background)]">
+          <FileText size={15} aria-hidden="true" /> Publish article
+        </div>
+      </div>
+    </Stage>
+  );
+}
+
+function ReadVisual() {
+  const words = "modern transformer models begin by converting every token into three learned vectors".split(" ");
+  const delivered = 6;
+  return (
+    <Stage label="Agents read · live stream">
+      <div className="flex items-center justify-between">
+        <Token glyph={<BuyerGlyph size={20} />} status="receiving" color="#2f567c" align="left" />
+        <div className="relative mx-3 flex-1">
+          <div className="h-px w-full bg-[var(--line)]" />
+          <span className="mono absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-[var(--river-line)] bg-[var(--surface)] px-2 py-0.5 text-[0.6rem] text-[var(--river-deep)]">
+            vectors
+          </span>
+        </div>
+        <Token glyph={<SellerGlyph size={20} />} status="streaming" color="#3f7da1" align="right" />
+      </div>
+
+      <div className="rounded-xl border border-[var(--faint)] bg-[var(--surface)] p-3.5">
+        <div className="mb-2 text-[0.82rem] font-semibold text-[var(--ink)]">Self-Attention Mechanism</div>
+        <p className="flex flex-wrap gap-x-1 gap-y-1.5 text-[0.82rem] leading-6">
+          {words.map((w, i) => (
+            <span
+              key={i}
+              className={`rounded px-1 ${
+                i < delivered
+                  ? "bg-[rgba(var(--river-rgb),0.16)] text-[var(--river-deep)]"
+                  : i === delivered
+                    ? "bg-[rgba(var(--river-rgb),0.28)] text-[var(--ink)]"
+                    : "text-[var(--quiet)]"
+              }`}
+            >
+              {w}
+            </span>
+          ))}
+        </p>
+      </div>
+
+      <div className="mt-auto flex items-end justify-between border-t border-[var(--faint)] pt-3.5">
+        <div className="text-lg font-bold text-[var(--ink)]">
+          34<span className="ml-1.5 text-sm font-medium text-[var(--muted)]">words read</span>
+        </div>
+        <div className="mono text-base font-bold text-[var(--river-deep)]">$0.00034 paid</div>
+      </div>
+    </Stage>
+  );
+}
+
+function EarnVisual() {
+  const ledger = [
+    { title: "Self-Attention Mechanism", words: 34, amount: "0.00034" },
+    { title: "Scaling the Context Window", words: 42, amount: "0.00042" },
+    { title: "Consent decree language", words: 19, amount: "0.00019" },
+  ];
+  return (
+    <Stage label="You earn · payouts">
+      <div className="rounded-xl border border-[rgba(88,213,155,0.3)] bg-[rgba(88,213,155,0.08)] px-4 py-4">
+        <div className="flex items-center justify-between">
+          <span className="mono text-[0.62rem] uppercase tracking-[0.12em] text-[var(--muted)]">Earned this session</span>
+          <span className="mono flex items-center gap-1.5 rounded-full border border-[rgba(88,213,155,0.4)] px-2 py-0.5 text-[0.58rem] text-[var(--green)]">
+            <span className="status-dot h-1.5 w-1.5 rounded-full bg-[var(--green)]" /> live
+          </span>
+        </div>
+        <div className="mono mt-2 text-3xl font-bold tracking-[-0.02em] text-[var(--ink)]">$0.00095</div>
+        <div className="mt-1 text-[0.72rem] text-[var(--muted)]">95 words delivered · 0% platform fee</div>
+      </div>
+
+      <div className="grid gap-1.5">
+        {ledger.map((row) => (
+          <div
+            key={row.title}
+            className="flex items-center gap-3 rounded-lg border border-[var(--faint)] bg-[var(--surface)] px-3 py-2.5"
+          >
+            <span className="grid h-7 w-7 shrink-0 place-items-center rounded-md bg-[var(--river-pale)] text-[var(--river-deep)]">
+              <Coins size={14} aria-hidden="true" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-[0.8rem] font-medium text-[var(--ink)]">{row.title}</div>
+              <div className="mono text-[0.62rem] text-[var(--quiet)]">{row.words} words read</div>
+            </div>
+            <span className="mono text-[0.8rem] font-semibold text-[var(--river-deep)]">+${row.amount}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-auto flex items-center gap-2.5 rounded-lg border border-[var(--faint)] bg-[var(--surface)] px-3.5 py-2.5">
+        <Wallet size={15} className="text-[var(--muted)]" aria-hidden="true" />
+        <span className="mono text-[0.72rem] text-[var(--ink)]">0x9f4c…2a18</span>
+        <span className="mono ml-auto text-[0.62rem] uppercase tracking-[0.1em] text-[var(--quiet)]">
+          receiving wallet
+        </span>
+      </div>
+    </Stage>
+  );
+}
+
+function Token({
+  glyph,
+  status,
+  color,
+  align,
+}: {
+  glyph: React.ReactNode;
+  status: string;
+  color: string;
+  align: "left" | "right";
+}) {
+  return (
+    <div className={`flex flex-col gap-1.5 ${align === "right" ? "items-end" : "items-start"}`}>
+      <div
+        className="agent-token grid h-11 w-11 place-items-center rounded-xl text-white"
+        style={{ backgroundColor: color }}
+      >
+        {glyph}
+      </div>
+      <span className="mono inline-flex items-center gap-1.5 rounded-md border border-[rgba(145,185,220,0.4)] bg-[rgba(63,125,161,0.16)] px-1.5 py-[2px] text-[0.5rem] uppercase tracking-[0.1em] text-[var(--river-deep)]">
+        <span className="status-dot h-1 w-1 rounded-full bg-[var(--river-deep)]" />
+        {status}
+      </span>
+    </div>
+  );
+}

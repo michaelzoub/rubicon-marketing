@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   ArrowRight,
   BadgeCheck,
@@ -11,13 +11,16 @@ import {
   FileText,
   Github,
   Link2,
+  LockKeyhole,
   MessageSquare,
-  Quote,
+  Search,
   Settings2,
   Waves,
 } from "lucide-react";
 import Link from "next/link";
-import { useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
+import { SellerGlyph } from "./_components/agent-glyphs";
+import { HowItWorks } from "./_components/how-it-works";
 import { StreamTheater } from "./_components/stream-theater";
 import { WordStreamDemo } from "./_components/word-stream";
 
@@ -28,10 +31,10 @@ const setupSkillPrompt = `Set up the Rubicon skill from ${skillUrl}. Help me fun
 const ease = [0.16, 1, 0.3, 1] as const;
 
 const fade = {
-  initial: { opacity: 0, y: 22, filter: "blur(6px)" },
-  whileInView: { opacity: 1, y: 0, filter: "blur(0px)" },
+  initial: { opacity: 0, y: 14 },
+  whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, amount: 0.2 },
-  transition: { duration: 0.7, ease },
+  transition: { duration: 0.8, ease },
 } as const;
 
 function StackPanel({
@@ -43,32 +46,19 @@ function StackPanel({
   className: string;
   children: ReactNode;
 }) {
-  const ref = useRef<HTMLElement | null>(null);
-  const reducedMotion = useReducedMotion();
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start 86%", "end 18%"],
-  });
-  const scale = useTransform(scrollYProgress, [0, 0.55, 1], [1, 0.992, 1]);
-  const y = useTransform(scrollYProgress, [0, 0.55, 1], [0, -8, 0]);
-  const opacity = useTransform(scrollYProgress, [0, 0.55, 1], [1, 0.96, 1]);
-
   return (
-    <motion.section
-      ref={ref}
-      id={id}
-      className={className}
-      style={reducedMotion ? undefined : { scale, y, opacity }}
-    >
+    <section id={id} className={className}>
       {children}
-    </motion.section>
+    </section>
   );
 }
 
 const developerCode = {
   sdk: `import Rubicon from "@rubicon-caliga/agent-sdk";
 
-const rubicon = new Rubicon();
+const rubicon = new Rubicon({
+  baseUrl: process.env.RUBICON_GATEWAY_URL,
+});
 
 const receipt = await rubicon.run({
   articleId: "rubicon-streaming-001",
@@ -187,7 +177,7 @@ function Navigation() {
             <a className="site-nav-link" href="#product">Product</a>
             <a className="site-nav-link" href="#agents">Agents</a>
             <a className="site-nav-link" href="#creators">Creators</a>
-            <a className="site-nav-link" href="#docs">Docs</a>
+            <Link className="site-nav-link" href="/docs">Docs</Link>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -213,7 +203,7 @@ function Hero() {
           {/* <p className="eyebrow inline-flex w-fit items-center gap-2 rounded-full border border-[var(--river-line)] bg-[var(--river-pale)] px-3 py-1">
             <span className="status-dot h-1.5 w-1.5 rounded-full bg-[var(--river)]" /> Paid reading for AI agents
           </p> */}
-          <h1 className="mt-5 max-w-[640px] text-[clamp(2.4rem,5vw,4.6rem)] font-[800] leading-[0.98] tracking-[-0.045em]">
+          <h1 className="mt-5 max-w-[680px] text-[clamp(2.7rem,5.6vw,5.25rem)] font-[800] leading-[0.94] tracking-[-0.052em]">
             Let AI agents pay to read your work.
           </h1>
           <p className="mt-6 max-w-[560px] text-lg leading-8 text-[var(--muted)]">
@@ -236,12 +226,12 @@ function Hero() {
         </motion.div>
 
         <motion.div
-          initial={{ opacity: 0, y: 28, filter: "blur(8px)" }}
-          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          transition={{ duration: 0.85, delay: 0.12, ease }}
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.14, ease }}
           className="flex min-w-0 items-center"
         >
-          <div className="hero-visual w-full min-w-0" style={{ animation: "soft-float 7s var(--ease-in-out) infinite" }}>
+          <div className="hero-visual w-full min-w-0">
             <StreamTheater />
           </div>
         </motion.div>
@@ -250,76 +240,95 @@ function Hero() {
   );
 }
 
-function HowItWorks() {
-  const steps = [
-    {
-      icon: <FileText size={20} aria-hidden="true" />,
-      title: "Publish",
-      copy: "Add an article, review its sections, and choose your price per word.",
-    },
-    {
-      icon: <MessageSquare size={20} aria-hidden="true" />,
-      title: "Agents read",
-      copy: "Your seller agent guides buyers to the right section and releases each word as it is paid for.",
-    },
-    {
-      icon: <Coins size={20} aria-hidden="true" />,
-      title: "You earn",
-      copy: "Every delivered word is attributed to your article and receiving wallet.",
-    },
-  ];
-  return (
-    <StackPanel id="product" className="section stack-panel stack-panel-muted border-y border-[var(--faint)] bg-[var(--surface-muted)]">
-      <motion.div {...fade} className="container">
-        <h2 className="section-title">How it works</h2>
-        <div className="mt-12 grid gap-5 md:grid-cols-3">
-          {steps.map((step, i) => (
-            <div key={step.title} className="card-soft p-6">
-              <div className="flex items-center gap-3">
-                <span className="grid h-10 w-10 place-items-center rounded-lg bg-[var(--river-pale)] text-[var(--river)]">{step.icon}</span>
-                <span className="mono text-xs text-[var(--river-deep)]">{String(i + 1).padStart(2, "0")}</span>
-              </div>
-              <h3 className="mt-5 text-xl font-semibold">{step.title}</h3>
-              <p className="mt-2 leading-7 text-[var(--muted)]">{step.copy}</p>
-            </div>
-          ))}
-        </div>
-      </motion.div>
-    </StackPanel>
-  );
-}
-
 function CreatorValue() {
-  const cards = [
-    {
-      icon: <Coins size={20} aria-hidden="true" />,
-      title: "Earn from agent traffic",
-      copy: "Make premium research available to AI systems without giving away the complete article.",
-    },
-    {
-      icon: <Settings2 size={20} aria-hidden="true" />,
-      title: "Stay in control",
-      copy: "Choose the price, article availability, receiving wallet, and sections agents can navigate.",
-    },
-    {
-      icon: <BadgeCheck size={20} aria-hidden="true" />,
-      title: "Get paid for exact usage",
-      copy: "If an agent reads 137 words, you earn for 137 words—not an arbitrary bundle or full-article purchase.",
-    },
-  ];
+  const controls = ["Price per word", "Article availability", "Navigable sections", "Receiving wallet"];
   return (
     <StackPanel id="creators" className="section stack-panel stack-panel-base bg-[var(--background)]">
       <motion.div {...fade} className="container">
         <p className="eyebrow">For creators</p>
         <h2 className="mt-4 section-title">Built around what creators actually want.</h2>
-        <div className="mt-12 grid gap-5 md:grid-cols-3">
-          {cards.map((card) => (
-            <div key={card.title} className="card-soft p-6">
-              <span className="grid h-10 w-10 place-items-center rounded-lg bg-[var(--river-pale)] text-[var(--river)]">{card.icon}</span>
-              <h3 className="mt-5 text-xl font-semibold">{card.title}</h3>
-              <p className="mt-2 leading-7 text-[var(--muted)]">{card.copy}</p>
+
+        <div className="mt-12 grid gap-5 lg:grid-cols-2 lg:grid-rows-2">
+          {/* feature — earn from agent traffic */}
+          <div className="card-soft flex flex-col p-7 lg:row-span-2">
+            <span className="grid h-11 w-11 place-items-center rounded-xl bg-[var(--river-pale)] text-[var(--river-deep)]">
+              <Coins size={22} aria-hidden="true" />
+            </span>
+            <h3 className="mt-6 text-2xl font-semibold tracking-[-0.01em]">Earn from agent traffic</h3>
+            <p className="mt-3 max-w-md leading-7 text-[var(--muted)]">
+              Make premium research readable by AI systems without giving away the complete article. Every read is a
+              micro-sale, settled in USDC.
+            </p>
+
+            {/* revenue split visual */}
+            <div className="mt-auto pt-8">
+              <div className="flex items-end justify-between">
+                <div>
+                  <div className="mono text-4xl font-bold tracking-[-0.02em] text-[var(--ink)]">100%</div>
+                  <div className="mt-1 text-sm text-[var(--muted)]">of every read goes to you</div>
+                </div>
+                <span className="mono flex items-center gap-1.5 rounded-full border border-[rgba(88,213,155,0.4)] bg-[rgba(88,213,155,0.1)] px-2.5 py-1 text-xs font-medium text-[var(--green)]">
+                  0% platform fee
+                </span>
+              </div>
+              <div className="mt-4 flex h-2.5 overflow-hidden rounded-full bg-[var(--surface-muted)]">
+                <span className="h-full w-full rounded-full bg-[var(--river-deep)]" />
+              </div>
+              <div className="mono mt-2 flex justify-between text-[0.66rem] uppercase tracking-[0.1em] text-[var(--quiet)]">
+                <span>Creator payout</span>
+                <span>Rubicon · 0%</span>
+              </div>
             </div>
-          ))}
+          </div>
+
+          {/* stay in control */}
+          <div className="card-soft flex flex-col p-7">
+            <div className="flex items-center gap-3">
+              <span className="grid h-10 w-10 place-items-center rounded-lg bg-[var(--river-pale)] text-[var(--river-deep)]">
+                <Settings2 size={20} aria-hidden="true" />
+              </span>
+              <h3 className="text-xl font-semibold">Stay in control</h3>
+            </div>
+            <p className="mt-3 leading-7 text-[var(--muted)]">
+              You set the terms — price, availability, and exactly which sections agents can navigate.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              {controls.map((c) => (
+                <span
+                  key={c}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-[var(--faint)] bg-[var(--surface)] px-3 py-1.5 text-[0.78rem] text-[var(--ink)]"
+                >
+                  <Check size={12} className="text-[var(--river-deep)]" aria-hidden="true" />
+                  {c}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* exact usage */}
+          <div className="card-soft flex flex-col p-7">
+            <div className="flex items-center gap-3">
+              <span className="grid h-10 w-10 place-items-center rounded-lg bg-[var(--river-pale)] text-[var(--river-deep)]">
+                <BadgeCheck size={20} aria-hidden="true" />
+              </span>
+              <h3 className="text-xl font-semibold">Get paid for exact usage</h3>
+            </div>
+            <p className="mt-3 leading-7 text-[var(--muted)]">
+              Read 137 words, earn for 137 words — never an arbitrary bundle or full-article purchase.
+            </p>
+            <div className="mt-5 rounded-xl border border-[var(--faint)] bg-[var(--surface)] p-4">
+              <div className="flex items-baseline justify-between">
+                <span className="mono text-sm text-[var(--muted)]">
+                  <span className="text-lg font-bold text-[var(--ink)]">137</span> words read
+                </span>
+                <span className="mono text-base font-bold text-[var(--river-deep)]">$0.00137</span>
+              </div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--surface-muted)]">
+                <span className="block h-full w-[68%] rounded-full bg-[var(--river-deep)]" />
+              </div>
+              <div className="mono mt-2 text-[0.66rem] text-[var(--quiet)]">attributed word-for-word to your article</div>
+            </div>
+          </div>
         </div>
       </motion.div>
     </StackPanel>
@@ -327,12 +336,6 @@ function CreatorValue() {
 }
 
 function SellerAgent() {
-  const conversation = [
-    { who: "Buyer agent", tone: "buyer", text: "Where does the article discuss resale fees?" },
-    { who: "Seller agent", tone: "seller", text: "The most relevant section is “Consent Decree Language.” Start there?" },
-    { who: "Buyer", tone: "buyer", text: "Yes. Maximum spend: $0.02." },
-    { who: "Seller agent", tone: "seller", text: "Begins the paid word stream." },
-  ];
   return (
     <StackPanel className="section stack-panel stack-panel-muted border-y border-[var(--faint)] bg-[var(--surface-muted)]">
       <motion.div {...fade} className="container grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
@@ -344,23 +347,29 @@ function SellerAgent() {
             releases the article one paid word at a time.
           </p>
         </div>
-        <div className="card-soft p-5">
-          <div className="grid gap-3">
-            {conversation.map((line, i) => (
-              <div
-                key={i}
-                className={`rounded-2xl border px-4 py-3 ${
-                  line.tone === "seller"
-                    ? "border-[var(--river-line)] bg-[var(--river-pale)]"
-                    : "border-[var(--faint)] bg-[var(--surface-muted)]"
-                }`}
-              >
-                <div className={`mono text-[0.62rem] uppercase tracking-[0.12em] ${line.tone === "seller" ? "text-[var(--river-deep)]" : "text-[var(--river-deep)]"}`}>
-                  {line.who}
-                </div>
-                <p className="mt-1.5 text-sm leading-6 text-[var(--ink)]">{line.text}</p>
-              </div>
-            ))}
+        <div className="seller-agent-visual" aria-label="Seller agent routes a buyer to a protected article section">
+          <div className="seller-query">
+            <Search size={15} aria-hidden="true" />
+            <span>Where are resale fees defined?</span>
+          </div>
+          <div className="seller-route" aria-hidden="true"><span /></div>
+          <div className="seller-agent-node">
+            <span className="seller-agent-icon"><SellerGlyph size={26} /></span>
+            <div><strong>Seller agent</strong><span className="seller-agent-status"><i aria-hidden="true" />Routing query</span></div>
+          </div>
+          <div className="seller-document">
+            <div className="seller-document-head">
+              <div><FileText size={15} /> Premium research</div>
+              <LockKeyhole size={14} className="text-[var(--muted)]" />
+            </div>
+            <div className="seller-section"><span>01</span><div><strong>Market overview</strong><i /></div></div>
+            <div className="seller-section seller-section-active"><span>02</span><div><strong>Consent decree language</strong><i /></div></div>
+            <div className="seller-section"><span>03</span><div><strong>Enforcement mechanics</strong><i /></div></div>
+            <div className="seller-scan" aria-hidden="true" />
+          </div>
+          <div className="seller-result">
+            <span>Section found</span>
+            <strong>Start at section 02</strong>
           </div>
         </div>
       </motion.div>
@@ -507,83 +516,12 @@ function Agents() {
           <a href={githubUrl} className="button button-secondary text-sm">
             <Github size={15} aria-hidden="true" /> View on GitHub
           </a>
-          <a href="#docs" className="button button-secondary text-sm">
+          <Link href="/docs" className="button button-secondary text-sm">
             <BookOpen size={15} aria-hidden="true" /> Read the docs
-          </a>
+          </Link>
         </div>
       </motion.div>
     </StackPanel>
-  );
-}
-
-function Pricing() {
-  return (
-    <section id="docs" className="section">
-      <motion.div {...fade} className="container">
-        <div className="card-soft grid gap-8 p-8 md:grid-cols-[auto_1fr] md:items-center md:p-10">
-          <div className="text-center md:text-left">
-            <div className="text-[clamp(3rem,8vw,5rem)] font-bold leading-none tracking-[-0.03em] text-[var(--river-deep)]">0%</div>
-            <div className="mono mt-2 text-xs uppercase tracking-[0.14em] text-[var(--muted)]">Rubicon platform fee</div>
-          </div>
-          <div>
-            <h2 className="text-2xl font-semibold">Keep what you earn.</h2>
-            <p className="mt-3 leading-7 text-[var(--muted)]">
-              Rubicon platform fee: 0% during the current launch period. External network or payment-provider costs may
-              still apply.
-            </p>
-          </div>
-        </div>
-      </motion.div>
-    </section>
-  );
-}
-
-function Trust() {
-  const items = [
-    "Unpaid article body text remains protected",
-    "Buyers know the per-word price before streaming",
-    "Each paid word is recorded",
-    "Buyers can stop at any moment",
-    "Creators retain control over article availability",
-    "Rubicon’s current platform fee is zero",
-  ];
-  return (
-    <section className="section border-y border-[var(--faint)] bg-[var(--surface-muted)]">
-      <motion.div {...fade} className="container">
-        <h2 className="section-title">Trust built into every stream.</h2>
-        <div className="mt-10 grid gap-3 md:grid-cols-2">
-          {items.map((item) => (
-            <div key={item} className="flex items-center gap-3 rounded-2xl border border-[var(--faint)] bg-[var(--card)] px-4 py-4">
-              <Check size={17} className="shrink-0 text-[var(--green)]" aria-hidden="true" />
-              <span>{item}</span>
-            </div>
-          ))}
-        </div>
-      </motion.div>
-    </section>
-  );
-}
-
-function FinalCTA() {
-  return (
-    <section className="section">
-      <motion.div {...fade} className="container">
-        <div className="card-soft relative overflow-hidden bg-[radial-gradient(circle_at_50%_0%,rgba(var(--river-rgb),0.2),transparent_42%),var(--card)] p-8 text-center md:p-14">
-          <Quote size={28} className="mx-auto text-[var(--river)]" aria-hidden="true" />
-          <h2 className="mx-auto mt-5 max-w-2xl text-[clamp(1.7rem,3.4vw,2.6rem)] font-semibold leading-tight tracking-[-0.01em]">
-            Make your writing readable—and payable—by agents.
-          </h2>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href="/dashboard/articles/new" className="button button-primary">
-              Publish an article <ArrowRight size={16} aria-hidden="true" />
-            </Link>
-            <a href="#docs" className="button button-secondary">
-              Read the docs
-            </a>
-          </div>
-        </div>
-      </motion.div>
-    </section>
   );
 }
 
@@ -608,7 +546,7 @@ function Footer() {
           <a href="#agents">Agents</a>
           <a href="#creators">Creators</a>
           <Link href="/explore">Explore</Link>
-          <a href="#developers">Developers</a>
+          <Link href="/docs">Docs</Link>
           <a href={githubUrl}>GitHub</a>
           <Link href="/dashboard">Sign in</Link>
         </div>
@@ -629,9 +567,6 @@ export default function Home() {
         <SellerAgent />
         <StreamDemoSection />
         <Settlement />
-        <Pricing />
-        <Trust />
-        <FinalCTA />
       </main>
       <Footer />
     </>

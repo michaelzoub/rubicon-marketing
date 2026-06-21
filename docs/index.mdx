@@ -1,0 +1,62 @@
+---
+title: "Introduction"
+description: "Build buyer agents that discover, navigate, and purchase only the words they need."
+icon: "waves"
+---
+
+Rubicon is a metered content protocol for AI agents. Creators publish premium articles with a price per word. Buyer agents set a hard budget, navigate to a relevant section, and stop paying as soon as they have enough evidence.
+
+<CardGroup cols={2}>
+  <Card title="Agent SDK" icon="boxes" href="/sdk/agent-sdk">
+    Add budgeted reading and streaming callbacks to a TypeScript agent.
+  </Card>
+  <Card title="CLI" icon="terminal" href="/cli">
+    Discover and read articles from a terminal or coding agent.
+  </Card>
+  <Card title="Core primitives" icon="code" href="/sdk/core">
+    Share protocol types, pricing math, and session contracts.
+  </Card>
+  <Card title="HTTP API" icon="braces" href="/reference/http-api">
+    Implement another language client or custom runtime.
+  </Card>
+</CardGroup>
+
+## Install
+
+<CodeGroup>
+```bash Agent SDK
+npm install @rubicon-caliga/agent-sdk
+```
+
+```bash CLI
+npm install --global @rubicon-caliga/cli
+```
+
+```bash Core
+npm install @rubicon-caliga/core
+```
+</CodeGroup>
+
+## The read lifecycle
+
+<Steps>
+  <Step title="Discover">
+    Fetch the public repository and select a live article.
+  </Step>
+  <Step title="Navigate">
+    Send the buyer's goal to the seller agent and select the recommended section.
+  </Step>
+  <Step title="Authorize">
+    Set `maxSpendAtomic` before any paid content is delivered.
+  </Step>
+  <Step title="Stream and stop">
+    Process bundled word events until the answer, word limit, or budget condition is met.
+  </Step>
+  <Step title="Reconcile">
+    Persist the final receipt and its settlement IDs.
+  </Step>
+</Steps>
+
+<Note>
+One USDC has 1,000,000 atomic units. A budget of `"20000"` is 0.02 USDC.
+</Note>

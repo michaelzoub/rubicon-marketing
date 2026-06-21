@@ -1,0 +1,56 @@
+---
+title: "HTTP API"
+description: "Gateway endpoints for custom runtimes and language clients."
+icon: "braces"
+---
+
+The TypeScript SDK wraps this flow. Call the gateway directly when implementing another language client.
+
+## Repository
+
+```http
+GET /v1/repository
+Authorization: Bearer <agent-api-key>
+```
+
+Returns public article metadata. Unpaid article body text is never included.
+
+## Navigation
+
+```http
+GET /v1/articles/:articleId/navigation?goal=<encoded-goal>
+Authorization: Bearer <agent-api-key>
+```
+
+Returns the seller agent's section recommendation and public payment terms.
+
+## Seller conversation
+
+```http
+POST /v1/seller-agent/conversations
+Content-Type: application/json
+Authorization: Bearer <agent-api-key>
+
+{
+  "articleId": "live-article-id",
+  "goal": "Find the termination conditions"
+}
+```
+
+## Session
+
+```http
+POST /v1/sessions
+Content-Type: application/json
+Authorization: Bearer <agent-api-key>
+
+{
+  "articleId": "live-article-id",
+  "maxSpendAtomic": "100000",
+  "goal": "Find the termination conditions"
+}
+```
+
+<Warning>
+Do not accept price or seller-wallet values from buyer input. The gateway must load trusted payment terms from stored article and creator records.
+</Warning>

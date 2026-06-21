@@ -1,0 +1,42 @@
+---
+title: "Core primitives"
+description: "Protocol types, pricing math, network metadata, and session contracts."
+icon: "code"
+---
+
+Install `@rubicon-caliga/core` when multiple services need the same Rubicon contracts.
+
+```bash
+npm install @rubicon-caliga/core
+```
+
+## Pricing
+
+```ts
+import { quotePerWord, usageForWords } from "@rubicon-caliga/core";
+
+const quote = quotePerWord({
+  pricePerWordAtomic: 10n,
+  gatewayFeeBps: 0,
+});
+
+const usage = usageForWords({
+  wordsDelivered: 137,
+  pricePerWordAtomic: 10n,
+});
+```
+
+<Info>
+Authorization may cover a session or bundle, but accounting remains one delivered word equals one paid unit.
+</Info>
+
+## Main exports
+
+| Export | Purpose |
+| --- | --- |
+| `quotePerWord` | Calculate one-word buyer and creator amounts |
+| `usageForWords` | Calculate exact usage totals |
+| `createSession` | Create trusted server-side session state |
+| `canAffordNextWord` | Enforce the remaining session budget |
+| `settlementNetworkInfo` | Normalize network and funding metadata |
+| Protocol types | Share requests, responses, events, and receipts |

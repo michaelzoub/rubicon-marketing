@@ -1,8 +1,9 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, CircuitBoard, Coins, Fingerprint, ScanText, Sparkles } from "lucide-react";
+import { Check, Coins, ScanText, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { BuyerGlyph, SellerGlyph } from "./agent-glyphs";
 
 const PRICE_PER_WORD = 0.00001;
 const FIRST_STOP = 34;
@@ -160,8 +161,6 @@ export function StreamTheater() {
 
   return (
     <div className="stream-theater card-soft relative min-h-[560px] w-full min-w-0 overflow-hidden p-5 sm:p-6">
-      <div className="stream-chrome" aria-hidden="true" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(ellipse_at_50%_0%,rgba(var(--river-rgb),0.14),transparent_68%)]" aria-hidden="true" />
       <div className="relative flex items-center justify-between gap-4 border-b border-[var(--faint)] pb-4">
         <div className="flex min-w-0 items-center gap-2.5">
           <span
@@ -183,21 +182,21 @@ export function StreamTheater() {
           {/* buyer agent (left) */}
           <Agent
             side="left"
-            icon={<Fingerprint size={21} strokeWidth={1.75} aria-hidden="true" />}
+            icon={<BuyerGlyph />}
             name="Buyer agent"
-            sub={done ? "answer received" : phase === "streamDeeper" ? "searching section" : streaming ? "receiving" : asking ? "asking" : "searching section"}
+            sub={done ? "answer received" : phase === "streamDeeper" ? "searching" : streaming ? "receiving" : asking ? "asking" : "searching"}
             active={phase === "ask" || phase === "followup" || done}
-            tint="river"
+            tint="buyer"
           />
 
           {/* seller agent (right) */}
           <Agent
             side="right"
-            icon={<CircuitBoard size={21} strokeWidth={1.75} aria-hidden="true" />}
+            icon={<SellerGlyph />}
             name="Seller agent"
-            sub={streaming ? "streaming words" : routing ? "routing" : "listening"}
+            sub={streaming ? "streaming" : routing ? "routing" : "listening"}
             active={streaming || routing}
-            tint="blue"
+            tint="seller"
           />
 
           {/* in-flight word packets gliding seller → buyer along the channel */}
@@ -341,7 +340,7 @@ export function StreamTheater() {
 
         <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--surface-muted)]">
           <motion.div
-            className={`h-full rounded-full ${done ? "bg-[var(--green)]" : "bg-[linear-gradient(90deg,var(--river),var(--river-deep))]"}`}
+            className={`h-full rounded-full ${done ? "bg-[var(--green)]" : "bg-[var(--river-deep)]"}`}
             animate={{ width: `${Math.max(pct, 3)}%` }}
             transition={{ duration: 0.5, ease }}
           />
@@ -386,23 +385,37 @@ function Agent({
   name: string;
   sub: string;
   active: boolean;
-  tint: "river" | "blue";
+  tint: "buyer" | "seller";
 }) {
-  const color = tint === "river" ? "var(--river)" : "var(--river-deep)";
-  const pos = side === "left" ? "left-0 items-start text-left" : "right-0 items-end text-right";
+  // Solid, fixed token fills — the theater is always dark, so these don't follow
+  // the theme vars. Two distinct blues read as two distinct agents.
+  const color = tint === "buyer" ? "#2f567c" : "#3f7da1";
+  const pos = side === "left" ? "left-0 items-start" : "right-0 items-end";
   return (
-    <div className={`absolute top-0 flex w-[40%] min-w-0 flex-col gap-2 ${pos}`}>
-      <motion.div
-        animate={active ? { scale: 1, opacity: 1 } : { scale: 0.94, opacity: 0.72 }}
-        transition={{ duration: 0.6, ease }}
-        className="agent-token grid h-[60px] w-[60px] place-items-center text-white"
-        style={{ background: `linear-gradient(145deg, ${color}, var(--river))` }}
+    <div className={`absolute top-0 flex w-[40%] min-w-0 flex-col gap-2.5 ${pos}`}>
+      <div
+        className={`agent-token grid h-[58px] w-[58px] place-items-center text-white transition-shadow duration-500 ${
+          active ? "is-active" : ""
+        }`}
+        style={{ backgroundColor: color }}
       >
         {icon}
-      </motion.div>
-      <div className={`min-w-0 max-w-full ${side === "right" ? "text-right" : "text-left"}`}>
-        <div className="text-[0.8rem] font-semibold leading-tight">{name}</div>
-        <div className="mono whitespace-normal text-[0.58rem] uppercase leading-4 tracking-[0.08em] text-[var(--muted)]">{sub}</div>
+      </div>
+      <div className={`flex min-w-0 max-w-full flex-col gap-1.5 ${side === "right" ? "items-end" : "items-start"}`}>
+        <div className="text-[0.8rem] font-semibold leading-tight text-[var(--ink)]">{name}</div>
+        <span
+          className={`mono inline-flex items-center gap-1.5 rounded-md border px-1.5 py-[3px] text-[0.55rem] uppercase tracking-[0.1em] transition-colors duration-300 ${
+            active
+              ? "border-[rgba(145,185,220,0.4)] bg-[rgba(63,125,161,0.16)] text-[var(--river-deep)]"
+              : "border-[rgba(255,255,255,0.1)] bg-[rgba(255,255,255,0.02)] text-[var(--muted)]"
+          }`}
+        >
+          <span
+            className={`h-1.5 w-1.5 rounded-full ${active ? "status-dot bg-[var(--river-deep)]" : "bg-[var(--muted)]"}`}
+            aria-hidden="true"
+          />
+          {sub}
+        </span>
       </div>
     </div>
   );

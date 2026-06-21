@@ -1,4 +1,10 @@
-# Service Discovery
+---
+title: "Service discovery"
+description: "Discover stable service IDs and open budgeted gateway sessions."
+icon: "radar"
+---
+
+# Service discovery
 
 Rubicon is a discoverable marketplace of metered services for agents.
 

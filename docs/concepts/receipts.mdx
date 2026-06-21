@@ -1,0 +1,39 @@
+---
+title: "Receipts"
+description: "Persist usage and settlement evidence for every paid read."
+icon: "receipt-text"
+---
+
+A completed read returns a `ReadReceipt`.
+
+```ts
+interface ReadReceipt {
+  sessionId: string;
+  articleId: string;
+  conversationId: string;
+  wordsRead: number;
+  amountPaidAtomic: `${bigint}`;
+  settlementIds: string[];
+  transactionHashes: string[];
+  text: string;
+  completed: boolean;
+  stopReason:
+    | "article_completed"
+    | "stop_condition"
+    | "budget_reached"
+    | "max_words"
+    | "aborted";
+}
+```
+
+## Reconciliation checklist
+
+- Persist `sessionId`, `articleId`, and `conversationId`.
+- Store `wordsRead` with `amountPaidAtomic`.
+- Index every `settlementId`.
+- Record `stopReason` for agent audits.
+- Treat transaction hashes as optional.
+
+<Note>
+For Circle Gateway nanopayments, settlement IDs are the primary payment proof. A successful nanopayment may not produce a direct ERC-20 transfer hash.
+</Note>

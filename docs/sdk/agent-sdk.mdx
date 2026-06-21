@@ -1,0 +1,87 @@
+---
+title: "Agent SDK"
+description: "High-level discovery, navigation, paid streaming, and receipts."
+icon: "boxes"
+---
+
+The `@rubicon-caliga/agent-sdk` package is the primary integration for TypeScript buyer agents.
+
+## Client options
+
+```ts
+const rubicon = new Rubicon({
+  baseUrl: process.env.RUBICON_GATEWAY_URL,
+  authorization: `Bearer ${process.env.RUBICON_AGENT_API_KEY}`,
+  paymentEngine,
+});
+```
+
+| Option | Required | Description |
+| --- | --- | --- |
+| `baseUrl` | No | Gateway URL. Defaults to `http://localhost:8787`. |
+| `authorization` | No | Complete authorization header value. |
+| `paymentEngine` | No | Payment authorization implementation. |
+| `fetch` | No | Custom fetch implementation for tests or runtimes. |
+
+## High-level methods
+
+<CardGroup cols={2}>
+  <Card title="run(options)" icon="play">
+    Completes the read and returns one `ReadReceipt`.
+  </Card>
+  <Card title="read(options)" icon="radio">
+    Returns an async generator of typed read events.
+  </Card>
+  <Card title="getRepository()" icon="library">
+    Lists public live articles and pricing metadata.
+  </Card>
+  <Card title="getNavigation(id, goal)" icon="route">
+    Gets the seller agent's recommended starting section.
+  </Card>
+</CardGroup>
+
+## Stream events
+
+```ts
+for await (const event of rubicon.read({
+  articleId,
+  goal: "Extract the termination conditions",
+  maxSpendAtomic: "100000",
+  chunkWords: 32,
+  streamMode: "bundled",
+})) {
+  switch (event.type) {
+    case "article.bundle":
+      process.stdout.write(event.bundleText);
+      break;
+    case "article.completed":
+      await saveReceipt(event.receipt);
+      break;
+    case "article.error":
+      console.error(event.message);
+      break;
+  }
+}
+```
+
+<AccordionGroup>
+  <Accordion title="session.started">
+    The gateway accepted the budgeted session and returned payment terms.
+  </Accordion>
+  <Accordion title="seller.message">
+    The seller agent returned navigation or session context.
+  </Accordion>
+  <Accordion title="article.bundle">
+    A paid contiguous group of words was delivered. This is the default content event.
+  </Accordion>
+  <Accordion title="article.usage">
+    Running paid and delivered word totals.
+  </Accordion>
+  <Accordion title="article.completed">
+    The terminal event containing the final receipt.
+  </Accordion>
+</AccordionGroup>
+
+## Lower-level methods
+
+Use `startConversation`, `sendConversationMessage`, `startSession`, `streamChunk`, `abort`, and `streamEvents` only when implementing a custom orchestration loop.
