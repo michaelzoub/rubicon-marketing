@@ -35,10 +35,11 @@ import {
   Search,
   Settings,
   Unlink,
+  Volume2,
   WalletCards,
   Waves,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 /* ------------------------------------------------------------------ */
 /* Timeline                                                            */
@@ -52,10 +53,10 @@ type SceneId =
   | "end";
 
 const SCENES: Array<{ id: SceneId; ms: number }> = [
-  { id: "problem", ms: 10500 },
-  { id: "solution", ms: 19000 },
-  { id: "paid-stream", ms: 15000 },
-  { id: "receipt", ms: 9000 },
+  { id: "problem", ms: 12500 },
+  { id: "solution", ms: 20800 },
+  { id: "paid-stream", ms: 15600 },
+  { id: "receipt", ms: 9600 },
   { id: "end", ms: 3800 },
 ];
 
@@ -74,6 +75,44 @@ const STREAM_WORDS = STREAM_TEXT.split(" ");
 const STREAM_VISIBLE_WORDS = STREAM_WORDS.slice(0, 18);
 
 const BEATS = ["Problem", "Solution", "Stream", "Settle"] as const;
+
+type DemoSound = "slide" | "click" | "confirm";
+let demoAudioContext: AudioContext | null = null;
+
+async function enableDemoAudio() {
+  const AudioContextConstructor = window.AudioContext ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+  if (!AudioContextConstructor) return false;
+  demoAudioContext ??= new AudioContextConstructor();
+  await demoAudioContext.resume();
+  return demoAudioContext.state === "running";
+}
+
+function playDemoSound(kind: DemoSound) {
+  const ctx = demoAudioContext;
+  if (!ctx || ctx.state !== "running") return;
+  const now = ctx.currentTime;
+
+  const tone = (from: number, to: number, volume: number, duration: number, delay = 0) => {
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+    oscillator.type = "sine";
+    oscillator.frequency.setValueAtTime(from, now + delay);
+    oscillator.frequency.exponentialRampToValueAtTime(to, now + delay + duration);
+    gain.gain.setValueAtTime(0.0001, now + delay);
+    gain.gain.exponentialRampToValueAtTime(volume, now + delay + duration * 0.22);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + duration);
+    oscillator.connect(gain).connect(ctx.destination);
+    oscillator.start(now + delay);
+    oscillator.stop(now + delay + duration + 0.02);
+  };
+
+  if (kind === "slide") tone(180, 310, 0.06, 0.26);
+  if (kind === "click") tone(720, 430, 0.045, 0.08);
+  if (kind === "confirm") {
+    tone(260, 260, 0.055, 0.34);
+    tone(390, 390, 0.042, 0.4, 0.06);
+  }
+}
 const beatOf: Record<SceneId, number> = {
   problem: 0,
   solution: 1,
@@ -143,6 +182,8 @@ export default function DemoVideoPage() {
   const [minimal, setMinimal] = useState(false);
   const [paused, setPaused] = useState(false);
   const [ready, setReady] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(false);
+  const skipNextSceneSound = useRef(false);
 
   const scene = SCENES[index].id;
   const isEnd = scene === "end";
@@ -180,11 +221,38 @@ export default function DemoVideoPage() {
     return () => cancelAnimationFrame(raf);
   }, [index, ms, paused, ready]);
 
+  useEffect(() => {
+    if (!ready || !soundEnabled) return;
+    if (skipNextSceneSound.current) {
+      skipNextSceneSound.current = false;
+      return;
+    }
+    playDemoSound("slide");
+  }, [index, ready, soundEnabled]);
+
   return (
     <div className="dv-root">
       <DemoStyles />
       <AmbientBackground scene={scene} sceneIndex={index} />
       <div className="dv-vignette" aria-hidden="true" />
+
+      {!minimal && (
+        <button
+          type="button"
+          className={`dv-sound-toggle${soundEnabled ? " is-on" : ""}`}
+          onClick={async () => {
+            const enabled = await enableDemoAudio();
+            if (enabled) {
+              if (!soundEnabled) skipNextSceneSound.current = true;
+              playDemoSound("confirm");
+            }
+            setSoundEnabled(enabled);
+          }}
+          aria-pressed={soundEnabled}
+        >
+          <Volume2 size={14} /> {soundEnabled ? "Sound on" : "Enable sound"}
+        </button>
+      )}
 
       <div className="dv-stage">
         {ready && <DemoStage scene={scene} progress={progress} />}
@@ -278,7 +346,7 @@ type Segment =
   | { kind: "text"; weight: number; text: string }
   | { kind: "ui"; weight: number; wide?: boolean; render: (progress: number) => React.ReactNode };
 
-function SceneStage({ progress, bg, segments }: { progress: number; bg: string; segments: Segment[] }) {
+function SceneStage({ progress, bg, segments, sound = false }: { progress: number; bg: string; segments: Segment[]; sound?: boolean }) {
   const total = segments.reduce((sum, segment) => sum + segment.weight, 0);
   let acc = 0;
   const bounds = segments.map((segment) => {
@@ -294,6 +362,10 @@ function SceneStage({ progress, bg, segments }: { progress: number; bg: string; 
   const segment = segments[activeIndex];
   const { start, end } = bounds[activeIndex];
   const local = Math.max(0, Math.min(1, (progress - start) / (end - start || 1)));
+
+  useEffect(() => {
+    if (sound) playDemoSound("slide");
+  }, [activeIndex, sound]);
 
   return (
     <section className="dv-scene">
@@ -336,7 +408,7 @@ function TextCard({ text }: { text: string }) {
             className="dv-mainline-word"
             initial={{ opacity: 0, y: 16, filter: "blur(10px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.55, ease: CINE, delay: 0.1 + index * 0.05 }}
+            transition={{ duration: 0.62, ease: CINE, delay: 0.12 + index * 0.06 }}
           >
             {word}
           </motion.span>
@@ -357,10 +429,11 @@ function ProblemScene({ progress }: { progress: number }) {
     <SceneStage
       progress={progress}
       bg="🧩"
+      sound
       segments={[
-        { kind: "text", weight: 1.3, text: "Agents can’t buy paywalled content." },
+        { kind: "text", weight: 2, text: "Agents can’t buy paywalled content." },
         { kind: "ui", weight: 2.6, render: () => <BuyerBlocked /> },
-        { kind: "text", weight: 1.3, text: "And creators can’t sell to them either." },
+        { kind: "text", weight: 2, text: "And creators can’t sell to them either." },
         { kind: "ui", weight: 2.6, render: () => <CreatorBlocked /> },
       ]}
     />
@@ -477,7 +550,7 @@ function SolutionScene({ progress }: { progress: number }) {
       progress={progress}
       bg="🔨"
       segments={[
-        { kind: "text", weight: 1.4, text: "We came up with a solution." },
+        { kind: "text", weight: 1.85, text: "We came up with a solution." },
         // Add the article, then break it into navigable sections.
         {
           kind: "ui",
@@ -487,7 +560,7 @@ function SolutionScene({ progress }: { progress: number }) {
             <CreatorDashboardDemo step={p >= 0.58 ? 1 : 0} phase={p} priced={false} published={false} />
           ),
         },
-        { kind: "text", weight: 1.3, text: "Creators can price their articles per word. Rubicon’s cut is 0%." },
+        { kind: "text", weight: 1.75, text: "Creators can price their articles per word. Rubicon’s cut is 0%." },
         // The pricing step.
         {
           kind: "ui",
@@ -495,7 +568,7 @@ function SolutionScene({ progress }: { progress: number }) {
           wide: true,
           render: (p) => <CreatorDashboardDemo step={2} phase={p} priced={p >= 0.48} published={false} />,
         },
-        { kind: "text", weight: 1.2, text: "Publish once, and it’s instantly live to every agent." },
+        { kind: "text", weight: 1.65, text: "Publish once, and it’s instantly live to every agent." },
         // Review, then publish.
         {
           kind: "ui",
@@ -520,6 +593,10 @@ function CreatorDashboardDemo({ step, phase, priced, published }: { step: number
       : step === 2
         ? (phase < 0.48 ? "price" : phase < 0.74 ? "preview" : "action")
         : (phase < 0.4 ? "review" : "action");
+
+  useEffect(() => {
+    playDemoSound("slide");
+  }, [step]);
 
   return (
     <div className="dv-dashboard">
@@ -564,6 +641,7 @@ function CreatorDashboardDemo({ step, phase, priced, published }: { step: number
         </AnimatePresence>
       </div>
       {!published && <div className={`dv-dashboard-spotlight is-${spotlight}`} aria-hidden="true" />}
+      {!published && <SolutionCursor target={spotlight} />}
     </div>
   );
 }
@@ -580,7 +658,7 @@ function DashboardArticleStep({ focus }: { focus: "content" | "action" }) {
         <div><strong>Consent Decree Language</strong><p>The resale fee applies only when the asset transfers through a covered venue…</p></div>
         <footer><span>3 sections</span><span className="mono">2,418 words</span></footer>
       </div>
-      <DashboardButton label="Review sections" cursor={focus === "action"} focused={focus === "action"} />
+      <DashboardButton label="Review sections" focused={focus === "action"} />
     </>
   );
 }
@@ -602,7 +680,7 @@ function DashboardSectionsStep({ phase }: { phase: number }) {
           </motion.div>
         ))}
       </div>
-      <DashboardButton label="Choose pricing" cursor={actionFocused} focused={actionFocused} />
+      <DashboardButton label="Choose pricing" focused={actionFocused} />
     </>
   );
 }
@@ -616,7 +694,6 @@ function DashboardPricingStep({ phase, priced }: { phase: number; priced: boolea
         <div className={`dv-dashboard-price-input${priced ? " is-filled" : ""}`}>
           <span>Price per word</span>
           <div><small>$</small><strong className="mono">{priced ? "0.00005" : "0.0001"}</strong></div>
-          {!priced && <DashboardCursor />}
         </div>
         <div className="dv-dashboard-preview">
           <span className="mono">Pricing preview</span>
@@ -626,7 +703,7 @@ function DashboardPricingStep({ phase, priced }: { phase: number; priced: boolea
           <div><small>Rubicon platform fee</small><strong>0%</strong></div>
         </div>
       </div>
-      {priced && <DashboardButton label="Review" cursor={focus === "action"} focused={focus === "action"} />}
+      {priced && <DashboardButton label="Review" focused={focus === "action"} />}
     </>
   );
 }
@@ -641,7 +718,7 @@ function DashboardReviewStep({ focus }: { focus: "review" | "action" }) {
         <div><span>Price per word</span><strong>$0.00005 USDC</strong></div>
         <div><span>Receiving wallet</span><strong className="mono">0x8f2…91c ✓</strong></div>
       </div>
-      <DashboardButton label="Publish article" cursor={focus === "action"} focused={focus === "action"} />
+      <DashboardButton label="Publish article" focused={focus === "action"} />
     </>
   );
 }
@@ -656,21 +733,25 @@ function DashboardPublished() {
   );
 }
 
-function DashboardButton({ label, cursor, focused }: { label: string; cursor?: boolean; focused?: boolean }) {
-  return <div className={`dv-dashboard-button${focused ? " is-pressing" : ""}`}>{label}<ArrowRight size={13} />{cursor && <DashboardCursor />}</div>;
+function DashboardButton({ label, focused }: { label: string; focused?: boolean }) {
+  useEffect(() => {
+    if (focused) playDemoSound("click");
+  }, [focused]);
+
+  return <div className={`dv-dashboard-button${focused ? " is-pressing" : ""}`}>{label}<ArrowRight size={13} /></div>;
 }
 
-function DashboardCursor({ delay = 0 }: { delay?: number }) {
+function SolutionCursor({ target }: { target: string }) {
   return (
     <motion.span
-      className="dv-dashboard-cursor"
+      className={`dv-solution-cursor is-${target}${target === "action" ? " is-clicking" : ""}`}
       aria-hidden="true"
-      initial={{ opacity: 0, x: 30, y: -20, scale: 1 }}
-      animate={{ opacity: [0, 1, 1, 1], x: [30, 0, 0, 0], y: [-20, 0, 0, 0], scale: [1, 1, 0.84, 1] }}
-      transition={{ duration: 0.82, delay, ease: CINE, times: [0, 0.58, 0.78, 1] }}
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.35, ease: CINE }}
     >
       <MousePointer2 size={20} fill="currentColor" />
-      <span />
+      {target === "action" && <span />}
     </motion.span>
   );
 }
@@ -685,7 +766,7 @@ function PaidStreamScene({ progress }: { progress: number }) {
       progress={progress}
       bg="🌊"
       segments={[
-        { kind: "text", weight: 1.4, text: "Agents can pay for what they need and see only that." },
+        { kind: "text", weight: 1.85, text: "Agents can pay for what they need and see only that." },
         { kind: "ui", weight: 5, render: (p) => <PaidStreamCard progress={p} /> },
       ]}
     />
@@ -703,6 +784,10 @@ function PaidStreamCard({ progress }: { progress: number }) {
   const stopped = progress >= 0.86;
   const focus = !sellerReplied ? "question" : !sessionOpened ? "route" : !streaming ? "session" : stopped ? "stop" : "stream";
 
+  useEffect(() => {
+    playDemoSound(focus === "stop" ? "click" : "slide");
+  }, [focus]);
+
   return (
       <GlowCard
         glow="strong"
@@ -710,7 +795,7 @@ function PaidStreamCard({ progress }: { progress: number }) {
           <CardHead title="Rubicon" />
         }
       >
-        <div className={`dv-focus-region${focus === "question" || focus === "route" ? " is-focused has-label" : " is-dimmed"}`}>
+        <div className={`dv-focus-region has-label-slot${focus === "question" || focus === "route" ? " is-focused" : " is-dimmed"}`}>
           {(focus === "question" || focus === "route") && <span className="mono dv-focus-label">{focus === "question" ? "1 · Agent asks" : "2 · Seller routes"}</span>}
           <div className="dv-convo">
           <motion.div
@@ -739,7 +824,7 @@ function PaidStreamCard({ progress }: { progress: number }) {
           </div>
         </div>
 
-        <div className={`dv-guide-strip dv-focus-region${focus === "session" ? " is-focused has-label" : " is-dimmed"}`}>
+        <div className={`dv-guide-strip dv-focus-region has-label-slot${focus === "session" ? " is-focused" : " is-dimmed"}`}>
           {focus === "session" && <span className="mono dv-focus-label">3 · Open capped session</span>}
           <span className="mono dv-guide-from">POST /v1/sessions</span>
           <span className="dv-guide-text">
@@ -747,7 +832,7 @@ function PaidStreamCard({ progress }: { progress: number }) {
           </span>
         </div>
 
-        <div className={`dv-meters dv-focus-region${focus === "stream" ? " is-focused has-label" : " is-dimmed"}`}>
+        <div className={`dv-meters dv-focus-region has-label-slot${focus === "stream" ? " is-focused" : " is-dimmed"}`}>
           {focus === "stream" && <span className="mono dv-focus-label">4 · Pay as words arrive</span>}
           <div className="dv-meter">
             <span className="mono dv-meter-label">words read</span>
@@ -778,19 +863,22 @@ function PaidStreamCard({ progress }: { progress: number }) {
           </p>
         </div>
 
-        <AnimatePresence>
-          {stopped && (
-            <motion.div
-              key="stop"
-              className="dv-stop-chip is-focused"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, ease: CINE }}
-            >
-              5 · Enough context. Stop paying.
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <div className="dv-stop-slot">
+          <AnimatePresence>
+            {stopped && (
+              <motion.div
+                key="stop"
+                className="dv-stop-chip is-focused"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 4 }}
+                transition={{ duration: 0.32, ease: CINE }}
+              >
+                5 · Enough context. Stop paying.
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
       </GlowCard>
   );
 }
@@ -805,7 +893,7 @@ function ReceiptScene({ progress }: { progress: number }) {
       progress={progress}
       bg="🧾"
       segments={[
-        { kind: "text", weight: 1.3, text: "Every read settles to the creator, onchain." },
+        { kind: "text", weight: 1.75, text: "Every read settles to the creator, onchain." },
         { kind: "ui", weight: 3.7, render: (p) => <SettlementCard progress={p} /> },
       ]}
     />
@@ -816,6 +904,14 @@ function SettlementCard({ progress }: { progress: number }) {
   const submitted = progress >= 0.3;
   const included = progress >= 0.58;
   const confirmed = progress >= 0.8;
+
+  useEffect(() => {
+    if (included) playDemoSound("slide");
+  }, [included]);
+
+  useEffect(() => {
+    if (confirmed) playDemoSound("confirm");
+  }, [confirmed]);
 
   return (
     <div className="dv-simple-settlement">
@@ -845,14 +941,16 @@ function SettlementCard({ progress }: { progress: number }) {
         </motion.div>
       </div>
 
-      <AnimatePresence>
-        {confirmed && (
-          <motion.div className="dv-simple-paid" initial={{ opacity: 0, y: 12, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 180, damping: 20 }}>
-            <span className="dv-chain-check"><Check size={14} /></span>
-            <div><strong>Creator paid</strong><small className="mono">+$0.0068 USDC · FINAL ON ARC</small></div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <div className="dv-simple-paid-slot">
+        <AnimatePresence>
+          {confirmed && (
+            <motion.div className="dv-simple-paid" initial={{ opacity: 0, y: 10, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 4 }} transition={{ type: "spring", stiffness: 180, damping: 20 }}>
+              <span className="dv-chain-check"><Check size={14} /></span>
+              <div><strong>Creator paid</strong><small className="mono">+$0.0068 USDC · FINAL ON ARC</small></div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
@@ -1041,6 +1139,15 @@ function DemoStyles() {
         position: absolute; inset: 0; z-index: 1; pointer-events: none;
         background: radial-gradient(120% 120% at 50% 45%, transparent 58%, rgba(8,9,13,0.42) 100%);
       }
+      .dv-sound-toggle {
+        position: fixed; top: 18px; right: 20px; z-index: 30; display: inline-flex; align-items: center; gap: 7px;
+        border: 0; border-radius: 999px; padding: 8px 12px; color: var(--muted); background: rgba(22,24,29,0.82);
+        font-size: 0.68rem; font-weight: 650; backdrop-filter: blur(12px); cursor: pointer;
+        transition: color 160ms var(--ease-out), background-color 160ms var(--ease-out), transform 140ms var(--ease-out);
+      }
+      .dv-sound-toggle.is-on { color: var(--ink); background: rgba(47,128,237,0.16); }
+      .dv-sound-toggle:active { transform: scale(0.97); }
+      @media (hover: hover) and (pointer: fine) { .dv-sound-toggle:hover { color: var(--ink); } }
 
       .dv-stage {
         position: relative; z-index: 2;
@@ -1203,9 +1310,15 @@ function DemoStyles() {
       .dv-dashboard-button { position: absolute; right: 17px; bottom: 14px; display: inline-flex; align-items: center; gap: 6px; padding: 8px 13px; overflow: visible; border-radius: 999px; color: white; background: #25262c; font-size: 0.59rem; font-weight: 700; }
       .dv-dashboard-button.is-pressing { animation: dv-button-press 900ms var(--ease-out) 1; }
       @keyframes dv-button-press { 0%, 55%, 100% { transform: scale(1); } 70% { transform: scale(0.96); } }
-      .dv-dashboard-cursor { position: absolute; z-index: 10; right: 10px; top: 55%; width: 20px; height: 20px; color: #11151c; filter: drop-shadow(0 1px 2px rgba(255,255,255,0.9)) drop-shadow(0 2px 4px rgba(0,0,0,0.25)); }
-      .dv-dashboard-button .dv-dashboard-cursor { color: white; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.55)); }
-      .dv-dashboard-cursor > span { position: absolute; inset: -5px; border: 1px solid rgba(47,128,237,0.7); border-radius: 50%; animation: dv-cursor-pulse 700ms var(--ease-out) 2; }
+      .dv-solution-cursor { position: absolute; z-index: 12; width: 20px; height: 20px; color: #11151c; filter: drop-shadow(0 1px 2px rgba(255,255,255,0.95)) drop-shadow(0 3px 5px rgba(0,0,0,0.32)); transition: left 560ms var(--ease-in-out), top 560ms var(--ease-in-out); }
+      .dv-solution-cursor.is-content { left: 70%; top: 45%; }
+      .dv-solution-cursor.is-sections { left: 72%; top: 44%; }
+      .dv-solution-cursor.is-price { left: 53%; top: 48%; }
+      .dv-solution-cursor.is-preview { left: 82%; top: 49%; }
+      .dv-solution-cursor.is-review { left: 72%; top: 48%; }
+      .dv-solution-cursor.is-action { left: 88%; top: 84%; animation: dv-solution-click 900ms var(--ease-out) 1; }
+      .dv-solution-cursor > span { position: absolute; inset: -5px; border: 1px solid rgba(47,128,237,0.7); border-radius: 50%; animation: dv-cursor-pulse 700ms var(--ease-out) 1; }
+      @keyframes dv-solution-click { 0%, 55%, 100% { transform: scale(1); } 72% { transform: scale(0.82); } }
       @keyframes dv-cursor-pulse { to { transform: scale(1.55); opacity: 0; } }
       .dv-dashboard-spotlight {
         position: absolute; inset: 0; z-index: 8; pointer-events: none;
@@ -1267,9 +1380,10 @@ function DemoStyles() {
       .dv-caret { display: inline-block; width: 8px; height: 1.05em; vertical-align: text-bottom; margin-left: 1px; background: var(--river-deep); border-radius: 1px; animation: dv-blink 1s steps(2) infinite; }
       @keyframes dv-blink { 50% { opacity: 0; } }
       .dv-stop-chip { display: inline-flex; align-items: center; align-self: flex-start; font-size: 0.86rem; font-weight: 650; color: var(--green); padding: 8px 14px; border-radius: 999px; background: rgba(88,213,155,0.12); }
+      .dv-stop-slot { display: flex; min-height: 38px; align-items: flex-start; }
       .dv-focus-region { position: relative; transition: opacity 320ms var(--ease-out), filter 320ms var(--ease-out); }
       .dv-focus-region.is-focused { border-radius: 14px; }
-      .dv-focus-region.has-label { padding-top: 32px; }
+      .dv-focus-region.has-label-slot { padding-top: 32px; }
       .dv-focus-label { position: absolute; top: 8px; left: 12px; z-index: 4; padding: 5px 9px; border: 0; border-radius: 999px; color: white; background: var(--river); font-size: 0.58rem; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap; }
       .dv-stream-ellipsis { color: var(--quiet); }
 
@@ -1388,6 +1502,7 @@ function DemoStyles() {
       .dv-simple-status { display: flex; align-items: center; gap: 8px; min-height: 22px; font-size: 0.64rem; }
       .dv-simple-status .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--river-deep); animation: status-pulse 1.8s var(--ease-in-out) infinite; }
       .dv-simple-paid { display: flex; align-items: center; justify-content: center; gap: 11px; margin: 0 20px 18px; padding: 12px 14px; border-radius: 13px; color: var(--green); background: rgba(88,213,155,0.09); box-shadow: inset 0 0 0 1px rgba(88,213,155,0.16); }
+      .dv-simple-paid-slot { display: grid; min-height: 70px; align-content: start; }
       .dv-simple-paid div { display: grid; gap: 2px; }
       .dv-simple-paid strong { font-size: 0.72rem; }
       .dv-simple-paid small { color: var(--muted); font-size: 0.5rem; }
@@ -1434,6 +1549,7 @@ function DemoStyles() {
         .dv-dashboard { grid-template-columns: 1fr; }
         .dv-dashboard-side { display: none; }
         .dv-dashboard-spotlight { display: none; }
+        .dv-solution-cursor { display: none; }
         .dv-dashboard-main { padding: 12px; }
         .dv-dashboard-steps li { padding-inline: 7px; }
         .dv-dashboard-steps li { font-size: 0; }

@@ -89,14 +89,28 @@ export async function createImportDraft(
   payload: ExtensionImportPayload,
   appUrl: string,
 ): Promise<CreatedDraft> {
-  // The creator row must exist for the FK / RLS ownership to line up. The
-  // dashboard upserts it on login, but a token could be used before the
-  // creator opens the dashboard in this browser, so ensure it here.
-  const { error: creatorError } = await supabase
+  // The creator row must exist for the FK / RLS ownership to line up. It is
+  // guaranteed to: `extension_tokens.creator_id` is a NOT NULL FK to
+  // `creators(id)`, so a token cannot exist without its creator, and the token
+  // was just authenticated. We therefore only *verify* the row — we must not
+  // upsert it. `creators.username` is NOT NULL with no default, and Postgres
+  // checks NOT NULL on the candidate row *before* applying ON CONFLICT DO
+  // NOTHING, so an `upsert({ id }, { ignoreDuplicates })` that omits username
+  // raises 23502 even when the row already exists, breaking every import.
+  const { data: creatorRow, error: creatorError } = await supabase
     .from("creators")
-    .upsert({ id: creatorId }, { onConflict: "id", ignoreDuplicates: true });
+    .select("id")
+    .eq("id", creatorId)
+    .maybeSingle<{ id: string }>();
   if (creatorError) {
-    throw new ImportServerError(500, "creator_upsert_failed", "Could not prepare your creator account.");
+    throw new ImportServerError(500, "creator_lookup_failed", "Could not verify your creator account.");
+  }
+  if (!creatorRow) {
+    throw new ImportServerError(
+      404,
+      "creator_not_found",
+      "Open the Rubicon dashboard once to finish setting up your account, then try again.",
+    );
   }
 
   const articleId = randomId("article");
