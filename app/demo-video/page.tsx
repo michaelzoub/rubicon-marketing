@@ -39,7 +39,8 @@ import {
   WalletCards,
   Waves,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Howl } from "howler";
+import { useEffect, useState } from "react";
 
 /* ------------------------------------------------------------------ */
 /* Timeline                                                            */
@@ -56,7 +57,7 @@ const SCENES: Array<{ id: SceneId; ms: number }> = [
   { id: "problem", ms: 12500 },
   { id: "solution", ms: 20800 },
   { id: "paid-stream", ms: 15600 },
-  { id: "receipt", ms: 9600 },
+  { id: "receipt", ms: 7600 },
   { id: "end", ms: 3800 },
 ];
 
@@ -76,110 +77,49 @@ const STREAM_VISIBLE_WORDS = STREAM_WORDS.slice(0, 18);
 
 const BEATS = ["Problem", "Solution", "Stream", "Settle"] as const;
 
-type DemoSound = "slide-soft" | "slide-deep" | "slide-reverse" | "click" | "confirm";
+type DemoSound = "terminal" | "mouse" | "stream" | "error" | "block" | "confirm";
 let demoSoundEnabled = false;
-const demoSoundUrls = new Map<DemoSound, string>();
-const activeDemoAudio = new Set<HTMLAudioElement>();
-let slideSoundIndex = 0;
+const demoSounds = new Map<DemoSound, Howl>();
 
-function playSlideSound() {
-  const variants: DemoSound[] = ["slide-soft", "slide-deep", "slide-reverse"];
-  const variant = variants[slideSoundIndex % variants.length];
-  slideSoundIndex += 1;
-  return playDemoSound(variant);
-}
+const DEMO_SOUND_FILES: Record<DemoSound, { src: string; volume: number }> = {
+  terminal: { src: "/sounds/terminal-tick.mp3", volume: 0.22 },
+  mouse: { src: "/sounds/mouse-click.mp3", volume: 0.32 },
+  stream: { src: "/sounds/terminal-tick.mp3", volume: 0.045 },
+  error: { src: "/sounds/error-notification.mp3", volume: 0.28 },
+  block: { src: "/sounds/block-impact.mp3", volume: 0.38 },
+  confirm: { src: "/sounds/cinematic-impact.mp3", volume: 0.24 },
+};
 
-function createDemoSoundUrl(kind: DemoSound) {
-  const cached = demoSoundUrls.get(kind);
+function getDemoSound(kind: DemoSound) {
+  const cached = demoSounds.get(kind);
   if (cached) return cached;
-
-  const sampleRate = 32000;
-  const isSlide = kind.startsWith("slide-");
-  const duration = kind === "click" ? 0.16 : kind === "slide-soft" ? 0.5 : isSlide ? 0.64 : 1.05;
-  const sampleCount = Math.floor(sampleRate * duration);
-  const buffer = new ArrayBuffer(44 + sampleCount * 2);
-  const view = new DataView(buffer);
-  const write = (offset: number, value: string) => [...value].forEach((character, index) => view.setUint8(offset + index, character.charCodeAt(0)));
-
-  write(0, "RIFF");
-  view.setUint32(4, 36 + sampleCount * 2, true);
-  write(8, "WAVEfmt ");
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true);
-  view.setUint16(22, 1, true);
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * 2, true);
-  view.setUint16(32, 2, true);
-  view.setUint16(34, 16, true);
-  write(36, "data");
-  view.setUint32(40, sampleCount * 2, true);
-
-  let noiseSeed = kind === "slide-soft" ? 0x1a2b3c4d : kind === "slide-deep" ? 0x13579bdf : kind === "slide-reverse" ? 0x2468ace0 : kind === "click" ? 0x31415926 : 0x27182818;
-  let fastNoise = 0;
-  let slowNoise = 0;
-  let lowPhase = 0;
-  const noise = () => {
-    noiseSeed ^= noiseSeed << 13;
-    noiseSeed ^= noiseSeed >>> 17;
-    noiseSeed ^= noiseSeed << 5;
-    return ((noiseSeed >>> 0) / 0xffffffff) * 2 - 1;
-  };
-
-  for (let index = 0; index < sampleCount; index += 1) {
-    const time = index / sampleRate;
-    const progress = time / duration;
-    const attack = Math.min(1, time / (kind === "click" ? 0.006 : 0.045));
-    const release = Math.min(1, (duration - time) / (kind === "click" ? 0.055 : isSlide ? 0.2 : 0.24));
-    const envelope = attack * release;
-    const whiteNoise = noise();
-    const fastAmount = isSlide ? (kind === "slide-reverse" ? 0.2 - progress * 0.15 : 0.045 + progress * (kind === "slide-deep" ? 0.1 : 0.16)) : 0.12;
-    fastNoise += (whiteNoise - fastNoise) * fastAmount;
-    slowNoise += (whiteNoise - slowNoise) * 0.012;
-    const shapedNoise = fastNoise - slowNoise;
-    let sample = 0;
-
-    if (isSlide) {
-      const movement = Math.pow(Math.sin(Math.PI * progress), 0.72);
-      const lowFrequency = kind === "slide-deep" ? 52 + progress * 14 : kind === "slide-reverse" ? 94 - progress * 28 : 72 + progress * 24;
-      lowPhase += (2 * Math.PI * lowFrequency) / sampleRate;
-      const noiseLevel = kind === "slide-soft" ? 1.15 : kind === "slide-deep" ? 1.5 : 1.3;
-      sample = shapedNoise * noiseLevel * movement + Math.sin(lowPhase) * (kind === "slide-deep" ? 0.13 : 0.07) * movement;
-    } else if (kind === "click") {
-      const lowFrequency = 105 - progress * 42;
-      lowPhase += (2 * Math.PI * lowFrequency) / sampleRate;
-      sample = Math.sin(lowPhase) * Math.exp(-34 * time) * 0.72 + fastNoise * Math.exp(-48 * time) * 0.5;
-    } else {
-      const lowFrequency = 88 - progress * 46;
-      lowPhase += (2 * Math.PI * lowFrequency) / sampleRate;
-      const subImpact = Math.sin(lowPhase) * Math.exp(-3.4 * time) * 0.8;
-      const initialHit = fastNoise * Math.exp(-20 * time) * 0.65;
-      const airTail = shapedNoise * Math.pow(Math.sin(Math.PI * progress), 0.8) * 0.24;
-      sample = subImpact + initialHit + airTail;
-    }
-    view.setInt16(44 + index * 2, Math.max(-1, Math.min(1, sample * envelope * 0.82)) * 32767, true);
-  }
-
-  const url = URL.createObjectURL(new Blob([buffer], { type: "audio/wav" }));
-  demoSoundUrls.set(kind, url);
-  return url;
+  const config = DEMO_SOUND_FILES[kind];
+  const sound = new Howl({ src: [config.src], volume: config.volume, preload: true });
+  demoSounds.set(kind, sound);
+  return sound;
 }
 
 async function playDemoSound(kind: DemoSound, force = false) {
   if (!demoSoundEnabled && !force) return false;
-  const audio = new Audio(createDemoSoundUrl(kind));
-  audio.volume = kind === "click" ? 0.68 : 0.78;
-  activeDemoAudio.add(audio);
-  audio.addEventListener("ended", () => activeDemoAudio.delete(audio), { once: true });
-  try {
-    await audio.play();
-    return true;
-  } catch {
-    activeDemoAudio.delete(audio);
-    return false;
-  }
+  const sound = getDemoSound(kind);
+
+  return new Promise<boolean>((resolve) => {
+    let resolved = false;
+    const finish = (value: boolean) => {
+      if (resolved) return;
+      resolved = true;
+      resolve(value);
+    };
+    sound.once("play", () => finish(true));
+    sound.once("playerror", () => finish(false));
+    if (kind === "confirm") sound.stop();
+    sound.play();
+    window.setTimeout(() => finish(sound.playing()), 1400);
+  });
 }
 
 async function enableDemoAudio() {
+  (Object.keys(DEMO_SOUND_FILES) as DemoSound[]).forEach(getDemoSound);
   const started = await playDemoSound("confirm", true);
   demoSoundEnabled = started;
   return started;
@@ -255,7 +195,6 @@ export default function DemoVideoPage() {
   const [ready, setReady] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [soundBlocked, setSoundBlocked] = useState(false);
-  const skipNextSceneSound = useRef(false);
 
   const scene = SCENES[index].id;
   const isEnd = scene === "end";
@@ -293,15 +232,6 @@ export default function DemoVideoPage() {
     return () => cancelAnimationFrame(raf);
   }, [index, ms, paused, ready]);
 
-  useEffect(() => {
-    if (!ready || !soundEnabled) return;
-    if (skipNextSceneSound.current) {
-      skipNextSceneSound.current = false;
-      return;
-    }
-    void playSlideSound();
-  }, [index, ready, soundEnabled]);
-
   return (
     <div className="dv-root">
       <DemoStyles />
@@ -314,7 +244,6 @@ export default function DemoVideoPage() {
           className={`dv-sound-toggle${soundEnabled ? " is-on" : ""}${soundBlocked ? " is-blocked" : ""}`}
           onClick={async () => {
             const enabled = await enableDemoAudio();
-            if (enabled && !soundEnabled) skipNextSceneSound.current = true;
             setSoundEnabled(enabled);
             setSoundBlocked(!enabled);
           }}
@@ -417,7 +346,7 @@ type Segment =
   | { kind: "text"; weight: number; text: string }
   | { kind: "ui"; weight: number; wide?: boolean; render: (progress: number) => React.ReactNode };
 
-function SceneStage({ progress, bg, segments, sound = false }: { progress: number; bg: string; segments: Segment[]; sound?: boolean }) {
+function SceneStage({ progress, bg, segments }: { progress: number; bg: string; segments: Segment[] }) {
   const total = segments.reduce((sum, segment) => sum + segment.weight, 0);
   let acc = 0;
   const bounds = segments.map((segment) => {
@@ -433,10 +362,6 @@ function SceneStage({ progress, bg, segments, sound = false }: { progress: numbe
   const segment = segments[activeIndex];
   const { start, end } = bounds[activeIndex];
   const local = Math.max(0, Math.min(1, (progress - start) / (end - start || 1)));
-
-  useEffect(() => {
-    if (sound && segment.kind === "ui") void playSlideSound();
-  }, [activeIndex, segment.kind, sound]);
 
   return (
     <section className="dv-scene">
@@ -500,7 +425,6 @@ function ProblemScene({ progress }: { progress: number }) {
     <SceneStage
       progress={progress}
       bg="🧩"
-      sound
       segments={[
         { kind: "text", weight: 2, text: "Agents can’t buy paywalled content." },
         { kind: "ui", weight: 2.6, render: () => <BuyerBlocked /> },
@@ -528,6 +452,7 @@ function BuyerBlocked() {
       </div>
       <div className="dv-term-body mono">
         <div className="dv-term-cmd">
+          <TimedSoundCue delay={0.2} />
           <span className="dv-term-prompt">$</span>
           <span>
             <span className="dv-tok-fn">await fetch</span>(
@@ -543,6 +468,7 @@ function BuyerBlocked() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.38, ease: CINE, delay: request.delay }}
           >
+            <TimedSoundCue delay={request.delay} />
             <span className="dv-term-order">{request.n}</span>
             <span className="dv-term-method">{request.method}</span>
             <span className="dv-term-host">{request.path}</span>
@@ -557,12 +483,21 @@ function BuyerBlocked() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4, ease: CINE, delay: 1.95 }}
         >
+          <TimedSoundCue delay={1.95} />
           <span className="dv-term-x">✗</span> fetch() can’t complete an interactive subscription
           <span className="dv-term-cursor" aria-hidden="true" />
         </motion.div>
       </div>
     </div>
   );
+}
+
+function TimedSoundCue({ delay, sound = "terminal" }: { delay: number; sound?: DemoSound }) {
+  useEffect(() => {
+    const timeout = window.setTimeout(() => void playDemoSound(sound), delay * 1000);
+    return () => window.clearTimeout(timeout);
+  }, [delay, sound]);
+  return null;
 }
 
 function CreatorBlocked() {
@@ -605,6 +540,7 @@ function CreatorBlocked() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: CINE, delay: 1.5 }}
       >
+        <TimedSoundCue delay={1.5} sound="error" />
         <span className="dv-cl-red">The transaction fails before value can move.</span>
       </motion.p>
     </div>
@@ -664,10 +600,6 @@ function CreatorDashboardDemo({ step, phase, priced, published }: { step: number
       : step === 2
         ? (phase < 0.48 ? "price" : phase < 0.74 ? "preview" : "action")
         : (phase < 0.4 ? "review" : "action");
-
-  useEffect(() => {
-    if (step !== 1) void playSlideSound();
-  }, [step]);
 
   return (
     <div className="dv-dashboard">
@@ -806,7 +738,9 @@ function DashboardPublished() {
 
 function DashboardButton({ label, focused }: { label: string; focused?: boolean }) {
   useEffect(() => {
-    if (focused) void playDemoSound("click");
+    if (!focused) return;
+    const timeout = window.setTimeout(() => void playDemoSound("mouse"), 635);
+    return () => window.clearTimeout(timeout);
   }, [focused]);
 
   return <div className={`dv-dashboard-button${focused ? " is-pressing" : ""}`}>{label}<ArrowRight size={13} /></div>;
@@ -854,11 +788,11 @@ function PaidStreamCard({ progress }: { progress: number }) {
   const spent = TARGET_SPEND * revealFrac;
   const stopped = progress >= 0.86;
   const focus = !sellerReplied ? "question" : !sessionOpened ? "route" : !streaming ? "session" : stopped ? "stop" : "stream";
+  const streamSoundStep = Math.floor(revealed / 3);
 
   useEffect(() => {
-    if (focus === "session") void playSlideSound();
-    if (focus === "stop") void playDemoSound("click");
-  }, [focus]);
+    if (streaming && !stopped && streamSoundStep > 0) void playDemoSound("stream");
+  }, [streamSoundStep, streaming, stopped]);
 
   return (
       <GlowCard
@@ -978,12 +912,12 @@ function SettlementCard({ progress }: { progress: number }) {
   const confirmed = progress >= 0.8;
 
   useEffect(() => {
-    if (included) void playSlideSound();
-  }, [included]);
-
-  useEffect(() => {
     if (confirmed) void playDemoSound("confirm");
   }, [confirmed]);
+
+  useEffect(() => {
+    if (included) void playDemoSound("block");
+  }, [included]);
 
   return (
     <div className="dv-simple-settlement">
@@ -1516,7 +1450,7 @@ function DemoStyles() {
       .dv-tx-settlement { width: 100%; overflow: hidden; border-radius: 20px; background: #15181e; box-shadow: 0 30px 80px rgba(0,0,0,0.32), inset 0 0 0 1px rgba(255,255,255,0.055); }
       .dv-tx-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid rgba(255,255,255,0.06); }
       .dv-tx-brand { display: flex; align-items: center; gap: 11px; }
-      .dv-tx-brand img { width: 34px; height: 34px; border-radius: 9px; object-fit: contain; background: white; }
+      .dv-tx-brand img { width: 68px; height: 30px; border-radius: 0; object-fit: contain; background: transparent; }
       .dv-tx-brand div { display: grid; gap: 2px; }
       .dv-tx-brand span { color: var(--quiet); font-size: 0.46rem; letter-spacing: 0.12em; }
       .dv-tx-brand strong { font-size: 0.78rem; }
