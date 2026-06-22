@@ -10,7 +10,6 @@ import {
   Link2,
   LockKeyhole,
   Search,
-  Waves,
 } from "lucide-react";
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
@@ -18,6 +17,7 @@ import { SellerGlyph } from "./_components/agent-glyphs";
 import { HowItWorks } from "./_components/how-it-works";
 import { StreamTheater } from "./_components/stream-theater";
 import { WordStreamDemo } from "./_components/word-stream";
+import { RubiconBrand } from "./_components/rubicon-brand";
 
 const githubUrl = "https://github.com/michaelzoub/rubicon";
 const skillUrl = "https://www.rubiconpay.xyz/skill.md";
@@ -183,9 +183,8 @@ function Navigation() {
     <header className="sticky top-0 z-50 border-b border-[var(--faint)] bg-[rgba(21,21,23,0.92)] backdrop-blur-md">
       <nav className="container flex h-16 items-center justify-between gap-6" aria-label="Main navigation">
         <div className="flex min-w-0 items-center gap-8">
-          <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold">
-            <Waves size={21} strokeWidth={1.9} className="text-[var(--river)]" aria-hidden="true" />
-            <span>Rubicon</span>
+          <Link href="/" className="flex shrink-0 items-center" aria-label="Rubicon home">
+            <RubiconBrand className="h-8" />
           </Link>
           <div className="hidden items-center gap-7 text-sm text-[var(--muted)] lg:flex">
             <a className="site-nav-link" href="#product">Product</a>
@@ -499,9 +498,7 @@ function Footer() {
     <footer className="border-t border-[var(--faint)] bg-[var(--surface-muted)]">
       <div className="container flex flex-col gap-6 py-8 md:flex-row md:items-center md:justify-between">
         <div className="grid gap-4">
-          <div className="flex items-center gap-2 font-semibold">
-            <Waves size={16} className="text-[var(--river)]" aria-hidden="true" /> Rubicon
-          </div>
+          <RubiconBrand className="h-7" />
           <p className="text-sm text-[var(--muted)]">Let AI agents pay to read your work.</p>
           <div className="flex items-center gap-3 border-t border-[var(--faint)] pt-4 text-sm text-[var(--muted)]">
             <span className="relative grid h-10 w-10 shrink-0 place-items-center overflow-hidden bg-white">

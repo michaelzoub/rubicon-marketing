@@ -1,4 +1,5 @@
 const DEFAULT_ORIGIN = "https://www.rubiconpay.xyz";
+const SETTINGS_URL = "https://www.rubiconpay.xyz/dashboard/settings";
 const platformEl = document.querySelector("#platform");
 const titleEl = document.querySelector("#title");
 const authorEl = document.querySelector("#author");
@@ -9,6 +10,8 @@ const connectEl = document.querySelector("#connect");
 const tokenInput = document.querySelector("#token");
 const originInput = document.querySelector("#origin");
 const changeToken = document.querySelector("#change-token");
+const connPill = document.querySelector("#conn-pill");
+const connText = document.querySelector("#conn-text");
 let activeTab;
 let preview;
 let settings;
@@ -37,10 +40,17 @@ function supportedPlatform(url) {
   return null;
 }
 
+function updateConnectionPill() {
+  const connected = Boolean(settings?.token);
+  connPill.dataset.state = connected ? "on" : "off";
+  connText.textContent = connected ? "Connected" : "Not connected";
+}
+
 function showConnection(show) {
   connectEl.classList.toggle("hidden", !show);
   changeToken.classList.toggle("hidden", show || !settings?.token);
   sendButton.classList.toggle("hidden", show);
+  updateConnectionPill();
 }
 
 async function requestExtraction() {
@@ -55,6 +65,7 @@ async function init() {
   try { settings.origin = normalizedOrigin(settings.origin || DEFAULT_ORIGIN); }
   catch { settings.origin = DEFAULT_ORIGIN; }
   originInput.value = settings.origin;
+  updateConnectionPill();
   const platform = supportedPlatform(activeTab?.url || "");
   if (!platform) {
     platformEl.textContent = "Unsupported page";
@@ -88,12 +99,7 @@ document.querySelector("#save").addEventListener("click", async () => {
 });
 
 document.querySelector("#open-settings").addEventListener("click", () => {
-  try {
-    const origin = normalizedOrigin(originInput.value || DEFAULT_ORIGIN);
-    chrome.tabs.create({ url: `${origin}/dashboard/settings` });
-  } catch (error) {
-    setStatus(error instanceof Error ? error.message : "Enter a valid Rubicon app URL.");
-  }
+  chrome.tabs.create({ url: SETTINGS_URL });
 });
 changeToken.addEventListener("click", () => {
   setStatus();

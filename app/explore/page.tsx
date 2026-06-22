@@ -1,8 +1,9 @@
-import { ArrowRight, BookOpen, FileText, Users, Waves } from "lucide-react";
+import { ArrowRight, BookOpen, FileText, Users } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { listPublicCreators, PublicDirectoryUnavailable, type PublicCreator } from "@/lib/rubicon/public";
 import { ExploreDirectory } from "./_components/explore-directory";
+import { RubiconBrand } from "../_components/rubicon-brand";
 
 export const metadata: Metadata = {
   title: "Explore articles · Rubicon",
@@ -18,8 +19,8 @@ function ExploreNav() {
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--faint)] bg-[rgba(13,14,17,0.92)] backdrop-blur-md">
       <nav className="container flex h-16 items-center justify-between gap-6" aria-label="Main navigation">
-        <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold">
-          <Waves size={21} strokeWidth={1.9} className="text-[var(--river)]" aria-hidden="true" /> Rubicon
+        <Link href="/" className="flex shrink-0 items-center" aria-label="Rubicon home">
+          <RubiconBrand className="h-8" />
         </Link>
         <div className="hidden items-center gap-7 text-sm text-[var(--muted)] md:flex">
           <Link className="site-nav-link" href="/docs">Docs</Link>

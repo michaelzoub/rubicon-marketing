@@ -3,9 +3,10 @@
 import { usePrivy } from "@privy-io/react-auth";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, FileText, LayoutDashboard, Loader2, LogOut, Plus, Settings, Wallet2, Waves } from "lucide-react";
+import { BookOpen, FileText, LayoutDashboard, Loader2, LogOut, Plus, Settings, Wallet2 } from "lucide-react";
 import { type ReactNode } from "react";
 import { usePrivyConfigured } from "../../providers";
+import { RubiconBrand } from "../../_components/rubicon-brand";
 
 const nav = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
@@ -35,9 +36,7 @@ function AuthGate({ children }: { children: ReactNode }) {
   if (!authenticated) {
     return (
       <CenteredScreen>
-        <span className="grid h-12 w-12 place-items-center rounded-xl bg-[var(--river-pale)] text-[var(--river)]">
-          <Waves size={22} aria-hidden="true" />
-        </span>
+        <RubiconBrand className="h-14" onLight />
         <h1 className="mt-5 text-2xl font-semibold">Sign in to Rubicon</h1>
         <p className="mt-2 max-w-sm text-sm leading-6 text-[var(--muted)]">
           Manage your articles, pricing, and earnings. Agents pay you for every word they read.
@@ -77,9 +76,8 @@ function Sidebar() {
 
   return (
     <aside className="dashboard-sidebar sticky top-0 hidden h-screen flex-col bg-white lg:flex">
-      <Link href="/" className="flex items-center gap-2 px-6 py-5 font-semibold">
-        <Waves size={20} strokeWidth={1.9} className="text-[var(--river)]" aria-hidden="true" />
-        Rubicon
+      <Link href="/" className="flex items-center px-6 py-5" aria-label="Rubicon home">
+        <RubiconBrand className="h-10" onLight />
       </Link>
 
       <div className="px-4">
@@ -133,8 +131,8 @@ function MobileBar() {
   return (
     <div className="sticky top-0 z-30 bg-white/90 shadow-[0_8px_24px_-20px_rgba(20,35,60,0.3)] backdrop-blur lg:hidden">
       <div className="flex items-center justify-between px-5 py-3">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
-          <Waves size={18} className="text-[var(--river)]" aria-hidden="true" /> Rubicon
+        <Link href="/" className="flex items-center" aria-label="Rubicon home">
+          <RubiconBrand className="h-9" onLight />
         </Link>
         <button type="button" onClick={() => logout()} className="text-[var(--muted)]" aria-label="Sign out">
           <LogOut size={18} aria-hidden="true" />
@@ -171,9 +169,7 @@ function CenteredScreen({ children }: { children: ReactNode }) {
 function ConfigNotice() {
   return (
     <CenteredScreen>
-      <span className="grid h-12 w-12 place-items-center rounded-xl bg-[var(--river-pale)] text-[var(--river)]">
-        <Waves size={22} aria-hidden="true" />
-      </span>
+      <RubiconBrand className="h-14" onLight />
       <h1 className="mt-5 text-2xl font-semibold">Connect creator login</h1>
       <p className="mt-2 max-w-md text-sm leading-6 text-[var(--muted)]">
         Set <code className="mono rounded bg-[var(--surface-muted)] px-1.5 py-0.5">NEXT_PUBLIC_PRIVY_APP_ID</code>,{" "}

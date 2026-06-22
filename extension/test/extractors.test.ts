@@ -83,4 +83,29 @@ describe("extension extractors", () => {
     });
     expect(result.warnings[0]).toContain("Thread import is experimental");
   });
+
+  it("recovers the CDN image url from data-attrs when the editor shows a blob src", () => {
+    const doc = new DOMParser().parseFromString(`
+      <html><head><link rel="canonical" href="https://ada.substack.com/p/post"></head><body>
+        <div data-testid="editor"><div class="ProseMirror" contenteditable="true">
+          <p>Intro line.</p>
+          <div class="image2-inset" data-attrs='{"src":"https://substackcdn.com/image/fetch/abc/banner.png","fullscreen":"https://substackcdn.com/full/banner.png"}'>
+            <a class="image-link" href="#">
+              <picture>
+                <source srcset="https://substackcdn.com/image/fetch/w_1456/banner.png 1456w">
+                <img src="blob:https://substack.com/9f-uuid" alt="Banner">
+              </picture>
+            </a>
+          </div>
+        </div></div>
+      </body></html>
+    `, "text/html");
+    const result = extractSubstack(doc, "https://ada.substack.com/publish/post/1");
+    expect(result.body).toContain("![Banner](https://substackcdn.com/image/fetch/w_1456/banner.png)");
+    expect(result.media).toContainEqual({
+      type: "image",
+      url: "https://substackcdn.com/image/fetch/w_1456/banner.png",
+      alt: "Banner",
+    });
+  });
 });

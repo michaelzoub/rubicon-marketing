@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "Send to Rubicon",
-  "version": "0.1.0",
+  "name": "Rubicon",
+  "version": "0.1.1",
   "description": "Turn the current Substack or X post into a Rubicon draft.",
   "permissions": ["activeTab", "storage"],
   "host_permissions": [
@@ -13,8 +13,15 @@
     "http://localhost:3000/*"
   ],
   "action": {
-    "default_title": "Send to Rubicon",
-    "default_popup": "popup.html"
+    "default_title": "Rubicon",
+    "default_popup": "popup.html",
+    "default_icon": "rubicon-new.png"
+  },
+  "icons": {
+    "16": "rubicon-new.png",
+    "32": "rubicon-new.png",
+    "48": "rubicon-new.png",
+    "128": "rubicon-new.png"
   },
   "content_scripts": [
     {

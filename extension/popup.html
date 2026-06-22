@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Send to Rubicon</title>
+    <title>Rubicon</title>
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
@@ -11,35 +11,63 @@
     <main>
       <header>
         <span class="brand-mark" aria-hidden="true">
-          <svg viewBox="0 0 24 24" fill="none">
-            <path d="M3 7.5c2.2 0 2.2 2 4.4 2s2.2-2 4.4-2 2.2 2 4.4 2 2.2-2 4.4-2M3 12c2.2 0 2.2 2 4.4 2s2.2-2 4.4-2 2.2 2 4.4 2 2.2-2 4.4-2M3 16.5c2.2 0 2.2 2 4.4 2s2.2-2 4.4-2 2.2 2 4.4 2 2.2-2 4.4-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          <svg viewBox="95 825 1745 340">
+            <image href="rubicon-new.png" width="2000" height="2000" />
           </svg>
         </span>
-        <strong>Rubicon</strong>
-        <span class="header-label">Import</span>
+        <span id="conn-pill" class="conn-pill" data-state="off">
+          <span class="conn-dot" aria-hidden="true"></span>
+          <span id="conn-text">Not connected</span>
+        </span>
       </header>
+
       <section id="page-card" class="card">
-        <span id="platform" class="eyebrow">Checking page...</span>
+        <span id="platform" class="eyebrow">Checking page&hellip;</span>
         <h1 id="title">Current page</h1>
         <p id="author" class="author"></p>
       </section>
+
       <section id="connect" class="card hidden">
         <div class="card-heading">
-          <span class="eyebrow">Connect</span>
-          <h2>Link your creator account</h2>
+          <span class="eyebrow">Set up &mdash; one time</span>
+          <h2>Connect your Rubicon account</h2>
         </div>
-        <div class="field">
-          <label for="token">Extension token</label>
-          <input id="token" type="password" placeholder="rbx_..." autocomplete="off" spellcheck="false" />
+
+        <div class="step">
+          <span class="step-num">1</span>
+          <div class="step-body">
+            <p class="step-text">Open Rubicon and copy your extension token.</p>
+            <button id="open-settings" class="secondary setup-link">
+              <span>Open Rubicon settings</span>
+              <svg class="arrow" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+          </div>
         </div>
-        <div class="field">
-          <label for="origin">Rubicon app URL</label>
-          <input id="origin" type="url" value="https://www.rubiconpay.xyz" spellcheck="false" />
+
+        <div class="step">
+          <span class="step-num">2</span>
+          <div class="step-body">
+            <label for="token" class="step-text">Paste the token here.</label>
+            <input id="token" type="password" placeholder="rbx_&hellip;" autocomplete="off" spellcheck="false" />
+          </div>
         </div>
-        <p>Generate a token in Rubicon Settings, then paste it here.</p>
-        <div class="row"><button id="save" class="secondary">Save connection</button><button id="open-settings" class="link">Open settings</button></div>
+
+        <details>
+          <summary>Local development</summary>
+          <div class="field advanced-field">
+            <label for="origin">Rubicon app URL</label>
+            <input id="origin" type="url" value="https://www.rubiconpay.xyz" spellcheck="false" />
+          </div>
+        </details>
+
+        <button id="save" class="primary">
+          <span>Save &amp; connect</span>
+          <svg class="arrow" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+        </button>
       </section>
+
       <p id="status" class="status" role="status" aria-live="polite"></p>
+
       <button id="send" class="primary" disabled>
         <span class="button-label">Send to Rubicon</span>
         <svg class="arrow" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>

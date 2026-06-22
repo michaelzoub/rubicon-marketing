@@ -13,9 +13,9 @@ import {
   Radio,
   ShieldCheck,
   Terminal,
-  Waves,
 } from "lucide-react";
 import Link from "next/link";
+import { RubiconBrand } from "../_components/rubicon-brand";
 
 const npmBase = "https://www.npmjs.com/package";
 const githubUrl = "https://github.com/michaelzoub/rubicon";
@@ -74,9 +74,8 @@ export default function DocsPage() {
     <div className="docs-shell">
       <header className="docs-header">
         <div className="docs-header-inner">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
-            <Waves size={20} className="text-[var(--river-deep)]" aria-hidden="true" />
-            Rubicon
+          <Link href="/" className="flex items-center" aria-label="Rubicon home">
+            <RubiconBrand className="h-7" />
           </Link>
           <span className="docs-header-divider" />
           <span className="text-sm font-semibold">Documentation</span>

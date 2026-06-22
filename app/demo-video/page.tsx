@@ -41,6 +41,7 @@ import {
 } from "lucide-react";
 import { Howl } from "howler";
 import { useEffect, useState } from "react";
+import { RubiconBrand } from "../_components/rubicon-brand";
 
 /* ------------------------------------------------------------------ */
 /* Timeline                                                            */
@@ -604,7 +605,7 @@ function CreatorDashboardDemo({ step, phase, priced, published }: { step: number
   return (
     <div className="dv-dashboard">
       <aside className="dv-dashboard-side">
-        <div className="dv-dashboard-logo"><Waves size={17} /><strong>Rubicon</strong></div>
+        <div className="dv-dashboard-logo"><RubiconBrand className="h-7" onLight /></div>
         <div className="dv-dashboard-new"><Plus size={13} /> New article</div>
         <div className="dv-dashboard-nav">
           <span><LayoutGrid size={13} /> Overview</span>

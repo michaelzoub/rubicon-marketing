@@ -63,17 +63,39 @@ function safeUrl(value, pageUrl) {
   }
 }
 
+// Substack stores the real CDN url in a JSON `data-attrs` blob (on the <img> or
+// a wrapping element). In the editor the visible <img> is often a `blob:` object
+// URL, so the http(s) source only lives here. Returns the best url it can find.
+function dataAttrsSrc(el) {
+  const raw = el?.getAttribute?.("data-attrs");
+  if (!raw) return null;
+  try {
+    const data = JSON.parse(raw);
+    return data?.src || data?.fullscreen || data?.url || null;
+  } catch {
+    return null;
+  }
+}
+
 function imageUrl(img, pageUrl) {
   const candidates = [
     img.currentSrc,
     img.getAttribute("src"),
     img.getAttribute("data-src"),
     img.getAttribute("data-original-src"),
+    dataAttrsSrc(img),
+    dataAttrsSrc(img.closest?.("[data-attrs]")),
   ];
-  const srcset = img.getAttribute("srcset") || img.getAttribute("data-srcset");
-  if (srcset) {
+  // Pull the largest entry from every relevant srcset, including sibling
+  // <source> elements when the image sits inside a <picture>.
+  const srcsets = [img.getAttribute("srcset"), img.getAttribute("data-srcset")];
+  for (const source of img.closest?.("picture")?.querySelectorAll("source") || []) {
+    srcsets.push(source.getAttribute("srcset"));
+  }
+  for (const srcset of srcsets) {
+    if (!srcset) continue;
     const largest = srcset.split(",").map((part) => part.trim().split(/\s+/)[0]).filter(Boolean).pop();
-    candidates.unshift(largest);
+    if (largest) candidates.unshift(largest);
   }
   for (const candidate of candidates) {
     const url = safeUrl(candidate, pageUrl);
