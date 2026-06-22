@@ -76,17 +76,26 @@ const STREAM_VISIBLE_WORDS = STREAM_WORDS.slice(0, 18);
 
 const BEATS = ["Problem", "Solution", "Stream", "Settle"] as const;
 
-type DemoSound = "slide" | "click" | "confirm";
+type DemoSound = "slide-soft" | "slide-deep" | "slide-reverse" | "click" | "confirm";
 let demoSoundEnabled = false;
 const demoSoundUrls = new Map<DemoSound, string>();
 const activeDemoAudio = new Set<HTMLAudioElement>();
+let slideSoundIndex = 0;
+
+function playSlideSound() {
+  const variants: DemoSound[] = ["slide-soft", "slide-deep", "slide-reverse"];
+  const variant = variants[slideSoundIndex % variants.length];
+  slideSoundIndex += 1;
+  return playDemoSound(variant);
+}
 
 function createDemoSoundUrl(kind: DemoSound) {
   const cached = demoSoundUrls.get(kind);
   if (cached) return cached;
 
-  const sampleRate = 24000;
-  const duration = kind === "click" ? 0.11 : kind === "slide" ? 0.32 : 0.52;
+  const sampleRate = 32000;
+  const isSlide = kind.startsWith("slide-");
+  const duration = kind === "click" ? 0.16 : kind === "slide-soft" ? 0.5 : isSlide ? 0.64 : 1.05;
   const sampleCount = Math.floor(sampleRate * duration);
   const buffer = new ArrayBuffer(44 + sampleCount * 2);
   const view = new DataView(buffer);
@@ -105,22 +114,49 @@ function createDemoSoundUrl(kind: DemoSound) {
   write(36, "data");
   view.setUint32(40, sampleCount * 2, true);
 
+  let noiseSeed = kind === "slide-soft" ? 0x1a2b3c4d : kind === "slide-deep" ? 0x13579bdf : kind === "slide-reverse" ? 0x2468ace0 : kind === "click" ? 0x31415926 : 0x27182818;
+  let fastNoise = 0;
+  let slowNoise = 0;
+  let lowPhase = 0;
+  const noise = () => {
+    noiseSeed ^= noiseSeed << 13;
+    noiseSeed ^= noiseSeed >>> 17;
+    noiseSeed ^= noiseSeed << 5;
+    return ((noiseSeed >>> 0) / 0xffffffff) * 2 - 1;
+  };
+
   for (let index = 0; index < sampleCount; index += 1) {
     const time = index / sampleRate;
     const progress = time / duration;
-    const attack = Math.min(1, time / 0.018);
-    const release = Math.min(1, (duration - time) / (kind === "click" ? 0.045 : 0.12));
+    const attack = Math.min(1, time / (kind === "click" ? 0.006 : 0.045));
+    const release = Math.min(1, (duration - time) / (kind === "click" ? 0.055 : isSlide ? 0.2 : 0.24));
     const envelope = attack * release;
+    const whiteNoise = noise();
+    const fastAmount = isSlide ? (kind === "slide-reverse" ? 0.2 - progress * 0.15 : 0.045 + progress * (kind === "slide-deep" ? 0.1 : 0.16)) : 0.12;
+    fastNoise += (whiteNoise - fastNoise) * fastAmount;
+    slowNoise += (whiteNoise - slowNoise) * 0.012;
+    const shapedNoise = fastNoise - slowNoise;
     let sample = 0;
-    if (kind === "slide") {
-      const phase = 2 * Math.PI * (170 * time + ((340 - 170) / (2 * duration)) * time * time);
-      sample = Math.sin(phase) * 0.62;
+
+    if (isSlide) {
+      const movement = Math.pow(Math.sin(Math.PI * progress), 0.72);
+      const lowFrequency = kind === "slide-deep" ? 52 + progress * 14 : kind === "slide-reverse" ? 94 - progress * 28 : 72 + progress * 24;
+      lowPhase += (2 * Math.PI * lowFrequency) / sampleRate;
+      const noiseLevel = kind === "slide-soft" ? 1.15 : kind === "slide-deep" ? 1.5 : 1.3;
+      sample = shapedNoise * noiseLevel * movement + Math.sin(lowPhase) * (kind === "slide-deep" ? 0.13 : 0.07) * movement;
     } else if (kind === "click") {
-      sample = Math.sin(2 * Math.PI * (760 - 300 * progress) * time) * 0.7;
+      const lowFrequency = 105 - progress * 42;
+      lowPhase += (2 * Math.PI * lowFrequency) / sampleRate;
+      sample = Math.sin(lowPhase) * Math.exp(-34 * time) * 0.72 + fastNoise * Math.exp(-48 * time) * 0.5;
     } else {
-      sample = (Math.sin(2 * Math.PI * 262 * time) + Math.sin(2 * Math.PI * 392 * time)) * 0.32;
+      const lowFrequency = 88 - progress * 46;
+      lowPhase += (2 * Math.PI * lowFrequency) / sampleRate;
+      const subImpact = Math.sin(lowPhase) * Math.exp(-3.4 * time) * 0.8;
+      const initialHit = fastNoise * Math.exp(-20 * time) * 0.65;
+      const airTail = shapedNoise * Math.pow(Math.sin(Math.PI * progress), 0.8) * 0.24;
+      sample = subImpact + initialHit + airTail;
     }
-    view.setInt16(44 + index * 2, Math.max(-1, Math.min(1, sample * envelope)) * 32767, true);
+    view.setInt16(44 + index * 2, Math.max(-1, Math.min(1, sample * envelope * 0.82)) * 32767, true);
   }
 
   const url = URL.createObjectURL(new Blob([buffer], { type: "audio/wav" }));
@@ -131,7 +167,7 @@ function createDemoSoundUrl(kind: DemoSound) {
 async function playDemoSound(kind: DemoSound, force = false) {
   if (!demoSoundEnabled && !force) return false;
   const audio = new Audio(createDemoSoundUrl(kind));
-  audio.volume = 0.85;
+  audio.volume = kind === "click" ? 0.68 : 0.78;
   activeDemoAudio.add(audio);
   audio.addEventListener("ended", () => activeDemoAudio.delete(audio), { once: true });
   try {
@@ -263,7 +299,7 @@ export default function DemoVideoPage() {
       skipNextSceneSound.current = false;
       return;
     }
-    void playDemoSound("slide");
+    void playSlideSound();
   }, [index, ready, soundEnabled]);
 
   return (
@@ -399,8 +435,8 @@ function SceneStage({ progress, bg, segments, sound = false }: { progress: numbe
   const local = Math.max(0, Math.min(1, (progress - start) / (end - start || 1)));
 
   useEffect(() => {
-    if (sound) void playDemoSound("slide");
-  }, [activeIndex, sound]);
+    if (sound && segment.kind === "ui") void playSlideSound();
+  }, [activeIndex, segment.kind, sound]);
 
   return (
     <section className="dv-scene">
@@ -630,7 +666,7 @@ function CreatorDashboardDemo({ step, phase, priced, published }: { step: number
         : (phase < 0.4 ? "review" : "action");
 
   useEffect(() => {
-    void playDemoSound("slide");
+    if (step !== 1) void playSlideSound();
   }, [step]);
 
   return (
@@ -820,7 +856,8 @@ function PaidStreamCard({ progress }: { progress: number }) {
   const focus = !sellerReplied ? "question" : !sessionOpened ? "route" : !streaming ? "session" : stopped ? "stop" : "stream";
 
   useEffect(() => {
-    void playDemoSound(focus === "stop" ? "click" : "slide");
+    if (focus === "session") void playSlideSound();
+    if (focus === "stop") void playDemoSound("click");
   }, [focus]);
 
   return (
@@ -941,7 +978,7 @@ function SettlementCard({ progress }: { progress: number }) {
   const confirmed = progress >= 0.8;
 
   useEffect(() => {
-    if (included) void playDemoSound("slide");
+    if (included) void playSlideSound();
   }, [included]);
 
   useEffect(() => {
