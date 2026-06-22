@@ -54,11 +54,11 @@ type SceneId =
   | "end";
 
 const SCENES: Array<{ id: SceneId; ms: number }> = [
-  { id: "problem", ms: 12500 },
-  { id: "solution", ms: 20800 },
-  { id: "paid-stream", ms: 15600 },
-  { id: "receipt", ms: 7600 },
-  { id: "end", ms: 3800 },
+  { id: "problem", ms: 15000 },
+  { id: "solution", ms: 25000 },
+  { id: "paid-stream", ms: 18800 },
+  { id: "receipt", ms: 9200 },
+  { id: "end", ms: 4600 },
 ];
 
 /* Cinematic easing with long, confident deceleration. */
@@ -438,9 +438,9 @@ function ProblemScene({ progress }: { progress: number }) {
 /** Half one: a buyer agent's fetch dies on the subscription wall. */
 function BuyerBlocked() {
   const requests = [
-    { n: "01", method: "GET", path: "/search?q=resale+fee", status: "200", note: "application/json", tone: "ok", delay: 0.55 },
-    { n: "02", method: "GET", path: "/articles/resale-fees", status: "402", note: "payment_required", tone: "warn", delay: 1.0 },
-    { n: "03", method: "POST", path: "/checkout", status: "401", note: "browser_session_required", tone: "error", delay: 1.45 },
+    { n: "01", method: "GET", path: "/search?q=resale+fee", status: "200", note: "application/json", tone: "ok", delay: 0.7 },
+    { n: "02", method: "GET", path: "/articles/resale-fees", status: "402", note: "payment_required", tone: "warn", delay: 1.3 },
+    { n: "03", method: "POST", path: "/checkout", status: "401", note: "browser_session_required", tone: "error", delay: 1.9 },
   ];
   return (
     <div className="dv-term">
@@ -466,7 +466,7 @@ function BuyerBlocked() {
             className={`dv-term-line dv-term-${request.tone}`}
             initial={{ opacity: 0, x: -12 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.38, ease: CINE, delay: request.delay }}
+            transition={{ duration: 0.5, ease: CINE, delay: request.delay }}
           >
             <TimedSoundCue delay={request.delay} />
             <span className="dv-term-order">{request.n}</span>
@@ -481,9 +481,9 @@ function BuyerBlocked() {
           className="dv-term-fail"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, ease: CINE, delay: 1.95 }}
+          transition={{ duration: 0.4, ease: CINE, delay: 2.5 }}
         >
-          <TimedSoundCue delay={1.95} />
+          <TimedSoundCue delay={2.5} />
           <span className="dv-term-x">✗</span> fetch() can’t complete an interactive subscription
           <span className="dv-term-cursor" aria-hidden="true" />
         </motion.div>
@@ -771,7 +771,7 @@ function PaidStreamScene({ progress }: { progress: number }) {
       progress={progress}
       bg="🌊"
       segments={[
-        { kind: "text", weight: 1.85, text: "Agents can pay for what they need and see only that." },
+        { kind: "text", weight: 1.85, text: "Agents pay for just what they need, and read only that." },
         { kind: "ui", weight: 5, render: (p) => <PaidStreamCard progress={p} /> },
       ]}
     />
@@ -982,8 +982,7 @@ function EndScene() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.7, ease: CINE }}
       >
-        <Waves size={30} strokeWidth={2} className="text-[var(--river-deep)]" aria-hidden="true" />
-        <span>Rubicon</span>
+        <img src="/rubicon-new.png" alt="Rubicon" className="dv-end-logo" />
       </motion.div>
       <h2 className="dv-end-title">
         {headline.map((w, i) => (
@@ -1518,6 +1517,7 @@ function DemoStyles() {
       .dv-end { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 640px; gap: 16px; }
       .dv-end-burst { position: absolute; top: -40px; left: 50%; width: 280px; height: 280px; margin-left: -140px; border-radius: 50%; background: rgba(47,128,237,0.25); filter: blur(100px); pointer-events: none; }
       .dv-end-mark { position: relative; display: inline-flex; align-items: center; gap: 12px; font-size: 1.6rem; font-weight: 760; letter-spacing: -0.03em; }
+      .dv-end-logo { height: clamp(40px, 6vh, 64px); width: auto; object-fit: contain; }
       .dv-end-title { position: relative; font-size: clamp(2.1rem, 4.6vw, 3.6rem); font-weight: 790; letter-spacing: -0.04em; line-height: 1.04; max-width: 15ch; }
       .dv-end-sub { position: relative; font-size: clamp(0.95rem, 1.5vw, 1.15rem); line-height: 1.6; color: var(--muted); max-width: 44ch; }
       .dv-end-cta { position: relative; margin-top: 8px; display: inline-flex; align-items: center; padding: 12px 28px; border-radius: 999px; background: var(--river); color: #fff; font-weight: 700; letter-spacing: -0.01em; }
