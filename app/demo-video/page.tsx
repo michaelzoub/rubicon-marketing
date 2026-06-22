@@ -771,7 +771,7 @@ function PaidStreamScene({ progress }: { progress: number }) {
       progress={progress}
       bg="🌊"
       segments={[
-        { kind: "text", weight: 1.85, text: "Agents pay for just what they need, and read only that." },
+        { kind: "text", weight: 1.85, text: "Agents pay for the information they need, and read only that." },
         { kind: "ui", weight: 5, render: (p) => <PaidStreamCard progress={p} /> },
       ]}
     />
