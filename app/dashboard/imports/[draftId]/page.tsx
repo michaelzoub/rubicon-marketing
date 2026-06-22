@@ -7,6 +7,7 @@ import { ArrowLeft, ExternalLink, Loader2 } from "lucide-react";
 import { useRubiconMutation, useRubiconQuery } from "@/lib/rubicon/hooks";
 import { atomicToUsd, usdToAtomic } from "@/lib/rubicon/pricing";
 import { Card, ErrorState, LoadingState } from "../../_components/ui";
+import { MarkdownEditor } from "../../_components/markdown-editor";
 
 const inputClass = "h-11 rounded-lg bg-[var(--surface-muted)] px-3 outline-none transition focus:bg-white focus:ring-2 focus:ring-[var(--river-line)]";
 
@@ -75,7 +76,10 @@ export default function ImportedDraftReviewPage() {
           )}
           <label className="grid gap-2"><span className="text-sm font-medium">Title</span><input value={title} onChange={(e) => setTitle(e.target.value)} className={inputClass} /></label>
           <label className="grid gap-2"><span className="text-sm font-medium">Author</span><input value={author} onChange={(e) => setAuthor(e.target.value)} className={inputClass} /></label>
-          <label className="grid gap-2"><span className="text-sm font-medium">Body</span><textarea value={body} onChange={(e) => setBody(e.target.value)} rows={18} className="rounded-lg bg-[var(--surface-muted)] p-3 font-mono text-sm leading-6 outline-none focus:bg-white focus:ring-2 focus:ring-[var(--river-line)]" /></label>
+          <div className="grid gap-2">
+            <span className="text-sm font-medium">Body</span>
+            <MarkdownEditor value={body} onChange={setBody} placeholder="Review the imported article…" />
+          </div>
           <label className="grid max-w-xs gap-2"><span className="text-sm font-medium">Price per word (USD)</span><input value={price} onChange={(e) => setPrice(e.target.value.replace(/[^0-9.]/g, ""))} inputMode="decimal" placeholder="0.001" className={inputClass} /></label>
           {(update.error || publish.error) && <p className="rounded-lg bg-[#fff1f0] px-4 py-3 text-sm text-[#8d2f2d]">{(update.error ?? publish.error)?.message}</p>}
           <div className="flex flex-wrap justify-end gap-2">

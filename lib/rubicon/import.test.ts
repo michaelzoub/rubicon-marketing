@@ -34,4 +34,22 @@ describe("extension import payload", () => {
     expect(result.ok).toBe(true);
     if (result.ok) expect(composeArticleBody(result.value)).toBe("## One\n\nWords");
   });
+
+  it("preserves Markdown and appends only images missing from the body", () => {
+    const result = validateImportPayload({
+      ...base,
+      body: "A **bold** and *italic* [link](https://example.com).\n\n![Inline](https://img.example/inline.png)",
+      media: [
+        { type: "image", url: "https://img.example/inline.png", alt: "Inline" },
+        { type: "image", url: "https://img.example/missing.png", alt: "Missing [chart]" },
+        { type: "video", url: "https://video.example/watch", alt: "Video" },
+      ],
+    });
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(composeArticleBody(result.value)).toBe(
+        "A **bold** and *italic* [link](https://example.com).\n\n![Inline](https://img.example/inline.png)\n\n![Missing \\[chart\\]](https://img.example/missing.png)",
+      );
+    }
+  });
 });

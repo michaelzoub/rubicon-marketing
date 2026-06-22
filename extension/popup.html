@@ -7,24 +7,45 @@
     <link rel="stylesheet" href="popup.css" />
   </head>
   <body>
+    <div class="aurora" aria-hidden="true"></div>
     <main>
-      <header><span class="mark">R</span><strong>Send to Rubicon</strong></header>
+      <header>
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M3 7.5c2.2 0 2.2 2 4.4 2s2.2-2 4.4-2 2.2 2 4.4 2 2.2-2 4.4-2M3 12c2.2 0 2.2 2 4.4 2s2.2-2 4.4-2 2.2 2 4.4 2 2.2-2 4.4-2M3 16.5c2.2 0 2.2 2 4.4 2s2.2-2 4.4-2 2.2 2 4.4 2 2.2-2 4.4-2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+          </svg>
+        </span>
+        <strong>Rubicon</strong>
+        <span class="header-label">Import</span>
+      </header>
       <section id="page-card" class="card">
         <span id="platform" class="eyebrow">Checking page...</span>
         <h1 id="title">Current page</h1>
-        <p id="author"></p>
+        <p id="author" class="author"></p>
       </section>
       <section id="connect" class="card hidden">
-        <label for="token">Extension token</label>
-        <input id="token" type="password" placeholder="rbx_..." autocomplete="off" />
-        <label for="origin">Rubicon app URL</label>
-        <input id="origin" type="url" value="https://www.rubiconpay.xyz" />
+        <div class="card-heading">
+          <span class="eyebrow">Connect</span>
+          <h2>Link your creator account</h2>
+        </div>
+        <div class="field">
+          <label for="token">Extension token</label>
+          <input id="token" type="password" placeholder="rbx_..." autocomplete="off" spellcheck="false" />
+        </div>
+        <div class="field">
+          <label for="origin">Rubicon app URL</label>
+          <input id="origin" type="url" value="https://www.rubiconpay.xyz" spellcheck="false" />
+        </div>
         <p>Generate a token in Rubicon Settings, then paste it here.</p>
-        <div class="row"><button id="save" class="secondary">Save token</button><button id="open-settings" class="link">Open settings</button></div>
+        <div class="row"><button id="save" class="secondary">Save connection</button><button id="open-settings" class="link">Open settings</button></div>
       </section>
-      <p id="status" role="status"></p>
-      <button id="send" class="primary" disabled>Send to Rubicon</button>
+      <p id="status" class="status" role="status" aria-live="polite"></p>
+      <button id="send" class="primary" disabled>
+        <span class="button-label">Send to Rubicon</span>
+        <svg class="arrow" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+      </button>
       <button id="change-token" class="link hidden">Change connection</button>
+      <p class="footnote">Creates a draft for review. Nothing is published automatically.</p>
     </main>
     <script src="popup.js"></script>
   </body>

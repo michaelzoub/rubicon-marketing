@@ -19,7 +19,7 @@ export interface ImportSection {
 }
 
 export interface ImportMedia {
-  /** e.g. "image", "video". Free-form; the server does not act on it. */
+  /** e.g. "image", "video". Valid images are added to the Markdown body. */
   type: string;
   url: string | null;
   alt: string | null;
@@ -226,18 +226,30 @@ export function validateImportPayload(raw: unknown): ValidationResult {
  * (the gateway's section parser) recovers the same outline.
  */
 export function composeArticleBody(payload: ExtensionImportPayload): string {
-  if (payload.body && payload.body.trim()) return payload.body.trim();
+  let body = payload.body?.trim() ?? "";
 
-  if (payload.sections.length > 0) {
+  if (!body && payload.sections.length > 0) {
     const parts = payload.sections.map((section) => {
       const heading = section.heading ? `## ${section.heading}\n\n` : "";
       return `${heading}${section.text}`.trim();
     });
-    const composed = parts.filter(Boolean).join("\n\n").trim();
-    if (composed) return composed;
+    body = parts.filter(Boolean).join("\n\n").trim();
   }
 
-  return (payload.rawExtractedText ?? "").trim();
+  if (!body) body = (payload.rawExtractedText ?? "").trim();
+
+  // Extractors put images in their original position when possible. Media is
+  // also sent separately, so append any valid image that was not represented
+  // in the body instead of silently dropping it during draft creation.
+  const missingImages = payload.media
+    .filter((item) => item.type.toLowerCase() === "image" && item.url && !body.includes(item.url))
+    .map((item) => {
+      const alt = (item.alt ?? "").replace(/([\\[\]])/g, "\\$1").replace(/\s+/g, " ").trim();
+      const url = item.url?.replace(/\(/g, "%28").replace(/\)/g, "%29");
+      return `![${alt}](${url})`;
+    });
+
+  return [body, ...missingImages].filter(Boolean).join("\n\n").trim();
 }
 
 /** Title shown in the dashboard when the page had no detectable title. */

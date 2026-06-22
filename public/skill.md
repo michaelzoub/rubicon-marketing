@@ -1,6 +1,6 @@
 ---
 name: rubicon
-version: 2.0.0
+version: 2.0.1
 description: Autonomously buy the most useful paid article content within a hard USDC budget
 homepage: https://github.com/michaelzoub/rubicon
 ---
@@ -15,6 +15,8 @@ workflow. Use the SDK only inside custom embedded runtimes.
 
 - Never request, handle, print, store, infer, or export private keys.
 - Never accept Circle Terms on the user's behalf.
+- Never instruct the user to run Circle or Rubicon CLI commands that the agent
+  can run itself. Ask only for the email and one-time code required for login.
 - Always require an explicit budget with `--max-usdc`.
 - Never exceed the approved cumulative cap.
 - Never initiate a payment that would exceed the remaining budget.
@@ -38,9 +40,10 @@ commands before or after `rubicon buy`.
 The command performs all necessary work internally. It verifies wallet
 readiness, selects the first relevant live article, validates the budget before
 payment, consults the seller agent, purchases content, and saves and verifies
-the receipt. Internal validation should remain hidden unless it fails. Treat a
-wallet setup or authentication failure as a blocker; never ask for a private
-key or accept legal terms to resolve it.
+the receipt. Internal validation should remain hidden unless it fails. Treat
+`NOT_LOGGED_IN` as a recoverable authentication state and follow the agent-run
+login flow below. Never ask for a private key or accept legal terms to resolve
+an authentication failure.
 
 ## Buyer Strategy
 
@@ -85,16 +88,57 @@ checked is the amount enforced.
 
 ## Recovery
 
-Report a blocker only when `rubicon buy` cannot resolve it internally. Common
-blockers include missing Circle authentication, legal terms requiring the
-user's action, unavailable wallet funds, no relevant live article, seller-agent
-failure, payment failure, or receipt persistence/verification failure.
+Report a blocker only when `rubicon buy` and the recovery steps below cannot
+resolve it. Common blockers include legal terms requiring the user's action,
+unavailable wallet funds, no relevant live article, seller-agent failure,
+payment failure, or receipt persistence/verification failure.
 
-For Circle login, direct the user to the supported agent-wallet login flow. Do
-not request private keys and do not accept terms for them. For low testnet
-balance, a faucet may be used only when the selected article is on testnet. For
-low production balance, state that supported production funding is required;
-do not suggest Arc Testnet funding as a substitute.
+### Circle login
+
+When `rubicon buy` returns `NOT_LOGGED_IN`, the agent owns the recovery flow:
+
+1. Ask the user which email to use for their Circle agent wallet. Do not ask
+   them to run a command.
+2. In the same network-capable execution context used for Rubicon, run:
+
+   ```bash
+   circle wallet login <email> --type agent --init
+   ```
+
+3. Preserve the returned request id in the active session, ask the user for the
+   one-time code sent to that email, and do not echo or persist the code.
+4. Immediately complete login yourself:
+
+   ```bash
+   circle wallet login --type agent --request <request-id> --otp <code>
+   ```
+
+5. Retry the original `rubicon buy` command with the exact same goal and hard
+   `--max-usdc` cap. Do not split, raise, or reset the budget.
+
+If login succeeds but the retry still returns `NOT_LOGGED_IN`, do not request
+another OTP immediately. Run this check yourself in the same context:
+
+```bash
+circle wallet status --type agent --output json
+```
+
+If the relevant mainnet or testnet `tokenStatus` is `VALID`, authentication is
+complete and the failure is a Rubicon/Circle CLI compatibility issue, not a
+user-login failure. Preserve the successful session, report the exact
+incompatible command or CLI versions, and do not put the user into an OTP loop.
+Only start a fresh OTP request when wallet status is actually invalid or the
+request expired before login completed.
+
+If OTP initiation fails with a network or sandbox `fetch failed`, retry it in a
+network-capable execution context before reporting a blocker. If the request
+expires, start a fresh request and ask for the new code. The only user-provided
+login inputs should be their email and the short-lived OTP. Never request
+private keys, and never accept legal terms for the user.
+
+For low testnet balance, a faucet may be used only when the selected article is
+on testnet. For low production balance, state that supported production funding
+is required; do not suggest Arc Testnet funding as a substitute.
 
 ## Final Report
 

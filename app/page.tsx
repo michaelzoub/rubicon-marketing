@@ -198,9 +198,9 @@ function Navigation() {
           <Link href="/dashboard" className="button button-primary button-nav hidden text-sm sm:inline-flex">
             Start publishing <ArrowRight size={15} aria-hidden="true" />
           </Link>
-          <Link href="/explore" className="explore-pill text-sm">
+          <a href="/explore" className="explore-pill text-sm">
             Explore <ArrowRight size={15} aria-hidden="true" />
-          </Link>
+          </a>
         </div>
       </nav>
     </header>
@@ -514,7 +514,7 @@ function Footer() {
           <a href="#product">Product</a>
           <a href="#agents">Agents</a>
           <a href="#creators">Creators</a>
-          <Link href="/explore">Explore</Link>
+          <a href="/explore">Explore</a>
           <Link href="/docs">Docs</Link>
           <a href={githubUrl}>GitHub</a>
           <Link href="/dashboard">Sign in</Link>

@@ -9,7 +9,10 @@ export const metadata: Metadata = {
   description: "Discover authors and live pay-per-word articles for AI agents.",
 };
 
-export const revalidate = 30;
+// The directory changes immediately after publishing. Always query it on a
+// fresh request instead of serving an ISR or prefetched route snapshot.
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 function ExploreNav() {
   return (
@@ -20,7 +23,7 @@ function ExploreNav() {
         </Link>
         <div className="hidden items-center gap-7 text-sm text-[var(--muted)] md:flex">
           <Link className="site-nav-link" href="/docs">Docs</Link>
-          <Link className="site-nav-link" href="/explore" aria-current="page">Explore</Link>
+          <a className="site-nav-link" href="/explore" aria-current="page">Explore</a>
           <Link href="/dashboard" className="button button-primary button-nav text-sm">Start publishing <ArrowRight size={15} /></Link>
         </div>
       </nav>

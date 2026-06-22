@@ -4,6 +4,7 @@ const titleEl = document.querySelector("#title");
 const authorEl = document.querySelector("#author");
 const statusEl = document.querySelector("#status");
 const sendButton = document.querySelector("#send");
+const sendButtonLabel = sendButton.querySelector(".button-label");
 const connectEl = document.querySelector("#connect");
 const tokenInput = document.querySelector("#token");
 const originInput = document.querySelector("#origin");
@@ -11,6 +12,21 @@ const changeToken = document.querySelector("#change-token");
 let activeTab;
 let preview;
 let settings;
+
+function setStatus(message = "", kind = "error") {
+  statusEl.textContent = message;
+  if (message) statusEl.dataset.kind = kind;
+  else delete statusEl.dataset.kind;
+}
+
+function normalizedOrigin(value) {
+  const url = new URL(value.trim());
+  const origin = url.origin;
+  if (origin !== DEFAULT_ORIGIN && origin !== "http://localhost:3000") {
+    throw new Error("Use rubiconpay.xyz or http://localhost:3000.");
+  }
+  return origin;
+}
 
 function supportedPlatform(url) {
   try {
@@ -36,13 +52,14 @@ async function requestExtraction() {
 async function init() {
   [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
   settings = await chrome.storage.local.get(["token", "origin"]);
-  settings.origin = settings.origin || DEFAULT_ORIGIN;
+  try { settings.origin = normalizedOrigin(settings.origin || DEFAULT_ORIGIN); }
+  catch { settings.origin = DEFAULT_ORIGIN; }
   originInput.value = settings.origin;
   const platform = supportedPlatform(activeTab?.url || "");
   if (!platform) {
     platformEl.textContent = "Unsupported page";
     titleEl.textContent = "Open a Substack or X post";
-    statusEl.textContent = "This extension only imports supported post pages.";
+    setStatus("This extension imports published Substack and X posts.");
     return;
   }
 
@@ -54,7 +71,7 @@ async function init() {
     sendButton.disabled = false;
   } catch {
     titleEl.textContent = "Reload this page to import it";
-    statusEl.textContent = "The extension could not read the current tab yet.";
+    setStatus("The extension could not read the current tab yet.");
   }
   showConnection(!settings.token);
 }
@@ -62,24 +79,34 @@ async function init() {
 document.querySelector("#save").addEventListener("click", async () => {
   const token = tokenInput.value.trim();
   let origin;
-  try { origin = new URL(originInput.value.trim()).origin; } catch { statusEl.textContent = "Enter a valid Rubicon app URL."; return; }
-  if (!token.startsWith("rbx_")) { statusEl.textContent = "Paste a valid Rubicon extension token."; return; }
+  try { origin = normalizedOrigin(originInput.value); } catch (error) { setStatus(error instanceof Error ? error.message : "Enter a valid Rubicon app URL."); return; }
+  if (!token.startsWith("rbx_") || token.length < 12) { setStatus("Paste a valid Rubicon extension token."); return; }
   await chrome.storage.local.set({ token, origin });
   settings = { token, origin };
-  statusEl.textContent = "Connection saved.";
+  setStatus("Connection saved.", "success");
   showConnection(false);
 });
 
 document.querySelector("#open-settings").addEventListener("click", () => {
-  const origin = originInput.value.trim() || DEFAULT_ORIGIN;
-  chrome.tabs.create({ url: `${origin.replace(/\/$/, "")}/dashboard/settings` });
+  try {
+    const origin = normalizedOrigin(originInput.value || DEFAULT_ORIGIN);
+    chrome.tabs.create({ url: `${origin}/dashboard/settings` });
+  } catch (error) {
+    setStatus(error instanceof Error ? error.message : "Enter a valid Rubicon app URL.");
+  }
 });
-changeToken.addEventListener("click", () => showConnection(true));
+changeToken.addEventListener("click", () => {
+  setStatus();
+  tokenInput.value = "";
+  showConnection(true);
+  tokenInput.focus();
+});
 
 sendButton.addEventListener("click", async () => {
   sendButton.disabled = true;
-  sendButton.textContent = "Creating draft...";
-  statusEl.textContent = "";
+  sendButton.classList.add("is-loading");
+  sendButtonLabel.textContent = "Creating draft...";
+  setStatus("Extracting this post and preparing your draft.", "progress");
   try {
     const payload = await requestExtraction();
     const endpoint = `${settings.origin}/api/import/extension`;
@@ -95,12 +122,18 @@ sendButton.addEventListener("click", async () => {
       const detail = result.error?.message || `HTTP ${response.status} from ${endpoint}`;
       throw new Error(detail);
     }
-    await chrome.tabs.create({ url: result.reviewUrl });
+    const reviewUrl = new URL(result.reviewUrl || "", settings.origin);
+    if (reviewUrl.origin !== settings.origin || !reviewUrl.pathname.startsWith("/dashboard/imports/")) {
+      throw new Error("Rubicon created the draft but returned an invalid review link.");
+    }
+    setStatus("Draft created. Opening review...", "success");
+    await chrome.tabs.create({ url: reviewUrl.href });
     window.close();
   } catch (error) {
-    statusEl.textContent = error instanceof Error ? error.message : "Import failed. Try again.";
+    setStatus(error instanceof Error ? error.message : "Import failed. Try again.");
     sendButton.disabled = false;
-    sendButton.textContent = "Send to Rubicon";
+    sendButton.classList.remove("is-loading");
+    sendButtonLabel.textContent = "Try again";
   }
 });
 

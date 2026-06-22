@@ -11,7 +11,7 @@ function fixture(name: string): Document {
 }
 
 describe("extension extractors", () => {
-  it("extracts a published Substack post with sections and media", () => {
+  it("preserves Substack structure, inline formatting, links, and images", () => {
     const result = extractSubstack(fixture("substack.html"), "https://ada.substack.com/p/paid-agents?utm_source=x");
     expect(result).toMatchObject({
       sourcePlatform: "substack",
@@ -20,9 +20,55 @@ describe("extension extractors", () => {
       authorName: "Ada Writer",
       isPartial: false,
     });
+    expect(result.body).toContain("Opening with **bold text**, *italic text*, ~~old text~~, `inline()`, and [a source](https://ada.substack.com/p/source-note).");
     expect(result.body).toContain("## What changed");
-    expect(result.sections).toContainEqual({ heading: "What changed", text: "The payment loop became simple." });
-    expect(result.media[0]).toMatchObject({ type: "image", alt: "Payment chart" });
+    expect(result.body).toContain("The ***payment loop*** became simple.");
+    expect(result.body).toContain("- Fast settlement\n  - With receipts\n- Exact pricing");
+    expect(result.body).toContain("3. Connect\n4. Publish");
+    expect(result.body).toContain("> Agents pay for exactly what they read.\n>\n> Creators keep control.");
+    expect(result.body).toContain("```\nconst paid = true;\n```");
+    expect(result.body).toContain("\n\n---\n\n");
+    expect(result.body).toContain("![Payment chart](https://ada.substack.com/images/chart.png)");
+    expect(result.body).toContain("*Words and earnings over time*");
+    expect(result.sections.find((section) => section.heading === "What changed")?.text).toContain("**payment loop**");
+    expect(result.media).toEqual([{ type: "image", url: "https://ada.substack.com/images/chart.png", alt: "Payment chart" }]);
+  });
+
+  it("reads the real title value from an open Substack editor", () => {
+    const doc = new DOMParser().parseFromString(`
+      <html><head><meta property="og:title" content="Drafts - Ada's Newsletter"></head><body>
+        <input placeholder="Publication title" value="Ada's Newsletter">
+        <textarea placeholder="Title">The article title in the editor</textarea>
+        <textarea placeholder="Subtitle">A useful subtitle</textarea>
+        <div data-testid="editor"><div class="ProseMirror" contenteditable="true"><p>Draft body.</p></div></div>
+      </body></html>
+    `, "text/html");
+    const result = extractSubstack(doc, "https://ada.substack.com/publish/post/123");
+    expect(result.title).toBe("The article title in the editor");
+    expect(result.subtitle).toBe("A useful subtitle");
+  });
+
+  it("uses the structured article headline instead of a publication heading", () => {
+    const doc = new DOMParser().parseFromString(`
+      <html><head>
+        <meta property="og:site_name" content="Ada's Newsletter">
+        <meta property="og:title" content="The correct article title — Ada's Newsletter">
+        <script type="application/ld+json">{"@graph":[{"@type":"NewsArticle","headline":"The correct article title"}]}</script>
+      </head><body><main><h1>Ada's Newsletter</h1><article><div class="body markup"><p>Article body.</p></div></article></main></body></html>
+    `, "text/html");
+    const result = extractSubstack(doc, "https://ada.substack.com/p/correct-title");
+    expect(result.title).toBe("The correct article title");
+  });
+
+  it("removes an exact publication suffix from metadata titles", () => {
+    const doc = new DOMParser().parseFromString(`
+      <html><head>
+        <meta property="og:site_name" content="Ada's Newsletter">
+        <meta property="og:title" content="An essay about agents | Ada's Newsletter">
+      </head><body><article><div class="body markup"><p>Article body.</p></div></article></body></html>
+    `, "text/html");
+    const result = extractSubstack(doc, "https://ada.substack.com/p/agents");
+    expect(result.title).toBe("An essay about agents");
   });
 
   it("extracts the selected X post", () => {

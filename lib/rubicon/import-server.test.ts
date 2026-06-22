@@ -10,9 +10,9 @@ const payload: ExtensionImportPayload = {
   authorName: "Writer",
   authorHandle: null,
   publishedAt: null,
-  body: "## One\n\nReadable body.",
+  body: "## One\n\nA **bold**, *italic* [source](https://example.com).",
   sections: [],
-  media: [],
+  media: [{ type: "image", url: "https://images.example/chart.png", alt: "Payment chart" }],
   rawExtractedText: null,
   warnings: [],
   isPartial: false,
@@ -79,7 +79,11 @@ describe("createImportDraft", () => {
       state: "draft",
       is_imported: true,
       source_platform: "substack",
+      body: "## One\n\nA **bold**, *italic* [source](https://example.com).\n\n![Payment chart](https://images.example/chart.png)",
     });
+
+    const revision = inserts.article_revisions?.[0] as Record<string, unknown>;
+    expect(revision.body).toBe(article.body);
   });
 
   it("returns creator_not_found when the creator row is missing", async () => {
