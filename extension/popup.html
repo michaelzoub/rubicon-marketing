@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Send to Rubicon</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <main>
+      <header><span class="mark">R</span><strong>Send to Rubicon</strong></header>
+      <section id="page-card" class="card">
+        <span id="platform" class="eyebrow">Checking page...</span>
+        <h1 id="title">Current page</h1>
+        <p id="author"></p>
+      </section>
+      <section id="connect" class="card hidden">
+        <label for="token">Extension token</label>
+        <input id="token" type="password" placeholder="rbx_..." autocomplete="off" />
+        <label for="origin">Rubicon app URL</label>
+        <input id="origin" type="url" value="https://www.rubiconpay.xyz" />
+        <p>Generate a token in Rubicon Settings, then paste it here.</p>
+        <div class="row"><button id="save" class="secondary">Save token</button><button id="open-settings" class="link">Open settings</button></div>
+      </section>
+      <p id="status" role="status"></p>
+      <button id="send" class="primary" disabled>Send to Rubicon</button>
+      <button id="change-token" class="link hidden">Change connection</button>
+    </main>
+    <script src="popup.js"></script>
+  </body>
+</html>

@@ -50,11 +50,47 @@ export interface ArticleUsage {
   lastReadAt: string | null;
 }
 
+/** Platforms a draft can be imported from. Mirrors lib/import's ImportSource. */
+export type ArticleSourcePlatform = "substack" | "x";
+
+/**
+ * Provenance for drafts created via "Import from URL". Persisted alongside the
+ * article so the editor can show where content came from and warn when only a
+ * partial (preview-only) import was possible.
+ */
+export interface ArticleImportMeta {
+  isImported: boolean;
+  sourcePlatform: ArticleSourcePlatform | null;
+  sourceUrl: string | null;
+  sourceAuthorName: string | null;
+  sourceAuthorHandle: string | null;
+  /** ISO timestamp of the original post, when the source exposed one. */
+  sourcePublishedAt: string | null;
+  /** ISO timestamp of when the import ran. */
+  importedAt: string | null;
+  importWarnings: string[];
+  /** True when only public preview/metadata was imported. */
+  isPartialImport: boolean;
+}
+
+/** The source fields a creator can attach when saving an imported draft. */
+export interface ArticleSourceInput {
+  platform: ArticleSourcePlatform;
+  url: string;
+  authorName: string | null;
+  authorHandle: string | null;
+  publishedAt: string | null;
+  warnings: string[];
+  isPartial: boolean;
+}
+
 export interface Article {
   id: string;
   title: string;
   author: string;
   state: ArticleState;
+  /** Import provenance, or null for articles created by hand. */
+  importMeta: ArticleImportMeta | null;
   /** Price per single word, in atomic USDC units. */
   pricePerWordAtomic: string;
   /** Optional cap on the total an agent can be charged for one article. */
@@ -157,6 +193,8 @@ export interface CreateArticleInput {
   pricePerWordAtomic: string;
   maxArticlePriceAtomic?: string | null;
   sellerAgentConfig?: Record<string, unknown> | null;
+  /** Import provenance when the draft originated from "Import from URL". */
+  source?: ArticleSourceInput | null;
 }
 
 export type UpdateArticleInput = Partial<
@@ -179,6 +217,17 @@ export interface UpdateWalletInput {
    * embedded wallet. The gateway only settles payouts to verified wallets.
    */
   verified?: boolean;
+}
+
+/** A browser-extension token as shown in Settings (never includes the secret). */
+export interface ExtensionTokenSummary {
+  id: string;
+  /** First chars of the token (e.g. "rbx_ab12cd") for recognition. */
+  prefix: string;
+  label: string | null;
+  createdAt: string;
+  lastUsedAt: string | null;
+  revokedAt: string | null;
 }
 
 /** Error envelope the gateway returns on non-2xx responses. */

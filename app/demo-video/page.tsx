@@ -1,14 +1,16 @@
 "use client";
 
 /**
- * /demo-video — a deterministic, scripted ~30s product demo built to be
+ * /demo-video: a deterministic, scripted product demo built to be
  * screen-recorded.
  *
- * Direction: a cinematic "spotlight stage". Only ONE idea is on screen at a
- * time — a headline, then the proof card beneath it — over a living ambient
- * field. A camera-style push-in + light sweep fires on every cut. No backend,
- * auth, wallet, or env vars: a rAF engine drives a fixed timeline and exposes a
- * per-scene `progress` for the streaming "magic moment".
+ * Direction: a cinematic "spotlight stage". Each scene narrates in strict
+ * sequence. A full-stage text card reveals, holds, then leaves, and ONLY THEN
+ * does the UI for that beat appear. Text and product are never on screen at the
+ * same time, so the viewer reads one sentence, then watches one thing. A
+ * camera-style push-in + light sweep fires on every cut. No backend, auth,
+ * wallet, or env vars: a rAF engine drives a fixed timeline and exposes a
+ * per-scene `progress` that each scene slices into its own segments.
  *
  * "At every moment, the viewer should know exactly what to look at."
  */
@@ -21,21 +23,22 @@ import {
   type Transition,
 } from "framer-motion";
 import {
-  ArrowDownToLine,
   ArrowRight,
+  Bot,
+  Boxes,
   Check,
-  CircleDollarSign,
   FileText,
   LayoutGrid,
   MousePointer2,
+  PenLine,
   Plus,
   Search,
   Settings,
-  ShieldCheck,
+  Unlink,
   WalletCards,
   Waves,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 /* ------------------------------------------------------------------ */
 /* Timeline                                                            */
@@ -49,14 +52,14 @@ type SceneId =
   | "end";
 
 const SCENES: Array<{ id: SceneId; ms: number }> = [
-  { id: "problem", ms: 5500 },
-  { id: "solution", ms: 9000 },
-  { id: "paid-stream", ms: 9000 },
-  { id: "receipt", ms: 6000 },
-  { id: "end", ms: 3400 },
+  { id: "problem", ms: 10500 },
+  { id: "solution", ms: 19000 },
+  { id: "paid-stream", ms: 15000 },
+  { id: "receipt", ms: 9000 },
+  { id: "end", ms: 3800 },
 ];
 
-/* Cinematic easing — long, confident deceleration. */
+/* Cinematic easing with long, confident deceleration. */
 const CINE = [0.16, 1, 0.3, 1] as const;
 
 const TARGET_SPEND = 0.0068;
@@ -68,6 +71,7 @@ const ARTICLE_TITLE = "The Hidden Economics of Resale Fees";
 const STREAM_TEXT =
   "The resale fee applies only when the asset transfers through a secondary-market venue covered by the original agreement. It is assessed against the realized sale price, not the appraised value, and the seller of record remains liable until settlement clears.";
 const STREAM_WORDS = STREAM_TEXT.split(" ");
+const STREAM_VISIBLE_WORDS = STREAM_WORDS.slice(0, 18);
 
 const BEATS = ["Problem", "Solution", "Stream", "Settle"] as const;
 const beatOf: Record<SceneId, number> = {
@@ -78,7 +82,7 @@ const beatOf: Record<SceneId, number> = {
   end: 3,
 };
 
-/* Each scene owns its mood: the ambient field shifts color to match — a calm
+/* Each scene owns its mood: the ambient field shifts color to match. A calm
  * slate for the problem, green resolution at publish, river confidence through
  * the stream, settling green at payout. */
 const TONE: Record<SceneId, { glow: string; glow2: string }> = {
@@ -99,7 +103,7 @@ const CUTS: Record<SceneId, Cut> = {
     exit: { opacity: 0, y: -20, filter: "blur(12px)" },
     transition: { duration: 0.75, ease: CINE },
   },
-  // smooth, confident spring rise — the resolution
+  // Smooth, confident spring rise for the resolution.
   solution: {
     initial: { opacity: 0, y: 58, scale: 0.95, filter: "blur(10px)" },
     animate: { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" },
@@ -130,7 +134,7 @@ const CUTS: Record<SceneId, Cut> = {
 };
 
 /* ------------------------------------------------------------------ */
-/* DemoVideoPage — rAF engine + chrome                                 */
+/* DemoVideoPage: rAF engine and chrome                                */
 /* ------------------------------------------------------------------ */
 
 export default function DemoVideoPage() {
@@ -196,7 +200,7 @@ export default function DemoVideoPage() {
 }
 
 /* ------------------------------------------------------------------ */
-/* DemoStage — filmic cut + perpetual float + light sweep              */
+/* DemoStage: filmic cut, perpetual float, and light sweep             */
 /* ------------------------------------------------------------------ */
 
 function DemoStage({ scene, progress }: { scene: SceneId; progress: number }) {
@@ -231,13 +235,13 @@ function DemoStage({ scene, progress }: { scene: SceneId; progress: number }) {
 function SceneSwitch({ scene, progress }: { scene: SceneId; progress: number }) {
   switch (scene) {
     case "problem":
-      return <ProblemScene />;
+      return <ProblemScene progress={progress} />;
     case "solution":
       return <SolutionScene progress={progress} />;
     case "paid-stream":
       return <PaidStreamScene progress={progress} />;
     case "receipt":
-      return <ReceiptScene />;
+      return <ReceiptScene progress={progress} />;
     case "end":
       return <EndScene />;
   }
@@ -260,26 +264,36 @@ function LightSweep({ trigger }: { trigger: string }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* SceneFrame — headline above, focal proof card below                 */
+/* SceneStage plays a scene's segments one at a time (text, then UI).  */
 /* ------------------------------------------------------------------ */
 
-function SceneFrame({
-  scene,
-  line,
-  bg,
-  children,
-}: {
-  scene: Exclude<SceneId, "end">;
-  line: string;
-  bg: string;
-  children: React.ReactNode;
-}) {
-  const focalIntro = {
-    problem: { delay: 1.35, initial: { opacity: 0, y: 16, scale: 0.985, filter: "blur(7px)" } },
-    solution: { delay: 1.5, initial: { opacity: 0, y: 34, scale: 0.96, filter: "blur(9px)" } },
-    "paid-stream": { delay: 1.65, initial: { opacity: 0, scale: 0.93, filter: "blur(15px)" } },
-    receipt: { delay: 1.55, initial: { opacity: 0, y: 24, scale: 1.025, filter: "blur(10px)" } },
-  }[scene];
+/**
+ * A scene is an ordered list of segments. Each one is EITHER a full-stage text
+ * card OR the UI, never both. `AnimatePresence mode="wait"` is the guarantee:
+ * the next segment will not mount until the current one has fully animated out,
+ * so the viewer reads the sentence, watches it leave, *then* sees the product.
+ * One thing on screen at a time.
+ */
+type Segment =
+  | { kind: "text"; weight: number; text: string }
+  | { kind: "ui"; weight: number; wide?: boolean; render: (progress: number) => React.ReactNode };
+
+function SceneStage({ progress, bg, segments }: { progress: number; bg: string; segments: Segment[] }) {
+  const total = segments.reduce((sum, segment) => sum + segment.weight, 0);
+  let acc = 0;
+  const bounds = segments.map((segment) => {
+    const start = acc / total;
+    acc += segment.weight;
+    return { start, end: acc / total };
+  });
+
+  let activeIndex = 0;
+  segments.forEach((_, index) => {
+    if (progress >= bounds[index].start) activeIndex = index;
+  });
+  const segment = segments[activeIndex];
+  const { start, end } = bounds[activeIndex];
+  const local = Math.max(0, Math.min(1, (progress - start) / (end - start || 1)));
 
   return (
     <section className="dv-scene">
@@ -287,127 +301,226 @@ function SceneFrame({
         {bg}
       </span>
 
-      <div className="dv-scene-head">
-        <Headline text={line} scene={scene} />
-      </div>
-
-      <motion.div
-        className="dv-scene-focal"
-        initial={focalIntro.initial}
-        animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-        transition={{ duration: scene === "paid-stream" ? 0.85 : 0.68, delay: focalIntro.delay, ease: CINE }}
-      >
-        {children}
-      </motion.div>
+      <AnimatePresence mode="wait">
+        {segment.kind === "text" ? (
+          <TextCard key={`t${activeIndex}`} text={segment.text} />
+        ) : (
+          <motion.div
+            key={`u${activeIndex}`}
+            className={`dv-scene-focal${segment.wide ? " dv-scene-focal-wide" : ""}`}
+            initial={{ opacity: 0, y: 30, scale: 0.96, filter: "blur(14px)" }}
+            animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -24, scale: 0.985, filter: "blur(10px)", transition: { duration: 0.34, ease: CINE } }}
+            transition={{ duration: 0.62, ease: CINE }}
+          >
+            {segment.render(local)}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
 
-/** Word-by-word blur-in headline (the reference's signature reveal). */
-function Headline({ text, scene }: { text: string; scene: Exclude<SceneId, "end"> }) {
+/** Full-stage narration card: word-by-word blur-in, blurs away on exit. */
+function TextCard({ text }: { text: string }) {
   const words = text.split(" ");
-  const intro = {
-    problem: { initial: { y: 12, x: 0, scale: 1 }, delay: 0.14, step: 0.038 },
-    solution: { initial: { y: 22, x: 0, scale: 0.98 }, delay: 0.2, step: 0.05 },
-    "paid-stream": { initial: { y: 0, x: 12, scale: 1 }, delay: 0.16, step: 0.042 },
-    receipt: { initial: { y: 10, x: 0, scale: 0.95 }, delay: 0.22, step: 0.045 },
-  }[scene];
   return (
-    <h2 className="dv-mainline">
-      {words.map((w, i) => (
-        <motion.span
-          key={i}
-          className="dv-mainline-word"
-          initial={{ opacity: 0, ...intro.initial, filter: "blur(9px)" }}
-          animate={{ opacity: 1, y: 0, x: 0, scale: 1, filter: "blur(0px)" }}
-          transition={{ duration: 0.58, ease: CINE, delay: intro.delay + i * intro.step }}
-        >
-          {w}
-        </motion.span>
-      ))}
-    </h2>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Scene 1 — Problem                                                   */
-/* ------------------------------------------------------------------ */
-
-function ProblemScene() {
-  const requests = [
-    { n: "01", method: "GET", path: "/search?q=resale+fee", status: "200", note: "application/json", tone: "ok", delay: 1.75 },
-    { n: "02", method: "GET", path: "/articles/resale-fees", status: "402", note: "payment_required", tone: "warn", delay: 2.4 },
-    { n: "03", method: "POST", path: "/checkout", status: "401", note: "browser_session_required", tone: "error", delay: 3.05 },
-  ];
-
-  return (
-    <SceneFrame scene="problem" bg="🧩" line="Agents can’t access paywalls, and open sources are often low quality.">
-      <div className="dv-term">
-        <div className="dv-term-bar">
-          <span className="dv-term-dot dv-term-dot-r" />
-          <span className="dv-term-dot dv-term-dot-y" />
-          <span className="dv-term-dot dv-term-dot-g" />
-          <span className="mono dv-term-name">buyer-agent — fetch</span>
-        </div>
-        <div className="dv-term-body mono">
-          <div className="dv-term-cmd">
-            <span className="dv-term-prompt">$</span>
-            <span>
-              <span className="dv-tok-fn">await fetch</span>(
-              <span className="dv-tok-str">&quot;/articles/resale-fees&quot;</span>)
-            </span>
-          </div>
-
-          {requests.map((request) => (
-            <motion.div
-              key={request.n}
-              className={`dv-term-line dv-term-${request.tone}`}
-              initial={{ opacity: 0, x: -12 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.38, ease: CINE, delay: request.delay }}
-            >
-              <span className="dv-term-order">{request.n}</span>
-              <span className="dv-term-method">{request.method}</span>
-              <span className="dv-term-host">{request.path}</span>
-              <span className="dv-term-status">{request.status}</span>
-              <span className="dv-term-note">{request.note}</span>
-            </motion.div>
-          ))}
-
-          <motion.div
-            className="dv-term-fail"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4, ease: CINE, delay: 3.72 }}
+    <motion.div
+      className="dv-textcard"
+      exit={{ opacity: 0, y: -18, filter: "blur(10px)", transition: { duration: 0.4, ease: CINE } }}
+    >
+      <h2 className="dv-mainline">
+        {words.map((word, index) => (
+          <motion.span
+            key={index}
+            className="dv-mainline-word"
+            initial={{ opacity: 0, y: 16, filter: "blur(10px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            transition={{ duration: 0.55, ease: CINE, delay: 0.1 + index * 0.05 }}
           >
-            <span className="dv-term-x">✗</span> fetch() cannot complete an interactive subscription
-            <span className="dv-term-cursor" aria-hidden="true" />
-          </motion.div>
-        </div>
-      </div>
-    </SceneFrame>
+            {word}
+          </motion.span>
+        ))}
+      </h2>
+    </motion.div>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Scene 2 — Solution / publish                                        */
+/* Scene 1: Problem                                                    */
+/* ------------------------------------------------------------------ */
+
+function ProblemScene({ progress }: { progress: number }) {
+  // Two halves of the same wall, told one at a time: text, then the buyer agent
+  // bouncing off the paywall; text again, then the creator who can't charge it.
+  return (
+    <SceneStage
+      progress={progress}
+      bg="🧩"
+      segments={[
+        { kind: "text", weight: 1.3, text: "Agents can’t buy paywalled content." },
+        { kind: "ui", weight: 2.6, render: () => <BuyerBlocked /> },
+        { kind: "text", weight: 1.3, text: "And creators can’t sell to them either." },
+        { kind: "ui", weight: 2.6, render: () => <CreatorBlocked /> },
+      ]}
+    />
+  );
+}
+
+/** Half one: a buyer agent's fetch dies on the subscription wall. */
+function BuyerBlocked() {
+  const requests = [
+    { n: "01", method: "GET", path: "/search?q=resale+fee", status: "200", note: "application/json", tone: "ok", delay: 0.55 },
+    { n: "02", method: "GET", path: "/articles/resale-fees", status: "402", note: "payment_required", tone: "warn", delay: 1.0 },
+    { n: "03", method: "POST", path: "/checkout", status: "401", note: "browser_session_required", tone: "error", delay: 1.45 },
+  ];
+  return (
+    <div className="dv-term">
+      <div className="dv-term-bar">
+        <span className="dv-term-dot dv-term-dot-r" />
+        <span className="dv-term-dot dv-term-dot-y" />
+        <span className="dv-term-dot dv-term-dot-g" />
+        <span className="mono dv-term-name">buyer-agent: fetch</span>
+      </div>
+      <div className="dv-term-body mono">
+        <div className="dv-term-cmd">
+          <span className="dv-term-prompt">$</span>
+          <span>
+            <span className="dv-tok-fn">await fetch</span>(
+            <span className="dv-tok-str">&quot;/articles/resale-fees&quot;</span>)
+          </span>
+        </div>
+
+        {requests.map((request) => (
+          <motion.div
+            key={request.n}
+            className={`dv-term-line dv-term-${request.tone}`}
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.38, ease: CINE, delay: request.delay }}
+          >
+            <span className="dv-term-order">{request.n}</span>
+            <span className="dv-term-method">{request.method}</span>
+            <span className="dv-term-host">{request.path}</span>
+            <span className="dv-term-status">{request.status}</span>
+            <span className="dv-term-note">{request.note}</span>
+          </motion.div>
+        ))}
+
+        <motion.div
+          className="dv-term-fail"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, ease: CINE, delay: 1.95 }}
+        >
+          <span className="dv-term-x">✗</span> fetch() can’t complete an interactive subscription
+          <span className="dv-term-cursor" aria-hidden="true" />
+        </motion.div>
+      </div>
+    </div>
+  );
+}
+
+function CreatorBlocked() {
+  return (
+    <div className="dv-connect-fail">
+      <div className="dv-connect-parties">
+        <motion.div
+          className="dv-party-card"
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, ease: CINE, delay: 0.2 }}
+        >
+          <span className="dv-party-icon dv-party-creator"><PenLine size={25} /></span>
+          <div><span className="mono">CREATOR</span><strong>Premium article</strong><small>Needs a way to charge</small></div>
+        </motion.div>
+
+        <div className="dv-connect-rail" aria-hidden="true">
+          <motion.span className="dv-connect-line dv-connect-line-left" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.65, delay: 0.55, ease: CINE }} />
+          <motion.div className="dv-connect-blocker" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.35, delay: 1.05, ease: CINE }}>
+            <Unlink size={20} />
+            <span className="mono">NO PAYMENT RAIL</span>
+          </motion.div>
+          <motion.span className="dv-connect-line dv-connect-line-right" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.65, delay: 0.55, ease: CINE }} />
+        </div>
+
+        <motion.div
+          className="dv-party-card"
+          initial={{ opacity: 0, x: 30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5, ease: CINE, delay: 0.2 }}
+        >
+          <span className="dv-party-icon dv-party-agent"><Bot size={25} /></span>
+          <div><span className="mono">AI AGENT</span><strong>Needs one answer</strong><small>Cannot use a checkout</small></div>
+        </motion.div>
+      </div>
+
+      <motion.p
+        className="dv-creatorblock-result"
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: CINE, delay: 1.5 }}
+      >
+        <span className="dv-cl-red">The transaction fails before value can move.</span>
+      </motion.p>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Scene 2: Solution / publish                                         */
 /* ------------------------------------------------------------------ */
 
 function SolutionScene({ progress }: { progress: number }) {
-  const step = progress >= 0.694 ? 3 : progress >= 0.456 ? 2 : progress >= 0.317 ? 1 : 0;
-  const priced = progress >= 0.567;
-  const published = progress >= 0.839;
-
   return (
-    <SceneFrame scene="solution" bg="🔨" line="Creators publish once and choose their price per word.">
-      <CreatorDashboardDemo step={step} priced={priced} published={published} />
-    </SceneFrame>
+    <SceneStage
+      progress={progress}
+      bg="🔨"
+      segments={[
+        { kind: "text", weight: 1.4, text: "We came up with a solution." },
+        // Add the article, then break it into navigable sections.
+        {
+          kind: "ui",
+          weight: 2.6,
+          wide: true,
+          render: (p) => (
+            <CreatorDashboardDemo step={p >= 0.58 ? 1 : 0} phase={p} priced={false} published={false} />
+          ),
+        },
+        { kind: "text", weight: 1.3, text: "Creators can price their articles per word. Rubicon’s cut is 0%." },
+        // The pricing step.
+        {
+          kind: "ui",
+          weight: 2.2,
+          wide: true,
+          render: (p) => <CreatorDashboardDemo step={2} phase={p} priced={p >= 0.48} published={false} />,
+        },
+        { kind: "text", weight: 1.2, text: "Publish once, and it’s instantly live to every agent." },
+        // Review, then publish.
+        {
+          kind: "ui",
+          weight: 2.6,
+          wide: true,
+          render: (p) => (
+            <CreatorDashboardDemo step={3} phase={p} priced published={p >= 0.62} />
+          ),
+        },
+      ]}
+    />
   );
 }
 
 const CREATOR_STEPS = ["Add your article", "Review sections", "Choose pricing", "Publish"] as const;
 
-function CreatorDashboardDemo({ step, priced, published }: { step: number; priced: boolean; published: boolean }) {
+function CreatorDashboardDemo({ step, phase, priced, published }: { step: number; phase: number; priced: boolean; published: boolean }) {
+  const spotlight = step === 0
+    ? (phase < 0.32 ? "content" : "action")
+    : step === 1
+      ? (phase < 0.82 ? "sections" : "action")
+      : step === 2
+        ? (phase < 0.48 ? "price" : phase < 0.74 ? "preview" : "action")
+        : (phase < 0.4 ? "review" : "action");
+
   return (
     <div className="dv-dashboard">
       <aside className="dv-dashboard-side">
@@ -442,19 +555,20 @@ function CreatorDashboardDemo({ step, priced, published }: { step: number; price
               exit={{ opacity: 0, x: -18, filter: "blur(4px)" }}
               transition={{ duration: 0.28, ease: CINE }}
             >
-              {step === 0 && <DashboardArticleStep />}
-              {step === 1 && <DashboardSectionsStep />}
-              {step === 2 && <DashboardPricingStep priced={priced} />}
-              {step === 3 && <DashboardReviewStep />}
+              {step === 0 && <DashboardArticleStep focus={phase < 0.32 ? "content" : "action"} />}
+              {step === 1 && <DashboardSectionsStep phase={phase} />}
+              {step === 2 && <DashboardPricingStep phase={phase} priced={priced} />}
+              {step === 3 && <DashboardReviewStep focus={phase < 0.4 ? "review" : "action"} />}
             </motion.div>
           )}
         </AnimatePresence>
       </div>
+      {!published && <div className={`dv-dashboard-spotlight is-${spotlight}`} aria-hidden="true" />}
     </div>
   );
 }
 
-function DashboardArticleStep() {
+function DashboardArticleStep({ focus }: { focus: "content" | "action" }) {
   return (
     <>
       <div className="dv-dashboard-fields">
@@ -466,7 +580,7 @@ function DashboardArticleStep() {
         <div><strong>Consent Decree Language</strong><p>The resale fee applies only when the asset transfers through a covered venue…</p></div>
         <footer><span>3 sections</span><span className="mono">2,418 words</span></footer>
       </div>
-      <DashboardButton label="Review sections" cursor cursorDelay={1.82} />
+      <DashboardButton label="Review sections" cursor={focus === "action"} focused={focus === "action"} />
     </>
   );
 }
@@ -475,7 +589,8 @@ function DashboardField({ label, value }: { label: string; value: string }) {
   return <div className="dv-dashboard-field"><span>{label}</span><strong>{value}</strong></div>;
 }
 
-function DashboardSectionsStep() {
+function DashboardSectionsStep({ phase }: { phase: number }) {
+  const actionFocused = phase >= 0.82;
   const sections = [["Market background", "842"], ["Consent Decree Language", "137"], ["Secondary-market mechanics", "1,439"]];
   return (
     <>
@@ -487,12 +602,13 @@ function DashboardSectionsStep() {
           </motion.div>
         ))}
       </div>
-      <DashboardButton label="Choose pricing" cursor />
+      <DashboardButton label="Choose pricing" cursor={actionFocused} focused={actionFocused} />
     </>
   );
 }
 
-function DashboardPricingStep({ priced }: { priced: boolean }) {
+function DashboardPricingStep({ phase, priced }: { phase: number; priced: boolean }) {
+  const focus = phase < 0.48 ? "price" : phase < 0.74 ? "preview" : "action";
   return (
     <>
       <div className="dv-dashboard-title"><strong>Choose pricing</strong><span>Set what agents pay. You earn for exactly the words they read.</span></div>
@@ -510,12 +626,12 @@ function DashboardPricingStep({ priced }: { priced: boolean }) {
           <div><small>Rubicon platform fee</small><strong>0%</strong></div>
         </div>
       </div>
-      {priced && <DashboardButton label="Review" cursor />}
+      {priced && <DashboardButton label="Review" cursor={focus === "action"} focused={focus === "action"} />}
     </>
   );
 }
 
-function DashboardReviewStep() {
+function DashboardReviewStep({ focus }: { focus: "review" | "action" }) {
   return (
     <>
       <div className="dv-dashboard-title"><strong>Review and publish</strong><span>Confirm the creator listing before it goes live to agents.</span></div>
@@ -525,7 +641,7 @@ function DashboardReviewStep() {
         <div><span>Price per word</span><strong>$0.00005 USDC</strong></div>
         <div><span>Receiving wallet</span><strong className="mono">0x8f2…91c ✓</strong></div>
       </div>
-      <DashboardButton label="Publish article" cursor />
+      <DashboardButton label="Publish article" cursor={focus === "action"} focused={focus === "action"} />
     </>
   );
 }
@@ -540,8 +656,8 @@ function DashboardPublished() {
   );
 }
 
-function DashboardButton({ label, cursor, cursorDelay = 0 }: { label: string; cursor?: boolean; cursorDelay?: number }) {
-  return <div className="dv-dashboard-button">{label}<ArrowRight size={13} />{cursor && <DashboardCursor delay={cursorDelay} />}</div>;
+function DashboardButton({ label, cursor, focused }: { label: string; cursor?: boolean; focused?: boolean }) {
+  return <div className={`dv-dashboard-button${focused ? " is-pressing" : ""}`}>{label}<ArrowRight size={13} />{cursor && <DashboardCursor />}</div>;
 }
 
 function DashboardCursor({ delay = 0 }: { delay?: number }) {
@@ -560,31 +676,43 @@ function DashboardCursor({ delay = 0 }: { delay?: number }) {
 }
 
 /* ------------------------------------------------------------------ */
-/* Scene 3 — Seller guides + paid word stream — the magic moment        */
+/* Scene 3: Seller guides and paid word stream                         */
 /* ------------------------------------------------------------------ */
 
 function PaidStreamScene({ progress }: { progress: number }) {
-  const sellerReplied = progress >= 0.28;
-  const sessionOpened = progress >= 0.39;
-  const streaming = progress >= 0.46;
-  const revealFrac = Math.max(0, Math.min(1, (progress - 0.46) / 0.36));
-  const revealed = Math.round(STREAM_WORDS.length * revealFrac);
+  return (
+    <SceneStage
+      progress={progress}
+      bg="🌊"
+      segments={[
+        { kind: "text", weight: 1.4, text: "Agents can pay for what they need and see only that." },
+        { kind: "ui", weight: 5, render: (p) => <PaidStreamCard progress={p} /> },
+      ]}
+    />
+  );
+}
+
+function PaidStreamCard({ progress }: { progress: number }) {
+  const sellerReplied = progress >= 0.23;
+  const sessionOpened = progress >= 0.4;
+  const streaming = progress >= 0.52;
+  const revealFrac = Math.max(0, Math.min(1, (progress - 0.52) / 0.3));
+  const revealed = Math.round(STREAM_VISIBLE_WORDS.length * revealFrac);
   const wordsRead = Math.round(TARGET_WORDS * revealFrac);
   const spent = TARGET_SPEND * revealFrac;
   const stopped = progress >= 0.86;
+  const focus = !sellerReplied ? "question" : !sessionOpened ? "route" : !streaming ? "session" : stopped ? "stop" : "stream";
 
   return (
-    <SceneFrame scene="paid-stream" bg="🌊" line="Seller agents guide buyers to the right section without exposing the full article.">
       <GlowCard
         glow="strong"
         head={
-          <CardHead
-            title="Rubicon"
-            pill={stopped ? <Pill tone="green">Stopped</Pill> : <Pill tone="river" live>{streaming ? "Streaming" : "Routing"}</Pill>}
-          />
+          <CardHead title="Rubicon" />
         }
       >
-        <div className="dv-convo">
+        <div className={`dv-focus-region${focus === "question" || focus === "route" ? " is-focused has-label" : " is-dimmed"}`}>
+          {(focus === "question" || focus === "route") && <span className="mono dv-focus-label">{focus === "question" ? "1 · Agent asks" : "2 · Seller routes"}</span>}
+          <div className="dv-convo">
           <motion.div
             className="dv-convo-row dv-convo-buyer"
             initial={{ opacity: 0, x: -12 }}
@@ -608,16 +736,19 @@ function PaidStreamScene({ progress }: { progress: number }) {
               </motion.div>
             )}
           </AnimatePresence>
+          </div>
         </div>
 
-        <div className="dv-guide-strip">
+        <div className={`dv-guide-strip dv-focus-region${focus === "session" ? " is-focused has-label" : " is-dimmed"}`}>
+          {focus === "session" && <span className="mono dv-focus-label">3 · Open capped session</span>}
           <span className="mono dv-guide-from">POST /v1/sessions</span>
           <span className="dv-guide-text">
             {sessionOpened ? <><strong className="dv-session-created">201 Created</strong> · session_7f2a · hard cap <span className="dv-highlight">$0.0200</span></> : "Waiting for route, then opening a capped session…"}
           </span>
         </div>
 
-        <div className="dv-meters">
+        <div className={`dv-meters dv-focus-region${focus === "stream" ? " is-focused has-label" : " is-dimmed"}`}>
+          {focus === "stream" && <span className="mono dv-focus-label">4 · Pay as words arrive</span>}
           <div className="dv-meter">
             <span className="mono dv-meter-label">words read</span>
             <span className="dv-big-number mono">{wordsRead}</span>
@@ -632,9 +763,9 @@ function PaidStreamScene({ progress }: { progress: number }) {
           </div>
         </div>
 
-        <div className="dv-stream-body">
+        <div className={`dv-stream-body dv-focus-region${focus === "stream" ? " is-focused" : " is-dimmed"}`}>
           <p className="dv-stream-text">
-            {STREAM_WORDS.map((w, i) => (
+            {STREAM_VISIBLE_WORDS.map((w, i) => (
               <span
                 key={i}
                 className={`dv-word${i < revealed ? " dv-word-on" : ""}${i === revealed - 1 ? " dv-word-edge" : ""}`}
@@ -642,6 +773,7 @@ function PaidStreamScene({ progress }: { progress: number }) {
                 {w}{" "}
               </span>
             ))}
+            {stopped && <span className="dv-stream-ellipsis"> …</span>}
             {sessionOpened && !stopped && <span className="dv-caret" aria-hidden="true" />}
           </p>
         </div>
@@ -650,123 +782,74 @@ function PaidStreamScene({ progress }: { progress: number }) {
           {stopped && (
             <motion.div
               key="stop"
-              className="dv-stop-chip"
+              className="dv-stop-chip is-focused"
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.45, ease: CINE }}
             >
-              Enough context. Stop.
+              5 · Enough context. Stop paying.
             </motion.div>
           )}
         </AnimatePresence>
       </GlowCard>
-    </SceneFrame>
   );
 }
 
 /* ------------------------------------------------------------------ */
-/* Scene 6 — Receipt + creator earns                                   */
+/* Scene 6: Receipt and creator earnings                               */
 /* ------------------------------------------------------------------ */
 
-function ReceiptScene() {
-  const [batched, setBatched] = useState(false);
-  const [withdrawn, setWithdrawn] = useState(false);
-  useEffect(() => {
-    const batchTimer = window.setTimeout(() => setBatched(true), 2300);
-    const withdrawTimer = window.setTimeout(() => setWithdrawn(true), 3650);
-    return () => {
-      window.clearTimeout(batchTimer);
-      window.clearTimeout(withdrawTimer);
-    };
-  }, []);
+function ReceiptScene({ progress }: { progress: number }) {
+  return (
+    <SceneStage
+      progress={progress}
+      bg="🧾"
+      segments={[
+        { kind: "text", weight: 1.3, text: "Every read settles to the creator, onchain." },
+        { kind: "ui", weight: 3.7, render: (p) => <SettlementCard progress={p} /> },
+      ]}
+    />
+  );
+}
 
-  const earned = useCountUp(TARGET_SPEND, withdrawn, 900);
+function SettlementCard({ progress }: { progress: number }) {
+  const submitted = progress >= 0.3;
+  const included = progress >= 0.58;
+  const confirmed = progress >= 0.8;
 
   return (
-    <SceneFrame scene="receipt" bg="🧾" line="Every session produces a verifiable receipt, withdrawable onchain via Circle nanopayments.">
-      <div className="dv-settle-card">
-        <div className="dv-settle-head">
-          <div>
-            <span className="mono dv-settle-kicker">SESSION_7F2A</span>
-            <strong>Usage becomes withdrawable USDC</strong>
-          </div>
-          <Pill tone={withdrawn ? "green" : "river"} live={!withdrawn}>{withdrawn ? "Onchain" : "Settling"}</Pill>
-        </div>
+    <div className="dv-simple-settlement">
+      <header className="dv-simple-head">
+        <div className="dv-tx-brand"><img src="/arc-logo.webp" alt="" /><div><span className="mono">ARC NETWORK</span><strong>Settling creator payment</strong></div></div>
+      </header>
 
-        <div className="dv-settle-flow">
-          <SettlementNode
-            active
-            icon={<ShieldCheck size={18} />}
-            label="Signed receipt"
-            value="137 words"
-            meta="sha256: 91b7…e42c"
-          />
-          <SettlementRail active={batched} amount="$0.0068" />
-          <SettlementNode
-            active={batched}
-            icon={<CircleDollarSign size={18} />}
-            label="Circle Nanopayments"
-            value="Balance ready"
-            meta="usage verified"
-          />
-          <SettlementRail active={withdrawn} amount="USDC" />
-          <SettlementNode
-            active={withdrawn}
-            icon={<ArrowDownToLine size={18} />}
-            label="Creator wallet"
-            value={`+$${earned.toFixed(4)}`}
-            meta="Arc · 0x71c…9e4"
-            success
-          />
-        </div>
-
-        <AnimatePresence>
-          {withdrawn && (
-            <motion.div
-              className="dv-chain-confirm mono"
-              initial={{ opacity: 0, y: 10, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ type: "spring", stiffness: 220, damping: 20 }}
-            >
-              <span className="dv-chain-check"><Check size={14} /></span>
-              <span><strong>Withdrawal confirmed</strong><small>Final on Arc · unused cap never left the buyer</small></span>
-              <span className="dv-chain-block">#18,492,771</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
+      <div className="dv-simple-transfer">
+        <div><span className="mono">PAID READ</span><strong>137 words</strong></div>
+        <ArrowRight size={18} />
+        <div><span className="mono">CREATOR EARNS</span><strong>$0.0068 USDC</strong></div>
       </div>
-    </SceneFrame>
-  );
-}
 
-function SettlementNode({ active, icon, label, value, meta, success }: { active: boolean; icon: React.ReactNode; label: string; value: string; meta: string; success?: boolean }) {
-  return (
-    <motion.div
-      className={`dv-settle-node${active ? " is-active" : ""}${success ? " is-success" : ""}`}
-      animate={{ opacity: active ? 1 : 0.3, y: active ? 0 : 7 }}
-      transition={{ duration: 0.4, ease: CINE }}
-    >
-      <span className="dv-settle-node-icon">{icon}</span>
-      <span className="mono dv-settle-node-label">{label}</span>
-      <strong className="mono dv-settle-node-value">{value}</strong>
-      <span className="mono dv-settle-node-meta">{meta}</span>
-    </motion.div>
-  );
-}
+      <div className="dv-simple-chain" aria-label="Transaction included in an Arc block">
+        <span className="mono dv-simple-chain-label">ARC BLOCKS</span>
+        <div className="dv-simple-blocks">
+          {["769", "770"].map((block) => <div key={block} className="dv-simple-block is-past"><Boxes size={19} /><span className="mono">18,492,{block}</span></div>)}
+          <div className="dv-block-slot">
+            <motion.div className="dv-simple-block is-current" initial={{ opacity: 0, y: -70, scale: 0.9 }} animate={included ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: -70, scale: 0.9 }} transition={{ type: "spring", stiffness: 150, damping: 18 }}>
+              <Boxes size={22} /><strong className="mono">18,492,771</strong><small className="mono">0x8fc1…7a2e</small>
+            </motion.div>
+          </div>
+        </div>
+        <motion.div className="dv-simple-status" animate={{ color: included ? "var(--green)" : "var(--river-deep)" }}>
+          {included ? <Check size={15} /> : <span className="status-dot" />}
+          <strong>{included ? "Included in block 18,492,771" : submitted ? "Submitted to Arc" : "Preparing transaction"}</strong>
+        </motion.div>
+      </div>
 
-function SettlementRail({ active, amount }: { active: boolean; amount: string }) {
-  return (
-    <div className={`dv-settle-rail${active ? " is-active" : ""}`} aria-hidden="true">
-      <motion.span className="dv-settle-rail-fill" animate={{ scaleX: active ? 1 : 0 }} transition={{ duration: 0.55, ease: CINE }} />
       <AnimatePresence>
-        {active && (
-          <motion.div
-            className="dv-settle-packet mono"
-            initial={{ left: "0%", opacity: 0, scale: 0.92 }}
-            animate={{ left: "100%", opacity: [0, 1, 1, 0], scale: 1 }}
-            transition={{ duration: 0.95, ease: CINE, times: [0, 0.18, 0.78, 1] }}
-          >
-            {amount}
+        {confirmed && (
+          <motion.div className="dv-simple-paid" initial={{ opacity: 0, y: 12, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: "spring", stiffness: 180, damping: 20 }}>
+            <span className="dv-chain-check"><Check size={14} /></span>
+            <div><strong>Creator paid</strong><small className="mono">+$0.0068 USDC · FINAL ON ARC</small></div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -775,7 +858,7 @@ function SettlementRail({ active, amount }: { active: boolean; amount: string })
 }
 
 /* ------------------------------------------------------------------ */
-/* Scene 7 — End card                                                  */
+/* Scene 7: End card                                                   */
 /* ------------------------------------------------------------------ */
 
 function EndScene() {
@@ -856,7 +939,7 @@ function ProgressRail({ scene, onSelect }: { scene: SceneId; onSelect: (index: n
 }
 
 /* ------------------------------------------------------------------ */
-/* Ambient atmosphere — drifting glow that tracks the scene            */
+/* Ambient atmosphere with a drifting glow that tracks the scene.     */
 /* ------------------------------------------------------------------ */
 
 function AmbientBackground({ scene, sceneIndex }: { scene: SceneId; sceneIndex: number }) {
@@ -930,61 +1013,8 @@ function GlowCard({
   );
 }
 
-function CardHead({ title, pill }: { title: string; pill?: React.ReactNode }) {
-  return (
-    <>
-      <span className="dv-card-title">{title}</span>
-      {pill}
-    </>
-  );
-}
-
-function Pill({
-  tone,
-  live,
-  children,
-}: {
-  tone: "river" | "amber" | "green" | "red" | "muted";
-  live?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <motion.span
-      className={`dv-pill dv-pill-${tone}`}
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      transition={{ duration: 0.3, ease: CINE }}
-    >
-      <span className={`dv-pill-dot${live ? " dv-pill-dot-live" : ""} status-dot`} aria-hidden="true" /> {children}
-    </motion.span>
-  );
-}
-
-/** rAF count-up driven by an `active` flag. */
-function useCountUp(target: number, active: boolean, durationMs = 1200) {
-  const [val, setVal] = useState(0);
-  const reduce = useReducedMotion();
-  const raf = useRef(0);
-  useEffect(() => {
-    if (!active) {
-      setVal(0);
-      return;
-    }
-    if (reduce) {
-      setVal(target);
-      return;
-    }
-    const start = performance.now();
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / durationMs);
-      setVal(target * (1 - Math.pow(1 - t, 3)));
-      if (t < 1) raf.current = requestAnimationFrame(tick);
-    };
-    raf.current = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf.current);
-  }, [target, active, durationMs, reduce]);
-  return val;
+function CardHead({ title }: { title: string }) {
+  return <span className="dv-card-title">{title}</span>;
 }
 
 /* ------------------------------------------------------------------ */
@@ -1033,8 +1063,8 @@ function DemoStyles() {
         filter: blur(28px); pointer-events: none;
       }
 
-      /* ---- scene: headline above, card below ---- */
-      .dv-scene { position: relative; width: 100%; display: flex; flex-direction: column; align-items: center; gap: clamp(18px, 3vh, 32px); }
+      /* Scene: one thing on stage at a time, text card OR component. */
+      .dv-scene { position: relative; width: 100%; display: grid; place-items: center; min-height: clamp(360px, 58vh, 540px); }
       .dv-scene-bg {
         position: absolute; inset: 0; z-index: 0; display: grid; place-items: center;
         font-size: clamp(240px, 38vw, 480px); line-height: 1; opacity: 0.07;
@@ -1042,16 +1072,18 @@ function DemoStyles() {
         -webkit-mask-image: radial-gradient(60% 60% at 50% 50%, #000 25%, transparent 78%);
         mask-image: radial-gradient(60% 60% at 50% 50%, #000 25%, transparent 78%);
       }
-      .dv-scene-head { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; text-align: center; }
+      /* full-stage narration card, shown alone */
+      .dv-textcard { position: relative; z-index: 2; grid-area: 1 / 1; display: flex; align-items: center; justify-content: center; text-align: center; padding: 0 clamp(12px, 4vw, 40px); }
       .dv-mainline {
-        max-width: 20ch; display: flex; flex-wrap: wrap; justify-content: center; gap: 0 0.3em;
-        font-size: clamp(1.5rem, 3vw, 2.65rem); font-weight: 780; letter-spacing: -0.03em; line-height: 1.06; color: var(--ink);
+        max-width: 18ch; display: flex; flex-wrap: wrap; justify-content: center; gap: 0.12em 0.32em;
+        font-size: clamp(1.9rem, 4.4vw, 3.4rem); font-weight: 780; letter-spacing: -0.035em; line-height: 1.07; color: var(--ink);
       }
       .dv-mainline-word { display: inline-block; }
 
-      .dv-scene-focal { position: relative; z-index: 2; width: 100%; max-width: 720px; display: flex; justify-content: center; }
+      .dv-scene-focal { position: relative; z-index: 2; grid-area: 1 / 1; justify-self: center; width: 100%; max-width: 720px; display: flex; justify-content: center; }
+      .dv-scene-focal-wide { max-width: 920px; }
 
-      /* ---- card (flat: no border, no shadow — defined by fill only) ---- */
+      /* Card is flat with no border or shadow, defined by fill only. */
       .dv-card-wrap { position: relative; width: 100%; }
       .dv-card {
         position: relative; overflow: hidden;
@@ -1063,20 +1095,6 @@ function DemoStyles() {
       .dv-card-title { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
       .dv-card-body { padding: 18px 22px 22px; display: flex; flex-direction: column; gap: 14px; }
       .dv-card-compact .dv-card-body { padding: 14px 18px 18px; gap: 10px; }
-
-      /* ---- pills (flat fill, no border) ---- */
-      .dv-pill { display: inline-flex; align-items: center; gap: 6px; flex: none; padding: 4px 10px; border-radius: 999px; font-family: var(--font-mono), monospace; font-size: 0.6rem; letter-spacing: 0.04em; text-transform: uppercase; font-weight: 600; }
-      .dv-pill-dot { width: 6px; height: 6px; border-radius: 50%; }
-      .dv-pill-river { color: var(--river-deep); background: rgba(47,128,237,0.14); }
-      .dv-pill-river .dv-pill-dot { background: var(--river-deep); }
-      .dv-pill-amber { color: var(--amber); background: rgba(224,183,109,0.14); }
-      .dv-pill-amber .dv-pill-dot { background: var(--amber); }
-      .dv-pill-green { color: var(--green); background: rgba(88,213,155,0.14); }
-      .dv-pill-green .dv-pill-dot { background: var(--green); }
-      .dv-pill-red { color: var(--red); background: rgba(240,120,120,0.14); }
-      .dv-pill-red .dv-pill-dot { background: var(--red); }
-      .dv-pill-muted { color: var(--quiet); background: rgba(255,255,255,0.05); }
-      .dv-pill-muted .dv-pill-dot { background: var(--quiet); }
 
       /* ---- note + guidance strip ---- */
       .dv-note { font-size: 0.9rem; color: var(--quiet); }
@@ -1123,8 +1141,41 @@ function DemoStyles() {
       .dv-term-x { font-weight: 700; }
       .dv-term-cursor { display: inline-block; width: 8px; height: 1.05em; vertical-align: text-bottom; background: var(--river-deep); animation: dv-blink 1s steps(2) infinite; }
 
+      /* ---- problem: buyer terminal, then creator mismatch ---- */
+      .dv-problem { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; min-height: 300px; }
+      .dv-problem .dv-term { width: 100%; }
+      .dv-cl-red { color: var(--red); font-weight: 650; }
+      .dv-cl-amber { color: var(--amber); font-weight: 650; }
+
+      /* ---- problem: transaction rail cannot connect ---- */
+      .dv-connect-fail { display: grid; width: min(100%, 720px); gap: 24px; }
+      .dv-connect-parties { display: grid; grid-template-columns: minmax(180px, 1fr) minmax(210px, 1.1fr) minmax(180px, 1fr); align-items: center; gap: 18px; }
+      .dv-party-card { display: flex; align-items: center; gap: 13px; min-height: 112px; padding: 18px; border-radius: 18px; background: rgba(255,255,255,0.045); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06), 0 18px 42px rgba(0,0,0,0.16); }
+      .dv-party-icon { display: grid; flex: none; width: 50px; height: 50px; place-items: center; border-radius: 14px; color: white; }
+      .dv-party-creator { background: linear-gradient(145deg, #477fdc, #2555a3); }
+      .dv-party-agent { background: linear-gradient(145deg, #36a777, #19704d); }
+      .dv-party-card div { display: grid; gap: 3px; }
+      .dv-party-card div span { color: var(--quiet); font-size: 0.5rem; letter-spacing: 0.11em; }
+      .dv-party-card strong { font-size: 0.8rem; }
+      .dv-party-card small { color: var(--muted); font-size: 0.62rem; }
+      .dv-connect-rail { position: relative; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+      .dv-connect-line { height: 2px; background: repeating-linear-gradient(90deg, rgba(240,120,120,0.55) 0 8px, transparent 8px 14px); }
+      .dv-connect-line-left { transform-origin: right center; }
+      .dv-connect-line-right { transform-origin: left center; }
+      .dv-connect-blocker { display: grid; min-width: 112px; justify-items: center; gap: 7px; padding: 13px 11px; border-radius: 14px; color: var(--red); background: #251d22; box-shadow: 0 0 0 1px rgba(240,120,120,0.2), 0 15px 34px rgba(0,0,0,0.24); }
+      .dv-connect-blocker span { font-size: 0.44rem; letter-spacing: 0.1em; }
+      .dv-creatorblock { display: flex; flex-direction: column; align-items: stretch; gap: 11px; width: min(100%, 560px); }
+      .dv-creatorblock-row { display: flex; align-items: center; gap: 13px; padding: 15px 17px; border-radius: 14px; background: rgba(255,255,255,0.035); }
+      .dv-creatorblock-icon { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 10px; color: var(--river-deep); background: rgba(47,128,237,0.12); }
+      .dv-creatorblock-row > div { display: flex; flex-direction: column; gap: 4px; }
+      .dv-creatorblock-label { color: var(--quiet); font-size: 0.55rem; letter-spacing: 0.09em; text-transform: uppercase; }
+      .dv-creatorblock-row strong { color: var(--ink); font-size: 0.96rem; font-weight: 600; }
+      .dv-creatorblock-vs { align-self: center; display: inline-flex; align-items: center; gap: 6px; padding: 4px 13px; border-radius: 999px; color: var(--red); background: rgba(240,120,120,0.12); font-size: 0.62rem; font-weight: 650; letter-spacing: 0.02em; }
+      .dv-creatorblock-result { margin-top: 5px; text-align: center; font-size: 1rem; line-height: 1.5; color: var(--muted); }
+      .dv-creatorblock-result strong { font-size: 1.05rem; }
+
       /* ---- compressed creator dashboard ---- */
-      .dv-dashboard { position: relative; display: grid; grid-template-columns: 132px minmax(0, 1fr); width: 100%; height: 390px; overflow: hidden; border-radius: 20px; color: #202127; background: #fff; box-shadow: 0 30px 80px rgba(0,0,0,0.32), 0 0 0 1px rgba(119,157,230,0.24); }
+      .dv-dashboard { position: relative; display: grid; grid-template-columns: 156px minmax(0, 1fr); width: 100%; height: 470px; overflow: hidden; border-radius: 22px; color: #202127; background: #fff; box-shadow: 0 30px 80px rgba(0,0,0,0.32), 0 0 0 1px rgba(119,157,230,0.24); }
       .dv-dashboard-side { display: flex; flex-direction: column; padding: 17px 12px; border-right: 1px solid #e7e9ee; background: #fff; }
       .dv-dashboard-logo { display: flex; align-items: center; gap: 7px; padding: 0 7px; font-size: 0.78rem; }
       .dv-dashboard-logo svg { color: #3c82f6; }
@@ -1137,7 +1188,7 @@ function DemoStyles() {
       .dv-dashboard-steps li { display: flex; align-items: center; gap: 5px; padding: 6px 9px; border-radius: 999px; color: #82858e; background: white; box-shadow: 0 0 0 1px #e2e5eb; font-size: 0.54rem; white-space: nowrap; transition: color 180ms ease, background-color 180ms ease, box-shadow 180ms ease; }
       .dv-dashboard-steps li.is-active { color: #2f75e9; background: #e7efff; box-shadow: 0 0 0 1px #4789f6; }
       .dv-dashboard-steps li.is-done { color: #23734f; background: #eaf8f1; box-shadow: 0 0 0 1px #5ab98a; }
-      .dv-dashboard-panel { position: relative; height: 311px; margin-top: 14px; padding: 17px; overflow: hidden; border-radius: 15px; background: rgba(255,255,255,0.94); box-shadow: 0 0 0 1px #d8e4fb; }
+      .dv-dashboard-panel { position: relative; height: 390px; margin-top: 14px; padding: 22px; overflow: hidden; border-radius: 15px; background: rgba(255,255,255,0.94); box-shadow: 0 0 0 1px #e1e4e9; }
       .dv-dashboard-fields { display: grid; grid-template-columns: 1.4fr 0.8fr; gap: 9px; }
       .dv-dashboard-field { display: grid; gap: 5px; }
       .dv-dashboard-field span, .dv-dashboard-title span { color: #787c86; font-size: 0.56rem; }
@@ -1150,10 +1201,29 @@ function DemoStyles() {
       .dv-dashboard-editor > div:nth-child(2) p { margin-top: 5px; color: #7c808a; font-family: ui-serif, Georgia, serif; font-size: 0.57rem; line-height: 1.45; }
       .dv-dashboard-editor footer { display: flex; justify-content: space-between; padding: 6px 11px; color: #858993; background: white; font-size: 0.49rem; }
       .dv-dashboard-button { position: absolute; right: 17px; bottom: 14px; display: inline-flex; align-items: center; gap: 6px; padding: 8px 13px; overflow: visible; border-radius: 999px; color: white; background: #25262c; font-size: 0.59rem; font-weight: 700; }
+      .dv-dashboard-button.is-pressing { animation: dv-button-press 900ms var(--ease-out) 1; }
+      @keyframes dv-button-press { 0%, 55%, 100% { transform: scale(1); } 70% { transform: scale(0.96); } }
       .dv-dashboard-cursor { position: absolute; z-index: 10; right: 10px; top: 55%; width: 20px; height: 20px; color: #11151c; filter: drop-shadow(0 1px 2px rgba(255,255,255,0.9)) drop-shadow(0 2px 4px rgba(0,0,0,0.25)); }
       .dv-dashboard-button .dv-dashboard-cursor { color: white; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.55)); }
-      .dv-dashboard-cursor > span { position: absolute; inset: -5px; border: 1px solid rgba(47,128,237,0.7); border-radius: 50%; animation: dv-cursor-pulse 700ms ease-out infinite; }
+      .dv-dashboard-cursor > span { position: absolute; inset: -5px; border: 1px solid rgba(47,128,237,0.7); border-radius: 50%; animation: dv-cursor-pulse 700ms var(--ease-out) 2; }
       @keyframes dv-cursor-pulse { to { transform: scale(1.55); opacity: 0; } }
+      .dv-dashboard-spotlight {
+        position: absolute; inset: 0; z-index: 8; pointer-events: none;
+        background: rgba(18,21,27,0.12);
+      }
+      .dv-dashboard-spotlight::before {
+        content: ""; position: absolute; border-radius: 22px;
+        background: rgba(255,255,255,0.11); filter: blur(28px); transform: scale(1.05);
+        transition: top 440ms var(--ease-in-out), right 440ms var(--ease-in-out), bottom 440ms var(--ease-in-out), left 440ms var(--ease-in-out), width 440ms var(--ease-in-out), height 440ms var(--ease-in-out), border-radius 440ms var(--ease-in-out);
+      }
+      .dv-dashboard-spotlight.is-content::before { top: 62px; right: 22px; left: 172px; height: 258px; }
+      .dv-dashboard-spotlight.is-sections::before { top: 88px; right: 24px; left: 174px; height: 204px; }
+      .dv-dashboard-spotlight.is-price::before { top: 92px; left: 172px; width: 430px; height: 170px; }
+      .dv-dashboard-spotlight.is-preview::before { top: 92px; right: 20px; width: 348px; height: 192px; }
+      .dv-dashboard-spotlight.is-review::before { top: 88px; right: 20px; left: 172px; height: 208px; }
+      .dv-dashboard-spotlight.is-action::before { right: 8px; bottom: 4px; width: 220px; height: 92px; border-radius: 30px; }
+      .is-dimmed { opacity: 0.38; filter: brightness(0.48) saturate(0.55); transition: opacity 320ms var(--ease-out), filter 320ms var(--ease-out); }
+      .is-focused { z-index: 3; opacity: 1; filter: none; box-shadow: none; transition: opacity 320ms var(--ease-out), filter 320ms var(--ease-out); }
       .dv-dashboard-title { display: grid; gap: 4px; }
       .dv-dashboard-title strong { font-size: 0.78rem; }
       .dv-section-list { display: grid; gap: 7px; margin-top: 13px; }
@@ -1177,7 +1247,7 @@ function DemoStyles() {
       .dv-dashboard-review > div { display: grid; gap: 5px; min-height: 66px; padding: 10px; border-radius: 9px; background: #f3f5f8; }
       .dv-dashboard-review span { color: #838792; font-size: 0.49rem; }
       .dv-dashboard-review strong { font-size: 0.61rem; line-height: 1.35; }
-      .dv-dashboard-published { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 311px; margin-top: 14px; border-radius: 15px; text-align: center; background: linear-gradient(145deg, #fff, #effbf5); box-shadow: 0 0 0 1px #a8dfc4, 0 18px 50px rgba(59,162,113,0.13); }
+      .dv-dashboard-published { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 390px; margin-top: 14px; border-radius: 15px; text-align: center; background: linear-gradient(145deg, #fff, #effbf5); box-shadow: 0 0 0 1px #a8dfc4, 0 18px 50px rgba(59,162,113,0.13); }
       .dv-dashboard-published > span { display: grid; place-items: center; width: 54px; height: 54px; border-radius: 50%; color: white; background: #3ba271; box-shadow: 0 12px 30px rgba(59,162,113,0.25); }
       .dv-dashboard-published strong { margin-top: 14px; font-size: 1rem; }
       .dv-dashboard-published p { margin-top: 6px; color: #6d756f; font-size: 0.6rem; }
@@ -1197,6 +1267,11 @@ function DemoStyles() {
       .dv-caret { display: inline-block; width: 8px; height: 1.05em; vertical-align: text-bottom; margin-left: 1px; background: var(--river-deep); border-radius: 1px; animation: dv-blink 1s steps(2) infinite; }
       @keyframes dv-blink { 50% { opacity: 0; } }
       .dv-stop-chip { display: inline-flex; align-items: center; align-self: flex-start; font-size: 0.86rem; font-weight: 650; color: var(--green); padding: 8px 14px; border-radius: 999px; background: rgba(88,213,155,0.12); }
+      .dv-focus-region { position: relative; transition: opacity 320ms var(--ease-out), filter 320ms var(--ease-out); }
+      .dv-focus-region.is-focused { border-radius: 14px; }
+      .dv-focus-region.has-label { padding-top: 32px; }
+      .dv-focus-label { position: absolute; top: 8px; left: 12px; z-index: 4; padding: 5px 9px; border: 0; border-radius: 999px; color: white; background: var(--river); font-size: 0.58rem; font-weight: 700; letter-spacing: 0.04em; white-space: nowrap; }
+      .dv-stream-ellipsis { color: var(--quiet); }
 
       /* ---- settlement journey ---- */
       .dv-settle-card { width: 100%; padding: 20px; border-radius: 20px; overflow: hidden; background: linear-gradient(155deg, rgba(47,128,237,0.12), rgba(22,24,29,0.98) 46%, rgba(88,213,155,0.07)); }
@@ -1224,6 +1299,99 @@ function DemoStyles() {
       .dv-chain-confirm small { color: var(--quiet); font-size: 0.55rem; }
       .dv-chain-block { color: var(--muted); font-size: 0.58rem; }
 
+      /* ---- literal block settling on Arc ---- */
+      .dv-block-settlement { position: relative; display: grid; grid-template-columns: 190px minmax(280px, 1fr); grid-template-rows: 1fr auto; gap: 16px 24px; width: 100%; min-height: 410px; padding: 22px; overflow: hidden; border-radius: 22px; background: radial-gradient(circle at 70% 28%, rgba(72,129,231,0.18), transparent 38%), #15181e; box-shadow: 0 30px 80px rgba(0,0,0,0.3); }
+      .dv-block-receipt { align-self: center; display: grid; gap: 8px; padding: 18px; border-radius: 16px; background: rgba(255,255,255,0.04); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.05); }
+      .dv-block-receipt span { color: var(--river-deep); font-size: 0.54rem; letter-spacing: 0.12em; }
+      .dv-block-receipt strong { font-size: 1rem; }
+      .dv-block-receipt small { color: var(--quiet); font-size: 0.56rem; line-height: 1.5; }
+      .dv-block-drop-zone { position: relative; min-height: 300px; perspective: 700px; }
+      .dv-chain-cube { position: absolute; top: 34px; left: 50%; z-index: 3; width: 104px; height: 104px; margin-left: -52px; transform-style: preserve-3d; }
+      .dv-chain-cube-face { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 4px; border-radius: 10px; color: white; background: linear-gradient(145deg, #4d91fa, #2556ac); box-shadow: 0 24px 55px rgba(37,86,172,0.35); }
+      .dv-chain-cube-face strong { font-size: 0.72rem; letter-spacing: 0.14em; }
+      .dv-chain-cube-face small { color: rgba(255,255,255,0.72); font-size: 0.52rem; }
+      .dv-chain-cube-top { position: absolute; z-index: -1; top: -24px; left: 12px; width: 104px; height: 48px; border-radius: 8px 8px 4px 4px; background: #76aaf8; transform: skewX(-27deg); }
+      .dv-chain-cube-side { position: absolute; z-index: -1; top: -12px; right: -24px; width: 48px; height: 104px; border-radius: 4px 8px 8px 4px; background: #1d4388; transform: skewY(-27deg); }
+      .dv-arc-platform { position: absolute; right: 18px; bottom: 24px; left: 18px; z-index: 2; display: grid; grid-template-columns: 50px 1fr auto; align-items: center; gap: 13px; min-height: 76px; padding: 13px 16px; border-radius: 14px; background: linear-gradient(180deg, #252c39, #171b23); box-shadow: 0 14px 0 #0d1015, 0 26px 50px rgba(0,0,0,0.34), inset 0 0 0 1px rgba(118,170,248,0.16); transform-origin: center bottom; }
+      .dv-arc-platform img { width: 44px; height: 44px; object-fit: contain; border-radius: 10px; background: white; }
+      .dv-arc-platform div { display: grid; gap: 3px; }
+      .dv-arc-platform span { color: var(--quiet); font-size: 0.5rem; letter-spacing: 0.12em; }
+      .dv-arc-platform strong { font-size: 0.94rem; }
+      .dv-arc-platform a { color: var(--river-deep); font-size: 0.62rem; text-decoration: none; }
+      .dv-block-impact { position: absolute; z-index: 1; right: 14%; bottom: 72px; left: 14%; height: 36px; border: 2px solid rgba(110,165,255,0.7); border-radius: 50%; box-shadow: 0 0 28px rgba(110,165,255,0.36); }
+      .dv-block-payout { grid-column: 1 / -1; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; min-height: 62px; padding: 12px 14px; border-radius: 14px; color: var(--green); background: rgba(88,213,155,0.09); box-shadow: inset 0 0 0 1px rgba(88,213,155,0.18); }
+      .dv-block-payout div { display: grid; gap: 3px; }
+      .dv-block-payout div span { color: var(--quiet); font-size: 0.5rem; letter-spacing: 0.1em; }
+      .dv-block-payout strong { font-size: 0.8rem; }
+      .dv-block-payout > small { color: var(--quiet); font-size: 0.52rem; }
+
+      /* ---- Arc transaction lifecycle ---- */
+      .dv-tx-settlement { width: 100%; overflow: hidden; border-radius: 20px; background: #15181e; box-shadow: 0 30px 80px rgba(0,0,0,0.32), inset 0 0 0 1px rgba(255,255,255,0.055); }
+      .dv-tx-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+      .dv-tx-brand { display: flex; align-items: center; gap: 11px; }
+      .dv-tx-brand img { width: 34px; height: 34px; border-radius: 9px; object-fit: contain; background: white; }
+      .dv-tx-brand div { display: grid; gap: 2px; }
+      .dv-tx-brand span { color: var(--quiet); font-size: 0.46rem; letter-spacing: 0.12em; }
+      .dv-tx-brand strong { font-size: 0.78rem; }
+      .dv-tx-summary { display: grid; grid-template-columns: 1.15fr 1fr 1fr; border-bottom: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.018); }
+      .dv-tx-summary > div { display: grid; gap: 4px; padding: 14px 18px; border-right: 1px solid rgba(255,255,255,0.055); }
+      .dv-tx-summary > div:last-child { border-right: 0; }
+      .dv-tx-summary span { color: var(--quiet); font-size: 0.46rem; letter-spacing: 0.1em; }
+      .dv-tx-summary strong { font-size: 0.78rem; }
+      .dv-tx-summary small { color: var(--muted); font-size: 0.52rem; }
+      .dv-tx-body { display: grid; grid-template-columns: 0.72fr 1.28fr; min-height: 222px; }
+      .dv-tx-steps { display: grid; align-content: center; gap: 0; padding: 14px 18px; border-right: 1px solid rgba(255,255,255,0.06); }
+      .dv-tx-steps li { position: relative; display: flex; align-items: center; gap: 10px; min-height: 45px; }
+      .dv-tx-steps li:not(:last-child)::after { content: ""; position: absolute; top: 31px; bottom: -14px; left: 12px; width: 1px; background: rgba(255,255,255,0.1); }
+      .dv-tx-step-icon { position: relative; z-index: 2; display: grid; flex: none; width: 25px; height: 25px; place-items: center; border-radius: 50%; color: var(--quiet); background: #242832; font-size: 0.58rem; }
+      .dv-tx-steps li.is-active .dv-tx-step-icon { color: white; background: var(--river); box-shadow: 0 0 0 5px rgba(47,128,237,0.12); }
+      .dv-tx-steps li.is-done .dv-tx-step-icon { color: #102018; background: var(--green); }
+      .dv-tx-steps li div { display: grid; gap: 2px; }
+      .dv-tx-steps strong { font-size: 0.68rem; }
+      .dv-tx-steps small { color: var(--quiet); font-size: 0.49rem; }
+      .dv-blockchain-viz { position: relative; display: grid; align-content: center; gap: 14px; padding: 18px 20px; overflow: hidden; background: radial-gradient(circle at 70% 30%, rgba(47,128,237,0.12), transparent 52%); }
+      .dv-blockchain-label { color: var(--quiet); font-size: 0.47rem; letter-spacing: 0.12em; }
+      .dv-blockchain-row { position: relative; z-index: 2; display: grid; grid-template-columns: repeat(3, 1fr); align-items: stretch; gap: 8px; }
+      .dv-ledger-block { display: grid; justify-items: start; gap: 7px; min-height: 82px; padding: 12px; border-radius: 11px; color: var(--muted); background: #20242c; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.06); }
+      .dv-ledger-block span { font-size: 0.48rem; }
+      .dv-ledger-block small { color: var(--quiet); font-size: 0.42rem; }
+      .dv-ledger-block.is-current { color: var(--river-deep); background: linear-gradient(145deg, rgba(47,128,237,0.18), #202630); box-shadow: inset 0 0 0 1px rgba(110,165,255,0.3), 0 12px 32px rgba(47,128,237,0.13); }
+      .dv-tx-hash { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: rgba(255,255,255,0.035); }
+      .dv-tx-hash span { color: var(--quiet); font-size: 0.43rem; letter-spacing: 0.09em; }
+      .dv-tx-hash strong { color: var(--muted); font-size: 0.51rem; }
+      .dv-tx-hash small { color: var(--green); font-size: 0.45rem; }
+      .dv-tx-confirmed { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 11px; margin: 0 18px 16px; padding: 10px 12px; border-radius: 11px; color: var(--green); background: rgba(88,213,155,0.09); box-shadow: inset 0 0 0 1px rgba(88,213,155,0.16); }
+      .dv-tx-confirmed div { display: grid; gap: 2px; }
+      .dv-tx-confirmed strong { font-size: 0.68rem; }
+      .dv-tx-confirmed small { color: var(--muted); font-size: 0.53rem; }
+      .dv-tx-confirmed > span:last-child { font-size: 0.47rem; }
+
+      /* ---- simplified Arc block confirmation ---- */
+      .dv-simple-settlement { width: 100%; overflow: hidden; border-radius: 22px; background: radial-gradient(circle at 50% 58%, rgba(47,128,237,0.1), transparent 48%), #15181e; box-shadow: 0 30px 80px rgba(0,0,0,0.32), inset 0 0 0 1px rgba(255,255,255,0.055); }
+      .dv-simple-head { display: flex; align-items: center; justify-content: space-between; padding: 17px 20px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+      .dv-simple-transfer { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 22px; margin: 18px 20px 0; padding: 15px 18px; border-radius: 14px; background: rgba(255,255,255,0.035); }
+      .dv-simple-transfer > div { display: grid; gap: 4px; }
+      .dv-simple-transfer > div:last-child { text-align: right; }
+      .dv-simple-transfer span { color: var(--quiet); font-size: 0.47rem; letter-spacing: 0.1em; }
+      .dv-simple-transfer strong { font-size: 0.88rem; }
+      .dv-simple-transfer > svg { color: var(--river-deep); }
+      .dv-simple-chain { display: grid; justify-items: center; gap: 13px; padding: 20px 24px 18px; }
+      .dv-simple-chain-label { color: var(--quiet); font-size: 0.46rem; letter-spacing: 0.13em; }
+      .dv-simple-blocks { display: grid; grid-template-columns: 104px 104px 128px; align-items: end; gap: 12px; }
+      .dv-simple-block { display: grid; align-content: center; justify-items: center; gap: 8px; height: 82px; border-radius: 13px; }
+      .dv-simple-block.is-past { color: #6f7580; background: #20242b; box-shadow: inset 0 0 0 1px rgba(255,255,255,0.045); }
+      .dv-simple-block.is-past span { font-size: 0.47rem; }
+      .dv-block-slot { display: grid; width: 128px; height: 104px; place-items: stretch; border: 1px dashed rgba(110,165,255,0.22); border-radius: 15px; background: rgba(47,128,237,0.025); }
+      .dv-simple-block.is-current { width: 100%; height: 100%; color: #dceaff; background: linear-gradient(145deg, #2e67bb, #1c3f79); box-shadow: 0 18px 46px rgba(28,63,121,0.35), inset 0 0 0 1px rgba(153,194,255,0.24); }
+      .dv-simple-block.is-current strong { font-size: 0.56rem; }
+      .dv-simple-block.is-current small { color: rgba(220,234,255,0.66); font-size: 0.44rem; }
+      .dv-simple-status { display: flex; align-items: center; gap: 8px; min-height: 22px; font-size: 0.64rem; }
+      .dv-simple-status .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--river-deep); animation: status-pulse 1.8s var(--ease-in-out) infinite; }
+      .dv-simple-paid { display: flex; align-items: center; justify-content: center; gap: 11px; margin: 0 20px 18px; padding: 12px 14px; border-radius: 13px; color: var(--green); background: rgba(88,213,155,0.09); box-shadow: inset 0 0 0 1px rgba(88,213,155,0.16); }
+      .dv-simple-paid div { display: grid; gap: 2px; }
+      .dv-simple-paid strong { font-size: 0.72rem; }
+      .dv-simple-paid small { color: var(--muted); font-size: 0.5rem; }
+
       /* ---- end card ---- */
       .dv-end { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 640px; gap: 16px; }
       .dv-end-burst { position: absolute; top: -40px; left: 50%; width: 280px; height: 280px; margin-left: -140px; border-radius: 50%; background: rgba(47,128,237,0.25); filter: blur(100px); pointer-events: none; }
@@ -1246,12 +1414,26 @@ function DemoStyles() {
       .dv-beat.is-on .dv-beat-label { color: var(--ink); }
 
       @media (max-width: 720px) {
+        .dv-connect-parties { grid-template-columns: 1fr; }
+        .dv-connect-rail { order: 3; }
+        .dv-tx-body { grid-template-columns: 1fr; }
+        .dv-tx-steps { display: none; }
+        .dv-tx-summary { grid-template-columns: 1fr; }
+        .dv-tx-summary > div:not(:first-child) { display: none; }
+        .dv-simple-blocks { grid-template-columns: 76px 76px 100px; }
+        .dv-simple-block.is-past { width: 76px; }
+        .dv-block-slot { width: 100px; }
+        .dv-block-settlement { grid-template-columns: 1fr; min-height: 500px; }
+        .dv-block-receipt { display: none; }
+        .dv-block-payout { grid-column: 1; }
+        .dv-block-payout > small { display: none; }
         .dv-settle-flow { grid-template-columns: 1fr; gap: 8px; }
         .dv-settle-rail { width: 2px; height: 18px; justify-self: center; }
         .dv-settle-node { min-height: 110px; }
         .dv-chain-block { display: none; }
         .dv-dashboard { grid-template-columns: 1fr; }
         .dv-dashboard-side { display: none; }
+        .dv-dashboard-spotlight { display: none; }
         .dv-dashboard-main { padding: 12px; }
         .dv-dashboard-steps li { padding-inline: 7px; }
         .dv-dashboard-steps li { font-size: 0; }
@@ -1261,6 +1443,7 @@ function DemoStyles() {
       }
       @media (prefers-reduced-motion: reduce) {
         .dv-caret { animation: none !important; }
+        .dv-chain-cube { transform: translateY(104px) !important; }
       }
     `}</style>
   );

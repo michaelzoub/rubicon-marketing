@@ -2,7 +2,7 @@
 
 import { getEmbeddedConnectedWallet, useCreateWallet, usePrivy, useWallets } from "@privy-io/react-auth";
 import { useEffect, useState } from "react";
-import { ChevronDown, LogOut, ShieldCheck, Wallet } from "lucide-react";
+import { Check, ChevronDown, Copy, KeyRound, LogOut, ShieldCheck, Trash2, Wallet } from "lucide-react";
 import { useRubiconMutation, useRubiconQuery } from "@/lib/rubicon/hooks";
 import { RECEIVING_NETWORK, RECEIVING_NETWORK_LABEL } from "@/lib/chain";
 import {
@@ -91,11 +91,96 @@ export default function SettingsPage() {
             </div>
           </Card>
 
+          <ExtensionAccess />
+
           {/* Developer information */}
           <DeveloperInfo creatorId={creator.data?.id ?? ""} privyId={user?.id ?? ""} />
         </>
       )}
     </div>
+  );
+}
+
+function ExtensionAccess() {
+  const tokens = useRubiconQuery((c) => c.listExtensionTokens(), []);
+  const createToken = useRubiconMutation((c, label?: string) => c.createExtensionToken(label));
+  const revokeToken = useRubiconMutation((c, id: string) => c.revokeExtensionToken(id));
+  const [newToken, setNewToken] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  async function generate() {
+    const result = await createToken.run("Chrome extension");
+    setNewToken(result.token);
+    setCopied(false);
+    tokens.refetch();
+  }
+
+  async function copyToken() {
+    if (!newToken) return;
+    await navigator.clipboard.writeText(newToken);
+    setCopied(true);
+  }
+
+  return (
+    <Card>
+      <CardHeader title="Send to Rubicon extension" />
+      <div className="grid gap-4 p-5">
+        <p className="text-sm leading-6 text-[var(--muted)]">
+          Generate a token, then paste it into the Chrome extension. Imported content always arrives as a draft.
+        </p>
+
+        {newToken && (
+          <div className="rounded-lg bg-[#eef8f2] p-4">
+            <div className="text-sm font-medium text-[#165c3e]">Copy this token now. It will not be shown again.</div>
+            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+              <code className="mono min-w-0 flex-1 break-all rounded-lg bg-white px-3 py-2 text-xs">{newToken}</code>
+              <button type="button" onClick={copyToken} className="button button-secondary text-sm">
+                {copied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />}
+                {copied ? "Copied" : "Copy"}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {tokens.status === "loading" && <LoadingState />}
+        {tokens.status === "error" && tokens.error && <ErrorState error={tokens.error} onRetry={tokens.refetch} />}
+        {tokens.status === "success" && (
+          <div className="grid gap-2">
+            {tokens.data?.filter((token) => !token.revokedAt).map((token) => (
+              <div key={token.id} className="flex items-center justify-between gap-4 rounded-lg bg-[var(--surface-muted)] px-4 py-3">
+                <div className="min-w-0">
+                  <div className="mono text-sm">{token.prefix}...</div>
+                  <div className="mt-0.5 text-xs text-[var(--muted)]">
+                    {token.lastUsedAt ? `Last used ${new Date(token.lastUsedAt).toLocaleDateString()}` : "Never used"}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  aria-label={`Revoke token ${token.prefix}`}
+                  onClick={async () => {
+                    await revokeToken.run(token.id);
+                    tokens.refetch();
+                  }}
+                  disabled={revokeToken.pending}
+                  className="button button-secondary text-sm text-[#8d2f2d] disabled:opacity-50"
+                >
+                  <Trash2 size={15} aria-hidden="true" /> Revoke
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {(createToken.error || revokeToken.error) && (
+          <p className="rounded-lg bg-[#fff1f0] px-4 py-3 text-sm text-[#8d2f2d]">
+            {(createToken.error ?? revokeToken.error)?.message}
+          </p>
+        )}
+        <button type="button" onClick={generate} disabled={createToken.pending} className="button button-primary w-fit text-sm disabled:opacity-50">
+          <KeyRound size={15} aria-hidden="true" /> {createToken.pending ? "Generating..." : "Generate extension token"}
+        </button>
+      </div>
+    </Card>
   );
 }
 

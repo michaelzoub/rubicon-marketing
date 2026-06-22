@@ -7,13 +7,17 @@
  */
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { parseSections } from "./sections";
+import { generateExtensionToken, hashExtensionToken, tokenPrefix } from "./extension-tokens";
 import type {
   Article,
   ArticleDetail,
+  ArticleImportMeta,
   ArticleSection,
+  ArticleSourcePlatform,
   CreateArticleInput,
   Creator,
   EarningsSummary,
+  ExtensionTokenSummary,
   PaymentActivity,
   PaymentStatus,
   SectionUsage,
@@ -89,9 +93,23 @@ type ArticleRow = {
   revision: number;
   seller_agent_config: Record<string, unknown> | null;
   body: string;
+  is_imported: boolean | null;
+  source_platform: ArticleSourcePlatform | null;
+  source_url: string | null;
+  source_author_name: string | null;
+  source_author_handle: string | null;
+  source_published_at: string | null;
+  imported_at: string | null;
+  import_warnings: string[] | null;
+  is_partial_import: boolean | null;
   created_at: string;
   updated_at: string;
 };
+
+// Single source of truth for the article column projection, so every query that
+// hydrates an ArticleRow stays in sync (including the import provenance fields).
+const ARTICLE_COLUMNS =
+  "id, creator_id, title, author, state, price_per_word_atomic, max_article_price_atomic, total_words, revision, seller_agent_config, body, is_imported, source_platform, source_url, source_author_name, source_author_handle, source_published_at, imported_at, import_warnings, is_partial_import, created_at, updated_at";
 
 type ArticleSectionRow = {
   id: string;
@@ -102,6 +120,15 @@ type ArticleSectionRow = {
   word_start: number;
   word_count: number;
   ordinal: number;
+};
+
+type ExtensionTokenRow = {
+  id: string;
+  token_prefix: string;
+  label: string | null;
+  created_at: string;
+  last_used_at: string | null;
+  revoked_at: string | null;
 };
 
 type StreamSessionRow = {
@@ -242,6 +269,21 @@ function mapSection(row: ArticleSectionRow): ArticleSection {
   };
 }
 
+function mapImportMeta(row: ArticleRow): ArticleImportMeta | null {
+  if (!row.is_imported) return null;
+  return {
+    isImported: true,
+    sourcePlatform: row.source_platform,
+    sourceUrl: row.source_url,
+    sourceAuthorName: row.source_author_name,
+    sourceAuthorHandle: row.source_author_handle,
+    sourcePublishedAt: row.source_published_at,
+    importedAt: row.imported_at,
+    importWarnings: row.import_warnings ?? [],
+    isPartialImport: row.is_partial_import ?? false,
+  };
+}
+
 function mapArticle(
   row: ArticleRow,
   sections: ArticleSectionRow[],
@@ -260,6 +302,7 @@ function mapArticle(
     title: row.title,
     author: row.author,
     state: row.state,
+    importMeta: mapImportMeta(row),
     pricePerWordAtomic: row.price_per_word_atomic,
     maxArticlePriceAtomic: row.max_article_price_atomic,
     totalWords: row.total_words,
@@ -356,9 +399,7 @@ export function createRubiconClient({ supabaseUrl, supabaseAnonKey, getToken, ge
   async function articleContext(creatorId: string, articleId?: string) {
     let articleQuery = supabase
       .from("articles")
-      .select(
-        "id, creator_id, title, author, state, price_per_word_atomic, max_article_price_atomic, total_words, revision, seller_agent_config, body, created_at, updated_at",
-      )
+      .select(ARTICLE_COLUMNS)
       .eq("creator_id", creatorId)
       .neq("state", "deleted")
       .order("updated_at", { ascending: false });
@@ -527,6 +568,7 @@ export function createRubiconClient({ supabaseUrl, supabaseAnonKey, getToken, ge
       const now = new Date().toISOString();
       const totalWords = parseSections(input.body).reduce((sum, section) => sum + section.wordCount, 0);
 
+      const source = input.source ?? null;
       const article = await must(
         supabase
           .from("articles")
@@ -542,11 +584,18 @@ export function createRubiconClient({ supabaseUrl, supabaseAnonKey, getToken, ge
             revision: 1,
             seller_agent_config: input.sellerAgentConfig ?? null,
             body: input.body,
+            is_imported: source !== null,
+            source_platform: source?.platform ?? null,
+            source_url: source?.url ?? null,
+            source_author_name: source?.authorName ?? null,
+            source_author_handle: source?.authorHandle ?? null,
+            source_published_at: source?.publishedAt ?? null,
+            imported_at: source ? now : null,
+            import_warnings: source?.warnings ?? [],
+            is_partial_import: source?.isPartial ?? false,
             updated_at: now,
           })
-          .select(
-            "id, creator_id, title, author, state, price_per_word_atomic, max_article_price_atomic, total_words, revision, seller_agent_config, body, created_at, updated_at",
-          )
+          .select(ARTICLE_COLUMNS)
           .single<ArticleRow>(),
       );
 
@@ -801,6 +850,79 @@ export function createRubiconClient({ supabaseUrl, supabaseAnonKey, getToken, ge
           };
         })
         .sort((a, b) => (a.date < b.date ? 1 : -1));
+    },
+
+    // --- Browser-extension tokens -------------------------------------------
+    // Tokens authenticate the "Send to Rubicon" Chrome extension. We never store
+    // or return the plaintext: the browser generates it, shows it once, and
+    // persists only its SHA-256 hash (see lib/rubicon/extension-tokens.ts).
+
+    async listExtensionTokens(): Promise<ExtensionTokenSummary[]> {
+      const identity = requireIdentity(getIdentity);
+      const rows = await must(
+        supabase
+          .from("extension_tokens")
+          .select("id, token_prefix, label, created_at, last_used_at, revoked_at")
+          .eq("creator_id", identity.id)
+          .order("created_at", { ascending: false })
+          .returns<ExtensionTokenRow[]>(),
+      );
+      return rows.map((row) => ({
+        id: row.id,
+        prefix: row.token_prefix,
+        label: row.label,
+        createdAt: row.created_at,
+        lastUsedAt: row.last_used_at,
+        revokedAt: row.revoked_at,
+      }));
+    },
+
+    /**
+     * Mint a new extension token. Returns the plaintext token exactly once —
+     * the caller must surface it immediately; it cannot be retrieved again.
+     */
+    async createExtensionToken(label?: string): Promise<{ token: string; summary: ExtensionTokenSummary }> {
+      const identity = requireIdentity(getIdentity);
+      await ensureCreator();
+      const token = generateExtensionToken();
+      const tokenHash = await hashExtensionToken(token);
+      const row = await must(
+        supabase
+          .from("extension_tokens")
+          .insert({
+            id: randomId("exttok"),
+            creator_id: identity.id,
+            token_hash: tokenHash,
+            token_prefix: tokenPrefix(token),
+            label: label?.trim() || null,
+          })
+          .select("id, token_prefix, label, created_at, last_used_at, revoked_at")
+          .single<ExtensionTokenRow>(),
+      );
+      return {
+        token,
+        summary: {
+          id: row.id,
+          prefix: row.token_prefix,
+          label: row.label,
+          createdAt: row.created_at,
+          lastUsedAt: row.last_used_at,
+          revokedAt: row.revoked_at,
+        },
+      };
+    },
+
+    async revokeExtensionToken(tokenId: string): Promise<void> {
+      const identity = requireIdentity(getIdentity);
+      await must(
+        supabase
+          .from("extension_tokens")
+          .update({ revoked_at: new Date().toISOString() })
+          .eq("id", tokenId)
+          .eq("creator_id", identity.id)
+          .select("id")
+          .single<{ id: string }>(),
+      );
     },
   };
 }

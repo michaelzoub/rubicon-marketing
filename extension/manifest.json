@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "Send to Rubicon",
+  "version": "0.1.0",
+  "description": "Turn the current Substack or X post into a Rubicon draft.",
+  "permissions": ["activeTab", "storage"],
+  "host_permissions": [
+    "https://*.substack.com/*",
+    "https://substack.com/*",
+    "https://x.com/*",
+    "https://twitter.com/*",
+    "https://www.rubiconpay.xyz/*",
+    "http://localhost:3000/*"
+  ],
+  "action": {
+    "default_title": "Send to Rubicon",
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://*.substack.com/*", "https://substack.com/*", "https://x.com/*", "https://twitter.com/*"],
+      "js": ["contentScript.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["platformExtractors/*.js"],
+      "matches": ["https://*.substack.com/*", "https://substack.com/*", "https://x.com/*", "https://twitter.com/*"]
+    }
+  ]
+}

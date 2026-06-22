@@ -8,6 +8,7 @@ import {
   ArrowRight,
   ChevronDown,
   ChevronUp,
+  Link2,
   Upload,
 } from "lucide-react";
 import { useRubiconMutation, useRubiconQuery } from "@/lib/rubicon/hooks";
@@ -17,13 +18,29 @@ import {
   usdToAtomic,
 } from "@/lib/rubicon/pricing";
 import { parseSections } from "@/lib/rubicon/sections";
-import type { ArticleSectionInput } from "@/lib/rubicon/types";
+import type { ArticleSourceInput, ArticleSectionInput } from "@/lib/rubicon/types";
 import { MarkdownEditor } from "../../_components/markdown-editor";
-import { Card, PageHeader, shortWallet, WalletStatePill } from "../../_components/ui";
+import { Card, formatDate, PageHeader, shortWallet, WalletStatePill } from "../../_components/ui";
+import { takeImport } from "../_import-handoff";
+
+const PARTIAL_IMPORT_NOTICE =
+  "Only public preview content was imported. Paste the full gated body below to make it available to agents.";
 
 interface EditableSection {
   title: string;
   wordCount: number;
+}
+
+/** Imported provenance held in the wizard until the draft is saved. */
+type ImportedSource = ArticleSourceInput & {
+  importedAt: string;
+  initialContent: string;
+};
+
+function isStillPartial(source: ImportedSource, content: string): boolean {
+  if (!source.isPartial) return false;
+  if (source.platform === "x") return content.trim() === source.initialContent.trim();
+  return content.trim().length < 600;
 }
 
 const steps = ["Add your article", "Review sections", "Choose pricing", "Publish"] as const;
@@ -45,16 +62,52 @@ export default function NewArticlePage() {
   const [pricePerWord, setPricePerWord] = useState("");
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [savedDraftId, setSavedDraftId] = useState<string | null>(null);
+  const [source, setSource] = useState<ImportedSource | null>(null);
 
-  // Prefill the schema-required author from the creator display name once.
+  // Pull in a stashed "Import from URL" result once, on mount. This is the only
+  // place a draft is assembled from imported data — saving still goes through
+  // the normal create flow, so nothing is persisted without review.
+  const appliedImport = useRef(false);
+  useEffect(() => {
+    if (appliedImport.current) return;
+    appliedImport.current = true;
+    const imported = takeImport();
+    if (!imported) return;
+
+    if (imported.title) setTitle(imported.title);
+    if (imported.authorName) setAuthor(imported.authorName);
+    const initialBody = imported.body ?? imported.previewText ?? "";
+    if (initialBody) {
+      setContent(initialBody);
+      lastParsed.current = "";
+    }
+    setSource({
+      platform: imported.sourcePlatform,
+      url: imported.sourceUrl,
+      authorName: imported.authorName,
+      authorHandle: imported.authorHandle,
+      publishedAt: imported.publishedAt,
+      warnings: imported.warnings,
+      isPartial: imported.isPartial,
+      importedAt: new Date().toISOString(),
+      initialContent: initialBody,
+    });
+  }, []);
+
+  // Prefill the schema-required author from the creator display name once,
+  // unless an import already supplied one.
   const prefilledAuthor = useRef(false);
   useEffect(() => {
     if (prefilledAuthor.current) return;
+    if (source) {
+      prefilledAuthor.current = true;
+      return;
+    }
     const displayName = creator.data?.displayName;
     if (!displayName) return;
     setAuthor(displayName);
     prefilledAuthor.current = true;
-  }, [creator.data?.displayName]);
+  }, [creator.data?.displayName, source]);
 
   function enterReview() {
     if (content !== lastParsed.current) {
@@ -81,6 +134,19 @@ export default function NewArticlePage() {
       sections: sectionInput,
       pricePerWordAtomic: atomicPerWord,
       maxArticlePriceAtomic: null,
+      source: source
+        ? {
+            platform: source.platform,
+            url: source.url,
+            authorName: source.authorName,
+            authorHandle: source.authorHandle,
+            publishedAt: source.publishedAt,
+            warnings: source.warnings,
+            // Once the creator has pasted a real body over a preview-only
+            // import, the draft is no longer partial.
+            isPartial: isStillPartial(source, content),
+          }
+        : null,
     };
   }
 
@@ -121,6 +187,7 @@ export default function NewArticlePage() {
           title={title}
           author={author}
           content={content}
+          source={source}
           onTitle={setTitle}
           onAuthor={setAuthor}
           onContent={setContent}
@@ -209,10 +276,60 @@ function Field({ label, hint, children }: { label: string; hint?: string; childr
 const inputClass =
   "h-11 rounded-lg bg-[var(--surface-muted)] px-3 outline-none transition focus:bg-white focus:ring-2 focus:ring-[var(--river-line)]";
 
+const SOURCE_LABELS: Record<ImportedSource["platform"], string> = {
+  substack: "Substack",
+  x: "X / Twitter",
+};
+
+function ImportedSourceBanner({ source, partial }: { source: ImportedSource; partial: boolean }) {
+  const status = partial
+    ? source.platform === "x"
+      ? "Text needed"
+      : "Partial preview"
+    : "Imported";
+  const author =
+    source.authorName && source.authorHandle
+      ? `${source.authorName} (${source.authorHandle})`
+      : source.authorName ?? source.authorHandle ?? "Unknown";
+  return (
+    <div className="rounded-xl bg-[var(--river-pale)] p-4 text-sm text-[var(--river-deep)]">
+      <div className="flex items-center gap-2 font-medium">
+        <Link2 size={15} aria-hidden="true" />
+        Imported from {SOURCE_LABELS[source.platform]}
+        <span className="mono rounded-full bg-white/60 px-2 py-0.5 text-[0.66rem] uppercase tracking-[0.12em]">
+          {status}
+        </span>
+      </div>
+      <dl className="mt-3 grid gap-1.5 text-[var(--ink)] sm:grid-cols-2">
+        <SourceRow term="Source">
+          <a href={source.url} target="_blank" rel="noopener noreferrer" className="truncate underline underline-offset-2">
+            {source.url}
+          </a>
+        </SourceRow>
+        <SourceRow term="Original author">
+          {author}
+        </SourceRow>
+        <SourceRow term="Published">{source.publishedAt ? formatDate(source.publishedAt) : "—"}</SourceRow>
+        <SourceRow term="Imported">{formatDate(source.importedAt)}</SourceRow>
+      </dl>
+    </div>
+  );
+}
+
+function SourceRow({ term, children }: { term: string; children: React.ReactNode }) {
+  return (
+    <div className="flex min-w-0 gap-2">
+      <dt className="shrink-0 text-[var(--muted)]">{term}:</dt>
+      <dd className="min-w-0 truncate font-medium">{children}</dd>
+    </div>
+  );
+}
+
 function StepAddArticle({
   title,
   author,
   content,
+  source,
   onTitle,
   onAuthor,
   onContent,
@@ -221,6 +338,7 @@ function StepAddArticle({
   title: string;
   author: string;
   content: string;
+  source: ImportedSource | null;
   onTitle: (v: string) => void;
   onAuthor: (v: string) => void;
   onContent: (v: string) => void;
@@ -237,9 +355,22 @@ function StepAddArticle({
   }
 
   const ready = title.trim() && author.trim() && content.trim();
+  const stillPartial = source ? isStillPartial(source, content) : false;
 
   return (
     <Card className="p-6">
+      {source && (
+        <div className="mb-5 grid gap-3">
+          <ImportedSourceBanner source={source} partial={stillPartial} />
+          {stillPartial && (
+            <div className="rounded-lg bg-[#fdf6ec] px-4 py-3 text-sm leading-5 text-[#7b4e12]">
+              {/* Prefer the importer's source-specific guidance; fall back to the
+                  generic preview-only notice when it didn't supply one. */}
+              {source.warnings[0] ?? PARTIAL_IMPORT_NOTICE}
+            </div>
+          )}
+        </div>
+      )}
       <div className="grid gap-5">
         <Field label="Article title">
           <input value={title} onChange={(e) => onTitle(e.target.value)} placeholder="A clear, descriptive title" className={inputClass} />
@@ -259,6 +390,11 @@ function StepAddArticle({
           <button type="button" onClick={() => fileRef.current?.click()} className="button button-secondary text-sm">
             <Upload size={15} aria-hidden="true" /> Upload Markdown
           </button>
+          {!source && (
+            <Link href="/dashboard/articles/import" className="button button-secondary text-sm">
+              <Link2 size={15} aria-hidden="true" /> Import from URL
+            </Link>
+          )}
         </div>
       </div>
       <div className="mt-6 flex justify-end pt-2">

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { FileText, Pause, Pencil, Play } from "lucide-react";
+import { FileText, Link2, Pause, Pencil, Play } from "lucide-react";
 import type { Article } from "@/lib/rubicon/types";
 import { useRubiconMutation, useRubiconQuery } from "@/lib/rubicon/hooks";
 import { formatUsd } from "@/lib/rubicon/pricing";
@@ -40,7 +40,14 @@ export default function ArticlesPage() {
       <PageHeader
         title="Your articles"
         description="Everything you’ve published for agents to read."
-        action={<PrimaryLink href="/dashboard/articles/new">New article</PrimaryLink>}
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            <Link href="/dashboard/articles/import" className="button button-secondary text-sm">
+              <Link2 size={15} aria-hidden="true" /> Import from URL
+            </Link>
+            <PrimaryLink href="/dashboard/articles/new">New article</PrimaryLink>
+          </div>
+        }
       />
 
       {articles.status === "loading" && <LoadingState />}
@@ -51,7 +58,14 @@ export default function ArticlesPage() {
           icon={<FileText size={22} aria-hidden="true" />}
           title="No articles yet"
           description="Add your content, choose a price per word, and make it available to agents."
-          action={<PrimaryLink href="/dashboard/articles/new">New article</PrimaryLink>}
+          action={
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <Link href="/dashboard/articles/import" className="button button-secondary text-sm">
+                <Link2 size={15} aria-hidden="true" /> Import from URL
+              </Link>
+              <PrimaryLink href="/dashboard/articles/new">New article</PrimaryLink>
+            </div>
+          }
         />
       )}
 
