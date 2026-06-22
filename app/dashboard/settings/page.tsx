@@ -121,8 +121,17 @@ function ExtensionAccess() {
     setCopied(true);
   }
 
+  // When arriving from the Chrome extension (.../settings#extension-token),
+  // scroll this section into view once it has rendered. The page mounts before
+  // the creator query resolves, so the browser's native hash jump misses it.
+  useEffect(() => {
+    if (typeof window === "undefined" || window.location.hash !== "#extension-token") return;
+    if (tokens.status === "loading") return;
+    document.getElementById("extension-token")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [tokens.status]);
+
   return (
-    <Card>
+    <Card id="extension-token" className="scroll-mt-6">
       <CardHeader title="Send to Rubicon extension" />
       <div className="grid gap-4 p-5">
         <p className="text-sm leading-6 text-[var(--muted)]">

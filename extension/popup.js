@@ -1,5 +1,5 @@
 const DEFAULT_ORIGIN = "https://www.rubiconpay.xyz";
-const SETTINGS_URL = "https://www.rubiconpay.xyz/dashboard/settings";
+const SETTINGS_URL = "https://www.rubiconpay.xyz/dashboard/settings#extension-token";
 const platformEl = document.querySelector("#platform");
 const titleEl = document.querySelector("#title");
 const authorEl = document.querySelector("#author");

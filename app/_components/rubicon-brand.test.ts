@@ -10,8 +10,9 @@ describe("RubiconBrand", () => {
     expect(markup).toContain('aria-label="Rubicon"');
   });
 
-  it("adds a dark backing on light surfaces", () => {
+  it("uses the dark-wordmark asset on light surfaces", () => {
     const markup = renderToStaticMarkup(createElement(RubiconBrand, { onLight: true }));
-    expect(markup).toContain("bg-[#0d0e11]");
+    expect(markup).toContain('href="/rubicon-new-dark.png"');
+    expect(markup).not.toContain("bg-[#0d0e11]");
   });
 });

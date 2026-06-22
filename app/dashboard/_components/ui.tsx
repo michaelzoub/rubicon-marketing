@@ -29,8 +29,8 @@ export function PageHeader({
   );
 }
 
-export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`dashboard-card rounded-[22px] bg-white ${className}`}>{children}</div>;
+export function Card({ children, className = "", id }: { children: ReactNode; className?: string; id?: string }) {
+  return <div id={id} className={`dashboard-card rounded-[22px] bg-white ${className}`}>{children}</div>;
 }
 
 export function CardHeader({ title, action }: { title: string; action?: ReactNode }) {

@@ -107,7 +107,7 @@ button:disabled { cursor: default; opacity: .48; }
 .arrow { width: 16px; height: 16px; }
 .secondary { color: var(--ink); background: var(--river-pale); }
 .secondary:hover { background: rgba(47, 128, 237, .24); }
-.setup-link { width: 100%; }
+.setup-link { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
 .link { min-height: 30px; padding: 0 6px; color: var(--muted); background: transparent; font-size: 12px; }
 .link:hover { color: var(--ink); }
 
