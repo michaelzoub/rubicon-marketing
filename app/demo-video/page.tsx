@@ -77,41 +77,76 @@ const STREAM_VISIBLE_WORDS = STREAM_WORDS.slice(0, 18);
 const BEATS = ["Problem", "Solution", "Stream", "Settle"] as const;
 
 type DemoSound = "slide" | "click" | "confirm";
-let demoAudioContext: AudioContext | null = null;
+let demoSoundEnabled = false;
+const demoSoundUrls = new Map<DemoSound, string>();
+const activeDemoAudio = new Set<HTMLAudioElement>();
 
-async function enableDemoAudio() {
-  const AudioContextConstructor = window.AudioContext ?? (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-  if (!AudioContextConstructor) return false;
-  demoAudioContext ??= new AudioContextConstructor();
-  await demoAudioContext.resume();
-  return demoAudioContext.state === "running";
+function createDemoSoundUrl(kind: DemoSound) {
+  const cached = demoSoundUrls.get(kind);
+  if (cached) return cached;
+
+  const sampleRate = 24000;
+  const duration = kind === "click" ? 0.11 : kind === "slide" ? 0.32 : 0.52;
+  const sampleCount = Math.floor(sampleRate * duration);
+  const buffer = new ArrayBuffer(44 + sampleCount * 2);
+  const view = new DataView(buffer);
+  const write = (offset: number, value: string) => [...value].forEach((character, index) => view.setUint8(offset + index, character.charCodeAt(0)));
+
+  write(0, "RIFF");
+  view.setUint32(4, 36 + sampleCount * 2, true);
+  write(8, "WAVEfmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  write(36, "data");
+  view.setUint32(40, sampleCount * 2, true);
+
+  for (let index = 0; index < sampleCount; index += 1) {
+    const time = index / sampleRate;
+    const progress = time / duration;
+    const attack = Math.min(1, time / 0.018);
+    const release = Math.min(1, (duration - time) / (kind === "click" ? 0.045 : 0.12));
+    const envelope = attack * release;
+    let sample = 0;
+    if (kind === "slide") {
+      const phase = 2 * Math.PI * (170 * time + ((340 - 170) / (2 * duration)) * time * time);
+      sample = Math.sin(phase) * 0.62;
+    } else if (kind === "click") {
+      sample = Math.sin(2 * Math.PI * (760 - 300 * progress) * time) * 0.7;
+    } else {
+      sample = (Math.sin(2 * Math.PI * 262 * time) + Math.sin(2 * Math.PI * 392 * time)) * 0.32;
+    }
+    view.setInt16(44 + index * 2, Math.max(-1, Math.min(1, sample * envelope)) * 32767, true);
+  }
+
+  const url = URL.createObjectURL(new Blob([buffer], { type: "audio/wav" }));
+  demoSoundUrls.set(kind, url);
+  return url;
 }
 
-function playDemoSound(kind: DemoSound) {
-  const ctx = demoAudioContext;
-  if (!ctx || ctx.state !== "running") return;
-  const now = ctx.currentTime;
-
-  const tone = (from: number, to: number, volume: number, duration: number, delay = 0) => {
-    const oscillator = ctx.createOscillator();
-    const gain = ctx.createGain();
-    oscillator.type = "sine";
-    oscillator.frequency.setValueAtTime(from, now + delay);
-    oscillator.frequency.exponentialRampToValueAtTime(to, now + delay + duration);
-    gain.gain.setValueAtTime(0.0001, now + delay);
-    gain.gain.exponentialRampToValueAtTime(volume, now + delay + duration * 0.22);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + duration);
-    oscillator.connect(gain).connect(ctx.destination);
-    oscillator.start(now + delay);
-    oscillator.stop(now + delay + duration + 0.02);
-  };
-
-  if (kind === "slide") tone(180, 310, 0.06, 0.26);
-  if (kind === "click") tone(720, 430, 0.045, 0.08);
-  if (kind === "confirm") {
-    tone(260, 260, 0.055, 0.34);
-    tone(390, 390, 0.042, 0.4, 0.06);
+async function playDemoSound(kind: DemoSound, force = false) {
+  if (!demoSoundEnabled && !force) return false;
+  const audio = new Audio(createDemoSoundUrl(kind));
+  audio.volume = 0.85;
+  activeDemoAudio.add(audio);
+  audio.addEventListener("ended", () => activeDemoAudio.delete(audio), { once: true });
+  try {
+    await audio.play();
+    return true;
+  } catch {
+    activeDemoAudio.delete(audio);
+    return false;
   }
+}
+
+async function enableDemoAudio() {
+  const started = await playDemoSound("confirm", true);
+  demoSoundEnabled = started;
+  return started;
 }
 const beatOf: Record<SceneId, number> = {
   problem: 0,
@@ -183,6 +218,7 @@ export default function DemoVideoPage() {
   const [paused, setPaused] = useState(false);
   const [ready, setReady] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
+  const [soundBlocked, setSoundBlocked] = useState(false);
   const skipNextSceneSound = useRef(false);
 
   const scene = SCENES[index].id;
@@ -227,7 +263,7 @@ export default function DemoVideoPage() {
       skipNextSceneSound.current = false;
       return;
     }
-    playDemoSound("slide");
+    void playDemoSound("slide");
   }, [index, ready, soundEnabled]);
 
   return (
@@ -239,18 +275,17 @@ export default function DemoVideoPage() {
       {!minimal && (
         <button
           type="button"
-          className={`dv-sound-toggle${soundEnabled ? " is-on" : ""}`}
+          className={`dv-sound-toggle${soundEnabled ? " is-on" : ""}${soundBlocked ? " is-blocked" : ""}`}
           onClick={async () => {
             const enabled = await enableDemoAudio();
-            if (enabled) {
-              if (!soundEnabled) skipNextSceneSound.current = true;
-              playDemoSound("confirm");
-            }
+            if (enabled && !soundEnabled) skipNextSceneSound.current = true;
             setSoundEnabled(enabled);
+            setSoundBlocked(!enabled);
           }}
           aria-pressed={soundEnabled}
+          title={soundEnabled ? "Click to test sound" : "Enable demo sounds"}
         >
-          <Volume2 size={14} /> {soundEnabled ? "Sound on" : "Enable sound"}
+          <Volume2 size={14} /> {soundEnabled ? "Sound on · test" : soundBlocked ? "Sound blocked" : "Enable sound"}
         </button>
       )}
 
@@ -364,7 +399,7 @@ function SceneStage({ progress, bg, segments, sound = false }: { progress: numbe
   const local = Math.max(0, Math.min(1, (progress - start) / (end - start || 1)));
 
   useEffect(() => {
-    if (sound) playDemoSound("slide");
+    if (sound) void playDemoSound("slide");
   }, [activeIndex, sound]);
 
   return (
@@ -595,7 +630,7 @@ function CreatorDashboardDemo({ step, phase, priced, published }: { step: number
         : (phase < 0.4 ? "review" : "action");
 
   useEffect(() => {
-    playDemoSound("slide");
+    void playDemoSound("slide");
   }, [step]);
 
   return (
@@ -735,7 +770,7 @@ function DashboardPublished() {
 
 function DashboardButton({ label, focused }: { label: string; focused?: boolean }) {
   useEffect(() => {
-    if (focused) playDemoSound("click");
+    if (focused) void playDemoSound("click");
   }, [focused]);
 
   return <div className={`dv-dashboard-button${focused ? " is-pressing" : ""}`}>{label}<ArrowRight size={13} /></div>;
@@ -785,7 +820,7 @@ function PaidStreamCard({ progress }: { progress: number }) {
   const focus = !sellerReplied ? "question" : !sessionOpened ? "route" : !streaming ? "session" : stopped ? "stop" : "stream";
 
   useEffect(() => {
-    playDemoSound(focus === "stop" ? "click" : "slide");
+    void playDemoSound(focus === "stop" ? "click" : "slide");
   }, [focus]);
 
   return (
@@ -906,11 +941,11 @@ function SettlementCard({ progress }: { progress: number }) {
   const confirmed = progress >= 0.8;
 
   useEffect(() => {
-    if (included) playDemoSound("slide");
+    if (included) void playDemoSound("slide");
   }, [included]);
 
   useEffect(() => {
-    if (confirmed) playDemoSound("confirm");
+    if (confirmed) void playDemoSound("confirm");
   }, [confirmed]);
 
   return (
@@ -1146,6 +1181,7 @@ function DemoStyles() {
         transition: color 160ms var(--ease-out), background-color 160ms var(--ease-out), transform 140ms var(--ease-out);
       }
       .dv-sound-toggle.is-on { color: var(--ink); background: rgba(47,128,237,0.16); }
+      .dv-sound-toggle.is-blocked { color: var(--red); background: rgba(240,120,120,0.12); }
       .dv-sound-toggle:active { transform: scale(0.97); }
       @media (hover: hover) and (pointer: fine) { .dv-sound-toggle:hover { color: var(--ink); } }
 
