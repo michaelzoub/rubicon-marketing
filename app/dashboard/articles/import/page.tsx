@@ -63,7 +63,7 @@ export default function ImportFromUrlPage() {
     <div className="grid gap-6">
       <PageHeader
         title="Import from URL"
-        description="Paste a Substack or X post link. We'll pull in the public content and metadata so you can review, price, and publish it."
+        description="We only import the article you choose. Nothing is posted or published automatically."
       />
 
       <Card className="p-6">

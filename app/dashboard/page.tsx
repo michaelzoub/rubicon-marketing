@@ -1,15 +1,33 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
-import { Activity, ArrowRight, BarChart3, CheckCircle2, Circle, Copy, ExternalLink, FileText, Link2, PieChart, RefreshCw, Wallet2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import {
+  Activity,
+  ArrowRight,
+  BarChart3,
+  CheckCircle2,
+  Circle,
+  Copy,
+  Download,
+  ExternalLink,
+  FileText,
+  Eye,
+  Link2,
+  PieChart,
+  RefreshCw,
+  Share2,
+  ShieldCheck,
+  Wallet2,
+} from "lucide-react";
 import { usePrivy } from "@privy-io/react-auth";
-import { useRubiconQuery } from "@/lib/rubicon/hooks";
+import { useRubiconQuery, type QueryResult } from "@/lib/rubicon/hooks";
 import { atomicToUsd, formatUsd, formatUsdNumber } from "@/lib/rubicon/pricing";
 import type { Article, PaymentActivity } from "@/lib/rubicon/types";
 import { ACTIVE_CHAIN } from "@/lib/chain";
 import { explorerAddressUrl, formatBalance, useNativeBalance } from "@/lib/onchain";
 import { WithdrawDialog } from "./_components/withdraw-dialog";
+import { AgentPreviewDialog, AGENT_PREVIEW_EVENT, hasSeenAgentPreview } from "./articles/_components/agent-preview-dialog";
 import { CountUp, Donut, DONUT_COLORS, InsightTile, Reveal, TrendChart, type DonutSlice, type TrendBar } from "./_components/charts";
 import {
   ArticleStatePill,
@@ -40,8 +58,11 @@ export default function OverviewPage() {
 
   const walletConnected = Boolean(wallet.data?.address);
   const hasArticles = (articles.data?.length ?? 0) > 0;
+  const hasPricedArticle = (articles.data ?? []).some((a) => Number(a.pricePerWordAtomic) > 0);
   const hasLive = (articles.data ?? []).some((a) => a.state === "live");
-  const onboardingComplete = walletConnected && hasLive;
+  const onboardingComplete = walletConnected && hasLive && hasPricedArticle;
+  const [previewSeen, setPreviewSeen] = useState(false);
+  const [previewArticle, setPreviewArticle] = useState<Article | null>(null);
 
   const [trendMetric, setTrendMetric] = useState<"earnings" | "words">("earnings");
 
@@ -61,12 +82,23 @@ export default function OverviewPage() {
   const wordsAvailable = (articles.data ?? [])
     .filter((a) => a.state === "live")
     .reduce((sum, a) => sum + a.totalWords, 0);
+  const totalEarned = atomicToUsd(earnings.data?.settledEarnings);
+
+  useEffect(() => {
+    setPreviewSeen(hasSeenAgentPreview());
+    function onPreviewSeen() {
+      setPreviewSeen(true);
+    }
+    window.addEventListener(AGENT_PREVIEW_EVENT, onPreviewSeen);
+    return () => window.removeEventListener(AGENT_PREVIEW_EVENT, onPreviewSeen);
+  }, []);
 
   return (
-    <div className="grid gap-6">
+    <div className="grid gap-5">
       <PageHeader
         title="Overview"
         description={`Welcome back, ${greeting}.`}
+        action={<ContentProtectionPolicy articles={articles.data ?? []} />}
       />
 
       {loading && <LoadingState />}
@@ -86,224 +118,660 @@ export default function OverviewPage() {
       {!loading && !firstError && (
         <>
           {!onboardingComplete && (
-            <Card className="p-6">
-              <h2 className="text-lg font-semibold">Finish setting up</h2>
-              <p className="mt-1 text-sm text-[var(--muted)]">A few steps and agents can start paying to read your work.</p>
-              <ol className="mt-5 grid gap-3">
-                <ChecklistItem
-                  done
-                  title="Create your account"
-                  description="Sign in to manage your articles and earnings."
-                />
-                <ChecklistItem
-                  done={walletConnected}
-                  title="Set up a receiving wallet"
-                  description="Your Privy wallet receives payments for your articles."
-                  href="/dashboard/settings"
-                  cta="Set up wallet"
-                />
-                <ChecklistItem
-                  done={hasLive}
-                  title="Publish your first article"
-                  description="Add your content, choose a price per word, and make it available to agents."
-                  href="/dashboard/articles/new"
-                  cta="New article"
-                />
-              </ol>
-            </Card>
+            <OnboardingChecklistCard
+              articles={articles.data ?? []}
+              walletConnected={walletConnected}
+              previewSeen={previewSeen}
+              onPreview={() => setPreviewArticle((articles.data ?? [])[0] ?? null)}
+            />
           )}
 
           {onboardingComplete && (
-            <Reveal className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatTile
-                label="Total earnings"
-                value={<CountUp value={atomicToUsd(earnings.data?.settledEarnings)} format={formatUsdNumber} />}
-              />
-              <StatTile
-                label="Words read"
-                value={<CountUp value={earnings.data?.wordsPaidFor ?? 0} format={formatInt} />}
-              />
-              <StatTile
-                label="Agent reads"
-                value={<CountUp value={earnings.data?.agentReads ?? 0} format={formatInt} />}
-              />
-              <StatTile
-                label="Live articles"
-                value={<CountUp value={earnings.data?.liveArticles ?? 0} format={formatInt} />}
-              />
-            </Reveal>
-          )}
-
-          {onboardingComplete && earnings.data?.topArticle && (
-            <Reveal delay={0.05}>
-              <Card className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Top article</div>
-                  <div className="mt-1 text-lg font-semibold">{earnings.data.topArticle.title}</div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <div className="text-lg font-semibold">{formatUsd(earnings.data.topArticle.earnings)}</div>
-                    <div className="text-xs text-[var(--muted)]">earned</div>
-                  </div>
-                  <Link href={`/dashboard/articles/${earnings.data.topArticle.id}`} className="button button-secondary text-sm">
-                    View <ArrowRight size={15} aria-hidden="true" />
-                  </Link>
-                </div>
-              </Card>
-            </Reveal>
-          )}
-
-          {onboardingComplete && hasTrend && (
-            <Reveal delay={0.1}>
-              <Card className="p-5">
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <span className="grid h-9 w-9 place-items-center rounded-[12px] bg-[var(--river-pale)] text-[var(--river)]">
-                      <BarChart3 size={17} aria-hidden="true" />
-                    </span>
-                    <div>
-                      <h2 className="text-base font-semibold">Activity over time</h2>
-                      <p className="text-xs text-[var(--muted)]">Last 14 days</p>
-                    </div>
-                  </div>
-                  <div className="inline-flex rounded-full bg-[var(--surface-muted)] p-0.5 text-sm">
-                    <SegButton active={trendMetric === "earnings"} onClick={() => setTrendMetric("earnings")}>
-                      Earnings
-                    </SegButton>
-                    <SegButton active={trendMetric === "words"} onClick={() => setTrendMetric("words")}>
-                      Words read
-                    </SegButton>
-                  </div>
-                </div>
-                <div className="mt-6">
-                  <TrendChart
-                    bars={trendBars}
-                    formatValue={trendMetric === "earnings" ? formatUsdNumber : formatInt}
+            <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+              <div className="grid min-w-0 gap-5">
+                <Reveal className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  <StatTile
+                    label="Total earnings"
+                    value={<CountUp value={totalEarned} format={formatUsdNumber} />}
                   />
+                  <StatTile
+                    label="Words read"
+                    value={<CountUp value={earnings.data?.wordsPaidFor ?? 0} format={formatInt} />}
+                  />
+                  <StatTile
+                    label="Agent reads"
+                    value={<CountUp value={earnings.data?.agentReads ?? 0} format={formatInt} />}
+                  />
+                  <StatTile
+                    label="Live articles"
+                    value={<CountUp value={earnings.data?.liveArticles ?? 0} format={formatInt} />}
+                  />
+                </Reveal>
+
+                <div className="grid gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.95fr)]">
+                  {hasTrend && (
+                    <Reveal delay={0.08}>
+                      <Card className="h-full p-5">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="flex items-center gap-2.5">
+                            <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-[var(--river-pale)] text-[var(--river)]">
+                              <BarChart3 size={17} aria-hidden="true" />
+                            </span>
+                            <div>
+                              <h2 className="text-base font-semibold">Activity over time</h2>
+                              <p className="text-xs text-[var(--muted)]">Last 14 days</p>
+                            </div>
+                          </div>
+                          <div className="inline-flex w-fit rounded-[10px] bg-[var(--surface-muted)] p-0.5 text-sm">
+                            <SegButton active={trendMetric === "earnings"} onClick={() => setTrendMetric("earnings")}>
+                              Earnings
+                            </SegButton>
+                            <SegButton active={trendMetric === "words"} onClick={() => setTrendMetric("words")}>
+                              Words read
+                            </SegButton>
+                          </div>
+                        </div>
+                        <div className="mt-6">
+                          <TrendChart
+                            bars={trendBars}
+                            formatValue={trendMetric === "earnings" ? formatUsdNumber : formatInt}
+                            height={220}
+                          />
+                        </div>
+                      </Card>
+                    </Reveal>
+                  )}
+
+                  {earnings.data?.topArticle && (
+                    <Reveal delay={0.1}>
+                      <Card className="flex h-full flex-col justify-between gap-6 overflow-hidden p-5">
+                        <div>
+                          <div className="flex items-center gap-2.5">
+                            <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-[var(--surface-muted)] text-[var(--river)]">
+                              <FileText size={17} aria-hidden="true" />
+                            </span>
+                            <div className="mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--muted)]">Top article</div>
+                          </div>
+                          <div className="mt-5 text-xl font-semibold leading-tight">{earnings.data.topArticle.title}</div>
+                        </div>
+                        <div className="flex items-end justify-between gap-4 border-t border-[var(--line)] pt-4">
+                          <div>
+                            <div className="text-2xl font-semibold">{formatUsd(earnings.data.topArticle.earnings)}</div>
+                            <div className="text-xs text-[var(--muted)]">earned</div>
+                          </div>
+                          <Link href={`/dashboard/articles/${earnings.data.topArticle.id}`} className="button button-secondary text-sm">
+                            View <ArrowRight size={15} aria-hidden="true" />
+                          </Link>
+                        </div>
+                      </Card>
+                    </Reveal>
+                  )}
                 </div>
-              </Card>
-            </Reveal>
+
+                {hasBreakdown && (
+                  <Reveal delay={0.12}>
+                    <Card className="p-5">
+                      <div className="flex items-center gap-2.5">
+                        <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-[var(--river-pale)] text-[var(--river)]">
+                          <PieChart size={17} aria-hidden="true" />
+                        </span>
+                        <div>
+                          <h2 className="text-base font-semibold">Earnings breakdown</h2>
+                          <p className="text-xs text-[var(--muted)]">Where your revenue comes from</p>
+                        </div>
+                      </div>
+                      <div className="mt-6 grid gap-5 lg:grid-cols-[0.85fr_1.25fr]">
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                          <InsightTile
+                            value={<CountUp value={avgPerRead} format={formatUsdNumber} />}
+                            caption="Average earned per agent read"
+                          />
+                          <InsightTile
+                            value={<CountUp value={wordsAvailable} format={formatInt} />}
+                            caption="Words live and available to agents"
+                          />
+                        </div>
+                        <div className="rounded-[14px] bg-[var(--surface-muted)] p-5">
+                          <Donut
+                            slices={earningsSlices}
+                            centerValue={formatUsd(earnings.data?.settledEarnings)}
+                            centerLabel="Total earned"
+                          />
+                        </div>
+                      </div>
+                    </Card>
+                  </Reveal>
+                )}
+
+                <div className="grid gap-5 lg:grid-cols-2">
+                  <PaymentActivityCard activity={activity} />
+                  <ArticlesCard articles={articles.data ?? []} hasArticles={hasArticles} />
+                </div>
+              </div>
+
+              <aside className="grid h-fit gap-5 xl:sticky xl:top-8">
+                <ExportCard
+                  username={greeting}
+                  totalEarned={totalEarned}
+                  wordsRead={earnings.data?.wordsPaidFor ?? 0}
+                  agentReads={earnings.data?.agentReads ?? 0}
+                  liveArticles={earnings.data?.liveArticles ?? 0}
+                  topArticle={earnings.data?.topArticle?.title ?? null}
+                  topArticleEarned={atomicToUsd(earnings.data?.topArticle?.earnings)}
+                  walletAddress={wallet.data?.address ?? null}
+                  trendBars={trendBars}
+                />
+                <OnchainCard address={wallet.data?.address ?? null} />
+              </aside>
+            </div>
           )}
 
-          {onboardingComplete && hasBreakdown && (
-            <Reveal delay={0.12}>
-              <Card className="p-5">
-                <div className="flex items-center gap-2.5">
-                  <span className="grid h-9 w-9 place-items-center rounded-[12px] bg-[var(--river-pale)] text-[var(--river)]">
-                    <PieChart size={17} aria-hidden="true" />
-                  </span>
-                  <div>
-                    <h2 className="text-base font-semibold">Earnings breakdown</h2>
-                    <p className="text-xs text-[var(--muted)]">Where your revenue comes from</p>
-                  </div>
-                </div>
-                <div className="mt-6 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-                    <InsightTile
-                      value={<CountUp value={avgPerRead} format={formatUsdNumber} />}
-                      caption="Average earned per agent read"
-                    />
-                    <InsightTile
-                      value={<CountUp value={wordsAvailable} format={formatInt} />}
-                      caption="Words live and available to agents"
-                    />
-                  </div>
-                  <div className="rounded-[18px] bg-[var(--surface-muted)] p-5">
-                    <Donut
-                      slices={earningsSlices}
-                      centerValue={formatUsd(earnings.data?.settledEarnings)}
-                      centerLabel="Total earned"
-                    />
-                  </div>
-                </div>
-              </Card>
-            </Reveal>
+          {!onboardingComplete && (
+            <>
+              <OnchainCard address={wallet.data?.address ?? null} />
+              <PaymentActivityCard activity={activity} />
+              <ArticlesCard articles={articles.data ?? []} hasArticles={hasArticles} />
+            </>
           )}
-
-          <OnchainCard address={wallet.data?.address ?? null} />
-
-          <Card>
-            <CardHeader
-              title="Recent payment activity"
-              action={
-                <Link href="/dashboard/earnings" className="text-sm text-[var(--river-deep)] hover:underline">
-                  View all
-                </Link>
-              }
-            />
-            {activity.status === "loading" && <div className="p-5"><LoadingState /></div>}
-            {activity.status === "error" && activity.error && <div className="p-5"><ErrorState error={activity.error} onRetry={activity.refetch} /></div>}
-            {activity.status === "success" && (activity.data?.length ?? 0) === 0 && (
-              <div className="p-5">
-                <EmptyState
-                  icon={<Activity size={22} aria-hidden="true" />}
-                  title="No payments yet"
-                  description="When an agent reads your articles, every paid word shows up here."
-                />
-              </div>
-            )}
-            {activity.status === "success" && (activity.data?.length ?? 0) > 0 && (
-              <ul className="grid gap-1 px-2 pb-2">
-                {activity.data!.slice(0, 5).map((row) => (
-                  <li key={row.id} className="flex items-center justify-between gap-4 rounded-[16px] px-3 py-4 hover:bg-[var(--surface-muted)]">
-                    <div className="min-w-0">
-                      <div className="truncate font-medium">{row.articleTitle}</div>
-                      <div className="text-xs text-[var(--muted)]">
-                        {formatDate(row.date)} · {row.wordsRead.toLocaleString()} words read
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <span className="font-semibold">{formatUsd(row.creatorAmount)}</span>
-                      <PaymentStatusPill status={row.status} />
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
-
-          <Card>
-            <CardHeader
-              title="Your articles"
-              action={
-                <Link href="/dashboard/articles" className="text-sm text-[var(--river-deep)] hover:underline">
-                  Manage
-                </Link>
-              }
-            />
-            {!hasArticles ? (
-              <div className="p-5">
-                <EmptyState
-                  icon={<FileText size={22} aria-hidden="true" />}
-                  title="No articles yet"
-                  description="Publish your first article to let agents pay to read it."
-                  action={<PrimaryLink href="/dashboard/articles/new">New article</PrimaryLink>}
-                />
-              </div>
-            ) : (
-              <ul className="grid gap-1 px-2 pb-2">
-                {(articles.data ?? []).slice(0, 4).map((a) => (
-                  <li key={a.id}>
-                    <Link href={`/dashboard/articles/${a.id}`} className="flex items-center justify-between gap-4 rounded-[16px] px-3 py-4 hover:bg-[var(--surface-muted)]">
-                      <div className="min-w-0">
-                        <div className="truncate font-medium">{a.title}</div>
-                        <div className="text-xs text-[var(--muted)]">{a.usage.wordsRead.toLocaleString()} words read</div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm font-semibold">{formatUsd(a.usage.earnings)}</span>
-                        <ArticleStatePill state={a.state} />
-                      </div>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </Card>
+          <AgentPreviewDialog article={previewArticle} open={Boolean(previewArticle)} onClose={() => setPreviewArticle(null)} />
         </>
       )}
     </div>
   );
+}
+
+function ContentProtectionPolicy({ articles }: { articles: Article[] }) {
+  const draftCount = articles.filter((article) => article.state === "draft").length;
+  const pricedCount = articles.filter((article) => Number(article.pricePerWordAtomic) > 0).length;
+  const sectionCount = articles.reduce((sum, article) => sum + article.sections.length, 0);
+  const stats = [
+    { label: "Full article hidden", value: articles.length > 0 ? `${articles.length.toLocaleString()} article${articles.length === 1 ? "" : "s"}` : "Ready" },
+    { label: "Paid words only", value: pricedCount > 0 ? `${pricedCount.toLocaleString()} priced` : "Set in pricing" },
+    { label: "Drafts private until published", value: draftCount > 0 ? `${draftCount.toLocaleString()} draft${draftCount === 1 ? "" : "s"}` : "Draft first" },
+    { label: "Agent preview available", value: sectionCount > 0 ? `${sectionCount.toLocaleString()} headings` : "Metadata only" },
+  ];
+
+  return (
+    <div className="group relative">
+      <button type="button" className="button button-secondary text-sm">
+        <ShieldCheck size={15} aria-hidden="true" /> Content Protection Policy
+      </button>
+      <div className="pointer-events-none absolute right-0 top-[calc(100%+0.5rem)] z-40 w-[min(22rem,calc(100vw-2rem))] translate-y-1 rounded-[16px] border border-[var(--line)] bg-white p-5 text-left opacity-0 shadow-[0_18px_50px_rgba(20,35,60,0.16)] transition group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+        <div className="flex items-center gap-2.5">
+          <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-[var(--river-pale)] text-[var(--river)]">
+            <ShieldCheck size={17} aria-hidden="true" />
+          </span>
+          <h2 className="text-base font-semibold">Content Protection Policy</h2>
+        </div>
+        <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
+            Your full articles are never exposed upfront. Agents only see metadata and paid words.
+        </p>
+        <div className="mt-4 grid gap-2">
+          {stats.map((stat) => (
+            <div key={stat.label} className="rounded-[12px] bg-[var(--surface-muted)] p-3">
+              <div className="text-sm font-medium">{stat.label}</div>
+              <div className="mt-1 text-xs text-[var(--muted)]">{stat.value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OnboardingChecklistCard({
+  articles,
+  walletConnected,
+  previewSeen,
+  onPreview,
+}: {
+  articles: Article[];
+  walletConnected: boolean;
+  previewSeen: boolean;
+  onPreview: () => void;
+}) {
+  const hasArticles = articles.length > 0;
+  const hasPricedArticle = articles.some((article) => Number(article.pricePerWordAtomic) > 0);
+  const hasLive = articles.some((article) => article.state === "live");
+  const hasDraftOnly = hasArticles && !hasLive;
+  const firstUnpriced = articles.find((article) => Number(article.pricePerWordAtomic) <= 0);
+  const firstDraft = articles.find((article) => article.state !== "live");
+
+  let cta: React.ReactNode = <PrimaryLink href="/dashboard/articles/new">Create article</PrimaryLink>;
+  if (hasArticles && !hasPricedArticle) {
+    cta = <PrimaryLink href={`/dashboard/articles/${firstUnpriced?.id ?? articles[0].id}`}>Set pricing</PrimaryLink>;
+  } else if (hasArticles && !previewSeen) {
+    cta = (
+      <button type="button" onClick={onPreview} className="button button-primary text-sm">
+        <Eye size={15} aria-hidden="true" /> Preview as agent
+      </button>
+    );
+  } else if (hasDraftOnly) {
+    cta = <PrimaryLink href={`/dashboard/articles/${firstDraft?.id ?? articles[0].id}`}>Publish article</PrimaryLink>;
+  } else if (!walletConnected) {
+    cta = <PrimaryLink href="/dashboard/settings">Connect wallet</PrimaryLink>;
+  }
+
+  return (
+    <Card className="p-5 sm:p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold">Start earning from agent reads</h2>
+          <p className="mt-1 text-sm text-[var(--muted)]">Complete the setup steps agents need before paid reads can begin.</p>
+        </div>
+        <div className="shrink-0">{cta}</div>
+      </div>
+      <ol className="mt-5 grid gap-3">
+        <ChecklistItem done={hasArticles} title="Create or import an article" description="Start from a draft or a supported URL." />
+        <ChecklistItem done={hasPricedArticle} title="Set price per word" description="Add pricing to at least one article." />
+        <ChecklistItem done={previewSeen} title="Preview what agents see" description="Check the metadata-only view before publishing." />
+        <ChecklistItem done={hasLive} title="Publish article" description="Make one article available for paid reads." />
+        <ChecklistItem done={walletConnected} title="Connect wallet / confirm payout details" description="Use a connected wallet for creator payouts." />
+      </ol>
+    </Card>
+  );
+}
+
+function PaymentActivityCard({ activity }: { activity: QueryResult<PaymentActivity[]> }) {
+  return (
+    <Card>
+      <CardHeader
+        title="Recent payment activity"
+        action={
+          <Link href="/dashboard/earnings" className="text-sm text-[var(--river-deep)] hover:underline">
+            View all
+          </Link>
+        }
+      />
+      {activity.status === "loading" && <div className="p-5"><LoadingState /></div>}
+      {activity.status === "error" && activity.error && <div className="p-5"><ErrorState error={activity.error} onRetry={activity.refetch} /></div>}
+      {activity.status === "success" && (activity.data?.length ?? 0) === 0 && (
+        <div className="p-5">
+          <EmptyState
+            icon={<Activity size={22} aria-hidden="true" />}
+            title="No payments yet"
+            description="When an agent reads your articles, every paid word shows up here."
+          />
+        </div>
+      )}
+      {activity.status === "success" && (activity.data?.length ?? 0) > 0 && (
+        <ul className="grid gap-1 px-2 pb-2">
+          {activity.data!.slice(0, 5).map((row) => (
+            <li key={row.id} className="flex items-center justify-between gap-4 rounded-[12px] px-3 py-4 hover:bg-[var(--surface-muted)]">
+              <div className="min-w-0">
+                <div className="truncate font-medium">{row.articleTitle}</div>
+                <div className="text-xs text-[var(--muted)]">
+                  {formatDate(row.date)} · {row.wordsRead.toLocaleString()} words read
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="font-semibold">{formatUsd(row.creatorAmount)}</span>
+                <PaymentStatusPill status={row.status} />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+function ArticlesCard({ articles, hasArticles }: { articles: Article[]; hasArticles: boolean }) {
+  return (
+    <Card>
+      <CardHeader
+        title="Your articles"
+        action={
+          <Link href="/dashboard/articles" className="text-sm text-[var(--river-deep)] hover:underline">
+            Manage
+          </Link>
+        }
+      />
+      {!hasArticles ? (
+        <div className="p-5">
+          <EmptyState
+            icon={<FileText size={22} aria-hidden="true" />}
+            title="No articles yet"
+            description="Publish your first article to let agents pay to read it."
+            action={<PrimaryLink href="/dashboard/articles/new">New article</PrimaryLink>}
+          />
+        </div>
+      ) : (
+        <ul className="grid gap-1 px-2 pb-2">
+          {articles.slice(0, 4).map((a) => (
+            <li key={a.id}>
+              <Link href={`/dashboard/articles/${a.id}`} className="flex items-center justify-between gap-4 rounded-[12px] px-3 py-4 hover:bg-[var(--surface-muted)]">
+                <div className="min-w-0">
+                  <div className="truncate font-medium">{a.title}</div>
+                  <div className="text-xs text-[var(--muted)]">{a.usage.wordsRead.toLocaleString()} words read</div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-semibold">{formatUsd(a.usage.earnings)}</span>
+                  <ArticleStatePill state={a.state} />
+                </div>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+function ExportCard({
+  username,
+  totalEarned,
+  wordsRead,
+  agentReads,
+  liveArticles,
+  topArticle,
+  topArticleEarned,
+  walletAddress,
+  trendBars,
+}: {
+  username: string;
+  totalEarned: number;
+  wordsRead: number;
+  agentReads: number;
+  liveArticles: number;
+  topArticle: string | null;
+  topArticleEarned: number;
+  walletAddress: string | null;
+  trendBars: TrendBar[];
+}) {
+  const [pngUrl, setPngUrl] = useState<string | null>(null);
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "downloaded">("idle");
+  const publicSummary = `Rubicon creator ${username} has earned ${formatUsdNumber(totalEarned)} from ${formatInt(agentReads)} agent reads across ${formatInt(wordsRead)} paid words.`;
+
+  useEffect(() => {
+    setPngUrl(
+      renderExportPng({
+        username,
+        amount: formatUsdNumber(totalEarned),
+        reads: formatInt(agentReads),
+        words: formatInt(wordsRead),
+        liveArticles: formatInt(liveArticles),
+        topArticle: topArticle ?? "Not available yet",
+        wallet: shortWallet(walletAddress),
+        avgRead: formatUsdNumber(agentReads > 0 ? totalEarned / agentReads : 0),
+        trendValues: trendBars.map((bar) => bar.value),
+        topArticleShare: totalEarned > 0 ? topArticleEarned / totalEarned : 0,
+      }),
+    );
+  }, [agentReads, liveArticles, topArticle, topArticleEarned, totalEarned, trendBars, username, walletAddress, wordsRead]);
+
+  const download = () => {
+    if (!pngUrl) return;
+    const link = document.createElement("a");
+    link.href = pngUrl;
+    link.download = `rubicon-${username.replace(/[^a-z0-9_-]+/gi, "-").replace(/^-|-$/g, "") || "creator"}-earnings.png`;
+    link.click();
+  };
+
+  const copyImage = async () => {
+    if (!pngUrl) return;
+    try {
+      const response = await fetch(pngUrl);
+      const blob = await response.blob();
+      if ("ClipboardItem" in window && navigator.clipboard?.write) {
+        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      } else {
+        await navigator.clipboard.writeText(publicSummary);
+      }
+      setCopyStatus("copied");
+    } catch {
+      download();
+      setCopyStatus("downloaded");
+    }
+    window.setTimeout(() => setCopyStatus("idle"), 2200);
+  };
+
+  return (
+    <Card className="p-4">
+      <div className="flex items-center justify-between gap-3 pb-3">
+        <div>
+          <h2 className="text-base font-semibold">Export card</h2>
+          <p className="text-xs text-[var(--muted)]">PNG image</p>
+        </div>
+        <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-[var(--surface-muted)] text-[var(--river)]">
+          <Share2 size={17} aria-hidden="true" />
+        </span>
+      </div>
+
+      <div className="overflow-hidden rounded-[14px] bg-[#10131a]">
+        {pngUrl ? (
+          <img
+            src={pngUrl}
+            alt={`${username} Rubicon earnings export card`}
+            className="block h-auto w-full"
+            draggable={false}
+          />
+        ) : (
+          <div className="aspect-[1.52/1] animate-pulse bg-[#10131a]" />
+        )}
+      </div>
+
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <button type="button" onClick={download} className="button button-primary justify-center text-sm" disabled={!pngUrl}>
+          <Download size={15} aria-hidden="true" /> Download
+        </button>
+        <button type="button" onClick={copyImage} className="button button-secondary justify-center text-sm" disabled={!pngUrl}>
+          <Copy size={15} aria-hidden="true" /> {copyStatus === "copied" ? "Copied" : copyStatus === "downloaded" ? "Downloaded" : "Copy PNG"}
+        </button>
+      </div>
+      {copyStatus === "downloaded" && (
+        <p className="mt-2 text-xs text-[var(--muted)]">Image copy was blocked, so the PNG was downloaded instead.</p>
+      )}
+    </Card>
+  );
+}
+
+function renderExportPng({
+  username,
+  amount,
+  reads,
+  words,
+  liveArticles,
+  topArticle,
+  wallet,
+  avgRead,
+  trendValues,
+  topArticleShare,
+}: {
+  username: string;
+  amount: string;
+  reads: string;
+  words: string;
+  liveArticles: string;
+  topArticle: string;
+  wallet: string;
+  avgRead: string;
+  trendValues: number[];
+  topArticleShare: number;
+}) {
+  const scale = 2;
+  const width = 1200;
+  const height = 675;
+  const canvas = document.createElement("canvas");
+  canvas.width = width * scale;
+  canvas.height = height * scale;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return "";
+
+  ctx.scale(scale, scale);
+  ctx.fillStyle = "#f5f7fb";
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.fillStyle = "#ffffff";
+  roundRect(ctx, 40, 40, width - 80, height - 80, 28);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(30,40,62,0.09)";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.save();
+  ctx.globalAlpha = 0.045;
+  ctx.fillStyle = "#1f6ae0";
+  ctx.font = "900 128px Arial, sans-serif";
+  ctx.fillText("Rubicon", 620, 166);
+  ctx.restore();
+
+  drawRubiconMark(ctx, 72, 76);
+
+  ctx.fillStyle = "#171a22";
+  ctx.font = "800 34px Arial, sans-serif";
+  ctx.fillText("Rubicon", 134, 104);
+
+  ctx.fillStyle = "#687082";
+  ctx.font = "700 19px Arial, sans-serif";
+  ctx.fillText(username, 136, 134);
+
+  ctx.fillStyle = "#eef4ff";
+  roundRect(ctx, 860, 76, 230, 42, 21);
+  ctx.fill();
+  ctx.fillStyle = "#1f6ae0";
+  ctx.font = "800 15px Arial, sans-serif";
+  ctx.fillText("CREATOR EARNINGS", 902, 103);
+
+  drawLightPanel(ctx, 72, 170, 490, 205);
+  ctx.fillStyle = "#687082";
+  ctx.font = "800 16px Arial, sans-serif";
+  ctx.fillText("TOTAL EARNINGS", 104, 220);
+
+  ctx.fillStyle = "#171a22";
+  ctx.font = "900 86px Arial, sans-serif";
+  ctx.fillText(amount, 104, 312);
+
+  ctx.fillStyle = "#687082";
+  ctx.font = "700 20px Arial, sans-serif";
+  ctx.fillText("earned from autonomous paid reads", 108, 346);
+
+  drawLightPanel(ctx, 602, 170, 486, 205);
+  ctx.fillStyle = "#171a22";
+  ctx.font = "800 24px Arial, sans-serif";
+  ctx.fillText("Activity over time", 634, 214);
+  ctx.fillStyle = "#687082";
+  ctx.font = "700 15px Arial, sans-serif";
+  ctx.fillText("Last 14 days", 634, 238);
+  drawMiniBars(ctx, trendValues, 644, 268, 380, 72);
+
+  drawLightMetric(ctx, 72, 418, 226, "READS", reads, "#1f6ae0");
+  drawLightMetric(ctx, 324, 418, 226, "PAID WORDS", words, "#58d59b");
+  drawLightMetric(ctx, 576, 418, 226, "AVG / READ", avgRead, "#f1b85b");
+  drawLightMetric(ctx, 828, 418, 260, "LIVE ARTICLES", liveArticles, "#8fb6fa");
+
+  drawLightPanel(ctx, 72, 542, 620, 78);
+
+  ctx.fillStyle = "#687082";
+  ctx.font = "800 14px Arial, sans-serif";
+  ctx.fillText("TOP ARTICLE", 104, 573);
+  ctx.fillStyle = "#171a22";
+  ctx.font = "800 21px Arial, sans-serif";
+  ctx.fillText(truncateForCanvas(ctx, topArticle, 450), 104, 600);
+
+  const topShare = clamp(topArticleShare, 0, 1);
+  drawDonut(ctx, 790, 582, 38, topShare);
+  ctx.fillStyle = "#171a22";
+  ctx.font = "800 26px Arial, sans-serif";
+  ctx.fillText(`${Math.round(topShare * 100)}%`, 842, 576);
+  ctx.fillStyle = "#687082";
+  ctx.font = "700 14px Arial, sans-serif";
+  ctx.fillText("top article share", 842, 600);
+
+  ctx.fillStyle = "#687082";
+  ctx.font = "700 15px Arial, sans-serif";
+  ctx.fillText(`Wallet ${wallet}`, 914, 600);
+
+  return canvas.toDataURL("image/png");
+}
+
+function drawLightPanel(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number) {
+  ctx.fillStyle = "#ffffff";
+  roundRect(ctx, x, y, width, height, 20);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(30,40,62,0.09)";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+}
+
+function drawLightMetric(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, label: string, value: string, accent: string) {
+  ctx.fillStyle = "#f1f5fb";
+  roundRect(ctx, x, y, width, 86, 18);
+  ctx.fill();
+
+  ctx.fillStyle = accent;
+  roundRect(ctx, x + 20, y + 18, 8, 50, 4);
+  ctx.fill();
+
+  ctx.fillStyle = "#171a22";
+  ctx.font = "900 28px Arial, sans-serif";
+  ctx.fillText(value, x + 44, y + 39);
+
+  ctx.fillStyle = "#687082";
+  ctx.font = "800 12px Arial, sans-serif";
+  ctx.fillText(label, x + 44, y + 64);
+}
+
+function drawMiniBars(ctx: CanvasRenderingContext2D, values: number[], x: number, y: number, width: number, height: number) {
+  const data = values.slice(-10);
+  const max = Math.max(...data, 0);
+  const gap = 8;
+  const barWidth = (width - gap * (data.length - 1)) / Math.max(data.length, 1);
+  data.forEach((value, index) => {
+    const pct = max > 0 ? value / max : 0.12;
+    const barHeight = Math.max(8, pct * height);
+    ctx.fillStyle = value > 0 ? "#2f7df6" : "#dbe4f0";
+    roundRect(ctx, x + index * (barWidth + gap), y + height - barHeight, barWidth, barHeight, 8);
+    ctx.fill();
+  });
+}
+
+function drawDonut(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number, pct: number) {
+  ctx.lineWidth = 12;
+  ctx.strokeStyle = "#dbe4f0";
+  ctx.beginPath();
+  ctx.arc(x, y, radius, 0, Math.PI * 2);
+  ctx.stroke();
+
+  ctx.strokeStyle = "#2f7df6";
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.arc(x, y, radius, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pct);
+  ctx.stroke();
+  ctx.lineCap = "butt";
+}
+
+function drawRubiconMark(ctx: CanvasRenderingContext2D, x: number, y: number) {
+  ctx.fillStyle = "#2f7df6";
+  roundRect(ctx, x, y, 42, 7, 4);
+  ctx.fill();
+  roundRect(ctx, x, y + 14, 42, 7, 4);
+  ctx.fill();
+  roundRect(ctx, x, y + 28, 42, 7, 4);
+  ctx.fill();
+}
+
+function truncateForCanvas(ctx: CanvasRenderingContext2D, text: string, maxWidth: number) {
+  if (ctx.measureText(text).width <= maxWidth) return text;
+  let next = text;
+  while (next.length > 0 && ctx.measureText(`${next}...`).width > maxWidth) {
+    next = next.slice(0, -1);
+  }
+  return `${next}...`;
+}
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.arcTo(x + width, y, x + width, y + height, radius);
+  ctx.arcTo(x + width, y + height, x, y + height, radius);
+  ctx.arcTo(x, y + height, x, y, radius);
+  ctx.arcTo(x, y, x + width, y, radius);
+  ctx.closePath();
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
 }
 
 function OnchainCard({ address }: { address: string | null }) {
@@ -356,9 +824,11 @@ function OnchainCard({ address }: { address: string | null }) {
           />
         </div>
       ) : (
-        <div className="grid gap-2 px-3 pb-3 sm:grid-cols-3">
+        <div className="grid gap-3 px-3 pb-3">
+          <p className="px-2 text-xs text-[var(--muted)]">Withdrawable earnings are sent to your connected wallet.</p>
+          <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
           {/* Wallet address */}
-          <div className="rounded-[16px] bg-[var(--surface-muted)] p-5">
+          <div className="rounded-[12px] bg-[var(--surface-muted)] p-5">
             <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Wallet address</div>
             <div className="mt-2 flex items-center gap-2">
               <span className="mono text-sm font-medium">{shortWallet(address)}</span>
@@ -378,7 +848,7 @@ function OnchainCard({ address }: { address: string | null }) {
           </div>
 
           {/* Network */}
-          <div className="rounded-[16px] bg-[var(--surface-muted)] p-5">
+          <div className="rounded-[12px] bg-[var(--surface-muted)] p-5">
             <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Network</div>
             <div className="mt-2 flex items-center gap-2 text-sm font-medium">
               <Link2 size={15} className="text-[var(--river)]" aria-hidden="true" /> {ACTIVE_CHAIN.name}
@@ -387,7 +857,7 @@ function OnchainCard({ address }: { address: string | null }) {
           </div>
 
           {/* Balance */}
-          <div className="rounded-[16px] bg-[var(--surface-muted)] p-5">
+          <div className="rounded-[12px] bg-[var(--surface-muted)] p-5">
             <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Balance</div>
             <div className="mt-2 text-2xl font-semibold tracking-[-0.01em]">
               {balance.status === "loading" ? (
@@ -402,6 +872,7 @@ function OnchainCard({ address }: { address: string | null }) {
               )}
             </div>
             {balance.status === "error" && <div className="mt-1 text-xs text-[var(--muted)]">Could not reach the RPC. Try Refresh.</div>}
+          </div>
           </div>
         </div>
       )}

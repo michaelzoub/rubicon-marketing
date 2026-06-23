@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { FileText, Link2, Pause, Pencil, Play } from "lucide-react";
+import { Eye, FileText, Link2, Pause, Pencil, Play } from "lucide-react";
 import type { Article } from "@/lib/rubicon/types";
 import { useRubiconMutation, useRubiconQuery } from "@/lib/rubicon/hooks";
 import { formatUsd } from "@/lib/rubicon/pricing";
@@ -15,12 +15,14 @@ import {
   PageHeader,
   PrimaryLink,
 } from "../_components/ui";
+import { AgentPreviewDialog } from "./_components/agent-preview-dialog";
 
 export default function ArticlesPage() {
   const articles = useRubiconQuery((c) => c.listArticles(), []);
   const publish = useRubiconMutation((c, id: string) => c.publishArticle(id));
   const pause = useRubiconMutation((c, id: string) => c.pauseArticle(id));
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [previewArticle, setPreviewArticle] = useState<Article | null>(null);
 
   async function toggle(article: Article) {
     setBusyId(article.id);
@@ -41,11 +43,14 @@ export default function ArticlesPage() {
         title="Your articles"
         description="Everything you’ve published for agents to read."
         action={
-          <div className="flex flex-wrap items-center gap-2">
-            <Link href="/dashboard/articles/import" className="button button-secondary text-sm">
-              <Link2 size={15} aria-hidden="true" /> Import from URL
-            </Link>
-            <PrimaryLink href="/dashboard/articles/new">New article</PrimaryLink>
+          <div className="grid justify-items-start gap-1.5 sm:justify-items-end">
+            <div className="flex flex-wrap items-center gap-2">
+              <Link href="/dashboard/articles/import" className="button button-secondary text-sm">
+                <Link2 size={15} aria-hidden="true" /> Import from URL
+              </Link>
+              <PrimaryLink href="/dashboard/articles/new">New article</PrimaryLink>
+            </div>
+            <p className="text-xs text-[var(--muted)]">Saved as a draft first. Nothing goes live until you publish.</p>
           </div>
         }
       />
@@ -59,11 +64,14 @@ export default function ArticlesPage() {
           title="No articles yet"
           description="Add your content, choose a price per word, and make it available to agents."
           action={
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <Link href="/dashboard/articles/import" className="button button-secondary text-sm">
-                <Link2 size={15} aria-hidden="true" /> Import from URL
-              </Link>
-              <PrimaryLink href="/dashboard/articles/new">New article</PrimaryLink>
+            <div className="grid justify-items-center gap-2">
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                <Link href="/dashboard/articles/import" className="button button-secondary text-sm">
+                  <Link2 size={15} aria-hidden="true" /> Import from URL
+                </Link>
+                <PrimaryLink href="/dashboard/articles/new">New article</PrimaryLink>
+              </div>
+              <p className="text-xs text-[var(--muted)]">Saved as a draft first. Nothing goes live until you publish.</p>
             </div>
           }
         />
@@ -99,6 +107,9 @@ export default function ArticlesPage() {
               </div>
 
               <div className="flex shrink-0 items-center gap-2">
+                <button type="button" onClick={() => setPreviewArticle(article)} className="button button-secondary text-sm">
+                  <Eye size={15} aria-hidden="true" /> Preview as agent
+                </button>
                 <Link href={`/dashboard/articles/${article.id}`} className="button button-secondary text-sm">
                   <Pencil size={15} aria-hidden="true" /> Edit
                 </Link>
@@ -125,6 +136,7 @@ export default function ArticlesPage() {
           ))}
         </ul>
       )}
+      <AgentPreviewDialog article={previewArticle} open={Boolean(previewArticle)} onClose={() => setPreviewArticle(null)} />
     </div>
   );
 }

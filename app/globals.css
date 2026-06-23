@@ -65,16 +65,16 @@ a {
 }
 
 .dashboard-theme {
-  --background: #f8f9ff;
+  --background: #f5f7fb;
   --surface: #ffffff;
-  --surface-muted: #f3f6ff;
+  --surface-muted: #f1f5fb;
   --card: #ffffff;
-  --hovered: #edf2ff;
-  --ink: #19191f;
-  --muted: #70727d;
+  --hovered: #e9f0fb;
+  --ink: #171a22;
+  --muted: #687082;
   --quiet: #9a9ba5;
-  --faint: rgba(23, 23, 25, 0.08);
-  --line: rgba(33, 36, 48, 0.1);
+  --faint: rgba(23, 26, 34, 0.07);
+  --line: rgba(30, 40, 62, 0.09);
   --river: #2f7df6;
   --river-deep: #1f6ae0;
   --river-rgb: 47, 125, 246;
@@ -85,8 +85,7 @@ a {
 
 .dashboard-canvas {
   background:
-    radial-gradient(ellipse at 72% -10%, rgba(47, 125, 246, 0.13), transparent 34rem),
-    linear-gradient(180deg, #fbfcff 0%, var(--surface-muted) 38%, #f8f9ff 100%);
+    linear-gradient(180deg, #fbfcff 0%, var(--surface-muted) 44%, #f7f9fd 100%);
 }
 
 .dashboard-theme input,
@@ -347,19 +346,21 @@ a {
 }
 
 .dashboard-theme .button-primary {
-  background: linear-gradient(135deg, #1d1d22, #2d2e37);
+  background: linear-gradient(135deg, #1f6ae0, #2f7df6);
   color: #ffffff;
+  box-shadow: 0 12px 26px -16px rgba(31, 106, 224, 0.8);
 }
 
 .dashboard-theme .button-primary:hover {
-  background: linear-gradient(135deg, #111116, #272a34);
+  background: linear-gradient(135deg, #185bc4, #2673ec);
 }
 
 /* Borderless cards: definition comes from a soft shadow, never an outline. */
 .dashboard-card {
+  border: 1px solid rgba(30, 40, 62, 0.07);
   box-shadow:
-    0 1px 2px rgba(20, 35, 60, 0.05),
-    0 12px 32px -18px rgba(20, 35, 60, 0.18);
+    0 1px 2px rgba(20, 35, 60, 0.04),
+    0 18px 40px -28px rgba(20, 35, 60, 0.28);
   transition:
     box-shadow 220ms var(--ease-soft),
     background-color 220ms var(--ease-out),
@@ -368,14 +369,15 @@ a {
 
 .dashboard-card:hover {
   box-shadow:
-    0 1px 2px rgba(20, 35, 60, 0.06),
-    0 18px 44px -20px rgba(20, 35, 60, 0.24);
+    0 1px 2px rgba(20, 35, 60, 0.05),
+    0 22px 52px -28px rgba(20, 35, 60, 0.32);
 }
 
 .dashboard-sidebar {
   background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(250, 252, 255, 0.92)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(250, 252, 255, 0.94)),
     #ffffff;
+  box-shadow: 18px 0 44px -42px rgba(20, 35, 60, 0.6);
 }
 
 .dashboard-nav-link {

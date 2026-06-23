@@ -19,10 +19,10 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-4 pb-2 sm:flex-row sm:items-end sm:justify-between">
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 className="text-2xl font-semibold tracking-[-0.01em] sm:text-3xl">{title}</h1>
-        {description && <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--muted)]">{description}</p>}
+        <h1 className="text-2xl font-semibold sm:text-[1.7rem]">{title}</h1>
+        {description && <p className="mt-1.5 max-w-2xl text-sm leading-6 text-[var(--muted)]">{description}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}
     </div>
@@ -30,7 +30,7 @@ export function PageHeader({
 }
 
 export function Card({ children, className = "", id }: { children: ReactNode; className?: string; id?: string }) {
-  return <div id={id} className={`dashboard-card rounded-[22px] bg-white ${className}`}>{children}</div>;
+  return <div id={id} className={`dashboard-card rounded-[16px] bg-white ${className}`}>{children}</div>;
 }
 
 export function CardHeader({ title, action }: { title: string; action?: ReactNode }) {
@@ -45,8 +45,8 @@ export function CardHeader({ title, action }: { title: string; action?: ReactNod
 export function StatTile({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
   return (
     <Card className="p-5">
-      <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">{label}</div>
-      <div className="mt-3 text-2xl font-semibold tracking-[-0.01em]">{value}</div>
+      <div className="mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--muted)]">{label}</div>
+      <div className="mt-3 text-2xl font-semibold">{value}</div>
       {hint && <div className="mt-1 text-xs text-[var(--muted)]">{hint}</div>}
     </Card>
   );
@@ -56,7 +56,7 @@ export function StatTile({ label, value, hint }: { label: string; value: ReactNo
 
 export function LoadingState({ label = "Loading…" }: { label?: string }) {
   return (
-    <div className="dashboard-card flex items-center justify-center gap-3 rounded-[22px] bg-white px-6 py-16 text-sm text-[var(--muted)]">
+    <div className="dashboard-card flex items-center justify-center gap-3 rounded-[16px] bg-white px-6 py-16 text-sm text-[var(--muted)]">
       <Loader2 size={18} className="animate-spin text-[var(--river)]" aria-hidden="true" />
       {label}
     </div>
@@ -75,8 +75,8 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="dashboard-card flex flex-col items-center rounded-[22px] bg-white px-6 py-16 text-center">
-      <span className="grid h-12 w-12 place-items-center rounded-[18px] bg-[var(--river-pale)] text-[var(--river)]">
+    <div className="dashboard-card flex flex-col items-center rounded-[16px] bg-white px-6 py-16 text-center">
+      <span className="grid h-12 w-12 place-items-center rounded-[14px] bg-[var(--river-pale)] text-[var(--river)]">
         {icon ?? <Inbox size={22} aria-hidden="true" />}
       </span>
       <h3 className="mt-4 text-lg font-semibold">{title}</h3>

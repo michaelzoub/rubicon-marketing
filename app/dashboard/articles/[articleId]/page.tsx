@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Archive, ArrowLeft, Pause, Play } from "lucide-react";
+import { Archive, ArrowLeft, Eye, Pause, Play } from "lucide-react";
 import type { ArticleDetail } from "@/lib/rubicon/types";
 import { useRubiconMutation, useRubiconQuery } from "@/lib/rubicon/hooks";
 import {
@@ -23,6 +23,7 @@ import {
   PaymentStatusPill,
   StatTile,
 } from "../../_components/ui";
+import { AgentPreviewDialog } from "../_components/agent-preview-dialog";
 
 export default function ArticleDetailPage() {
   const params = useParams<{ articleId: string }>();
@@ -37,6 +38,18 @@ export default function ArticleDetailPage() {
 
   const data = article.data;
   const [editing, setEditing] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const agentPreviewArticle = data
+    ? {
+        title: data.title,
+        author: data.author,
+        pricePerWordAtomic: data.pricePerWordAtomic,
+        maxArticlePriceAtomic: data.maxArticlePriceAtomic,
+        totalWords: data.totalWords,
+        sections: data.sections,
+        sellerAgentConfig: data.sellerAgentConfig,
+      }
+    : null;
 
   return (
     <div className="grid gap-6">
@@ -57,6 +70,9 @@ export default function ArticleDetailPage() {
               </div>
             </div>
             <div className="flex shrink-0 flex-wrap gap-2">
+              <button type="button" onClick={() => setPreviewOpen(true)} className="button button-secondary text-sm">
+                <Eye size={15} aria-hidden="true" /> Preview as agent
+              </button>
               <button type="button" onClick={() => setEditing((v) => !v)} className="button button-secondary text-sm">
                 {editing ? "Close" : "Edit article"}
               </button>
@@ -89,6 +105,12 @@ export default function ArticleDetailPage() {
               )}
             </div>
           </div>
+          {data.state !== "live" && data.state !== "archived" && data.state !== "deleted" && (
+            <p className="-mt-4 text-sm text-[var(--muted)]">
+              Agents can preview metadata, but paid content remains hidden until purchased.
+            </p>
+          )}
+          <AgentPreviewDialog article={agentPreviewArticle} open={previewOpen} onClose={() => setPreviewOpen(false)} />
 
           {(publish.error || pause.error || archive.error) && (
             <div className="rounded-lg bg-[#fff1f0] px-4 py-3 text-sm text-[#8d2f2d]">
@@ -243,6 +265,7 @@ function EditPanel({
           <label className="grid gap-2">
             <span className="text-sm font-medium">Price per word ($)</span>
             <input value={pricePerWord} onChange={(e) => setPricePerWord(e.target.value.replace(/[^0-9.]/g, ""))} inputMode="decimal" placeholder="0.0001" className="h-11 rounded-lg bg-[var(--surface-muted)] px-3 outline-none transition focus:bg-white focus:ring-2 focus:ring-[var(--river-line)]" />
+            <span className="text-xs text-[var(--muted)]">Agents pay only for the words they reveal. You can update pricing anytime.</span>
           </label>
           <label className="grid gap-2">
             <span className="text-sm font-medium">Maximum article price ($)</span>

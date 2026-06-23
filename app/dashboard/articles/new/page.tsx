@@ -178,7 +178,7 @@ export default function NewArticlePage() {
 
   return (
     <div className="grid gap-6">
-      <PageHeader title="New article" description="Add your content, review sections, choose a price, and publish." />
+      <PageHeader title="New article" description="Saved as a draft first. Nothing goes live until you publish." />
 
       <Stepper current={step} />
 
@@ -504,7 +504,7 @@ function StepPricing({
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_320px]">
         <div className="grid gap-5">
-          <Field label="Price per word" hint="Enter the USDC amount per word. Minimum billable value is 0.000001.">
+          <Field label="Price per word" hint="Agents pay only for the words they reveal. You can update pricing anytime.">
             <div className="flex items-center rounded-lg bg-[var(--surface-muted)] focus-within:ring-2 focus-within:ring-[var(--river-line)]">
               <span className="px-3 text-[var(--muted)]">$</span>
               <input
@@ -629,6 +629,9 @@ function StepPublish({
           </button>
         </div>
       </div>
+      <p className="mt-3 text-right text-xs text-[var(--muted)]">
+        Agents can preview metadata, but paid content remains hidden until purchased.
+      </p>
     </Card>
   );
 }

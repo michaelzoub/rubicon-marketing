@@ -56,7 +56,7 @@ export default function ImportedDraftReviewPage() {
       <div>
         <p className="mono text-xs uppercase tracking-[0.14em] text-[var(--river)]">Imported draft</p>
         <h1 className="mt-2 text-3xl font-semibold">Review before publishing</h1>
-        <p className="mt-2 text-sm text-[var(--muted)]">Edit the extracted content and choose a price. Nothing is published until you confirm.</p>
+        <p className="mt-2 text-sm text-[var(--muted)]">We only import the article you choose. Nothing is posted or published automatically.</p>
       </div>
 
       {article.status === "loading" && <LoadingState />}
@@ -80,7 +80,11 @@ export default function ImportedDraftReviewPage() {
             <span className="text-sm font-medium">Body</span>
             <MarkdownEditor value={body} onChange={setBody} placeholder="Review the imported article…" />
           </div>
-          <label className="grid max-w-xs gap-2"><span className="text-sm font-medium">Price per word (USD)</span><input value={price} onChange={(e) => setPrice(e.target.value.replace(/[^0-9.]/g, ""))} inputMode="decimal" placeholder="0.001" className={inputClass} /></label>
+          <label className="grid max-w-xs gap-2">
+            <span className="text-sm font-medium">Price per word (USD)</span>
+            <input value={price} onChange={(e) => setPrice(e.target.value.replace(/[^0-9.]/g, ""))} inputMode="decimal" placeholder="0.001" className={inputClass} />
+            <span className="text-xs text-[var(--muted)]">Agents pay only for the words they reveal. You can update pricing anytime.</span>
+          </label>
           {(update.error || publish.error) && <p className="rounded-lg bg-[#fff1f0] px-4 py-3 text-sm text-[#8d2f2d]">{(update.error ?? publish.error)?.message}</p>}
           <div className="flex flex-wrap justify-end gap-2">
             <button type="button" onClick={() => save(false)} disabled={!valid || update.pending || publish.pending} className="button button-secondary disabled:opacity-50">Save draft</button>
@@ -88,6 +92,7 @@ export default function ImportedDraftReviewPage() {
               {(update.pending || publish.pending) && <Loader2 size={15} className="animate-spin" aria-hidden="true" />} Publish
             </button>
           </div>
+          <p className="text-right text-xs text-[var(--muted)]">Agents can preview metadata, but paid content remains hidden until purchased.</p>
         </Card>
       )}
     </div>
