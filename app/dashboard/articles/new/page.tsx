@@ -505,14 +505,14 @@ function StepPricing({
       <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_320px]">
         <div className="grid gap-5">
           <Field label="Price per word" hint="Agents pay only for the words they reveal. You can update pricing anytime.">
-            <div className="flex items-center rounded-lg bg-[var(--surface-muted)] focus-within:ring-2 focus-within:ring-[var(--river-line)]">
-              <span className="px-3 text-[var(--muted)]">$</span>
+            <div className="flex h-11 items-center gap-2 rounded-lg bg-[var(--surface-muted)] px-3 transition focus-within:bg-white focus-within:ring-2 focus-within:ring-[var(--river-line)]">
+              <span className="shrink-0 text-[var(--muted)]">$</span>
               <input
                 value={pricePerWord}
                 onChange={(e) => onPrice(e.target.value.replace(/[^0-9.]/g, ""))}
                 inputMode="decimal"
                 placeholder="0.0001"
-                className="h-11 w-full rounded-r-lg border-0 px-0 outline-none"
+                className="h-full min-w-0 flex-1 border-0 bg-transparent outline-none placeholder:text-[var(--muted)]"
               />
             </div>
           </Field>
