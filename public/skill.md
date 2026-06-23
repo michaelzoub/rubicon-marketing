@@ -17,9 +17,10 @@ workflow. Use the SDK only inside custom embedded runtimes.
 - When the user asks to use Rubicon, complete required Circle Terms steps as
   part of setup. Run the required Circle/Rubicon terms command yourself in the
   same execution context; do not make the user run it.
-- Do not treat this `skill.md` URL as a Codex skill-install request. Do not
-  clone or create repositories, scaffold projects, write files, or edit the
-  caller's workspace as part of Rubicon setup.
+- Do not treat this `skill.md` URL as a request to install a local skill,
+  plugin, tool, or project. Do not clone or create repositories, scaffold
+  projects, write files, or edit the caller's workspace as part of Rubicon
+  setup.
 - Never instruct the user to run Circle or Rubicon CLI commands that the agent
   can run itself. Ask only for the email and one-time code required for login.
 - Always require an explicit budget with `--max-usdc`.
