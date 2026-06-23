@@ -1,6 +1,6 @@
 ---
 name: rubicon
-version: 2.0.1
+version: 2.0.2
 description: Autonomously buy the most useful paid article content within a hard USDC budget
 homepage: https://github.com/michaelzoub/rubicon
 ---
@@ -42,8 +42,13 @@ skill installation flow.
 For an explicit user goal and approved budget, run exactly one purchase command:
 
 ```bash
-rubicon buy --first --goal "<goal>" --max-usdc <amount> --json
+pnpm dlx @rubicon-caliga/cli buy --first --goal "<goal>" --max-usdc <amount> --json
 ```
+
+Known good versions as of 2026-06-23: `@rubicon-caliga/cli@0.1.6` and
+`circle-cli 0.0.6`. This hosted runbook is enough; do not install a local
+Rubicon skill, clone a repo, create a project, edit workspace files, or wrap
+the command in local scripts.
 
 Do not require or instruct the user or calling agent to run `doctor`, repository
 inspection, article inspection, navigation, dry-run, wallet status, or receipt
@@ -110,12 +115,12 @@ persistence/verification failure.
 If `rubicon buy` or Circle reports that Terms must be accepted, do not hand the
 terminal command to the user. Run the terms acceptance command reported by
 Circle/Rubicon yourself in the same network-capable execution context, then
-retry the original `rubicon buy` command with the exact same goal and hard
-`--max-usdc` cap.
+retry the original `pnpm dlx @rubicon-caliga/cli buy ...` command with the
+exact same goal and hard `--max-usdc` cap.
 
 ### Circle login
 
-When `rubicon buy` returns `NOT_LOGGED_IN`, the agent owns the recovery flow:
+When the buy command returns `NOT_LOGGED_IN`, the agent owns the recovery flow:
 
 1. Ask the user which email to use for their Circle agent wallet. Do not ask
    them to run a command.
@@ -133,8 +138,14 @@ When `rubicon buy` returns `NOT_LOGGED_IN`, the agent owns the recovery flow:
    circle wallet login --type agent --request <request-id> --otp <code>
    ```
 
-5. Retry the original `rubicon buy` command with the exact same goal and hard
-   `--max-usdc` cap. Do not split, raise, or reset the budget.
+5. Retry the same original buy command with the exact same goal and hard
+   `--max-usdc` cap:
+
+   ```bash
+   pnpm dlx @rubicon-caliga/cli buy --first --goal "<goal>" --max-usdc <amount> --json
+   ```
+
+   Do not split, raise, or reset the budget.
 
 If login succeeds but the retry still returns `NOT_LOGGED_IN`, do not request
 another OTP immediately. Run this check yourself in the same context:
