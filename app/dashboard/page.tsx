@@ -257,7 +257,6 @@ export default function OverviewPage() {
                   agentReads={earnings.data?.agentReads ?? 0}
                   liveArticles={earnings.data?.liveArticles ?? 0}
                   topArticle={earnings.data?.topArticle?.title ?? null}
-                  topArticleEarned={atomicToUsd(earnings.data?.topArticle?.earnings)}
                   walletAddress={wallet.data?.address ?? null}
                   trendBars={trendBars}
                 />
@@ -465,7 +464,6 @@ function ExportCard({
   agentReads,
   liveArticles,
   topArticle,
-  topArticleEarned,
   walletAddress,
   trendBars,
 }: {
@@ -475,7 +473,6 @@ function ExportCard({
   agentReads: number;
   liveArticles: number;
   topArticle: string | null;
-  topArticleEarned: number;
   walletAddress: string | null;
   trendBars: TrendBar[];
 }) {
@@ -484,8 +481,9 @@ function ExportCard({
   const publicSummary = `Rubicon creator ${username} has earned ${formatUsdNumber(totalEarned)} from ${formatInt(agentReads)} agent reads across ${formatInt(wordsRead)} paid words.`;
 
   useEffect(() => {
-    setPngUrl(
-      renderExportPng({
+    let cancelled = false;
+    setPngUrl(null);
+    renderExportPng({
         username,
         amount: formatUsdNumber(totalEarned),
         reads: formatInt(agentReads),
@@ -495,10 +493,13 @@ function ExportCard({
         wallet: shortWallet(walletAddress),
         avgRead: formatUsdNumber(agentReads > 0 ? totalEarned / agentReads : 0),
         trendValues: trendBars.map((bar) => bar.value),
-        topArticleShare: totalEarned > 0 ? topArticleEarned / totalEarned : 0,
-      }),
-    );
-  }, [agentReads, liveArticles, topArticle, topArticleEarned, totalEarned, trendBars, username, walletAddress, wordsRead]);
+      }).then((url) => {
+        if (!cancelled) setPngUrl(url);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [agentReads, liveArticles, topArticle, totalEarned, trendBars, username, walletAddress, wordsRead]);
 
   const download = () => {
     if (!pngUrl) return;
@@ -538,16 +539,16 @@ function ExportCard({
         </span>
       </div>
 
-      <div className="overflow-hidden rounded-[14px] bg-[#10131a]">
+      <div className="overflow-hidden rounded-[14px] bg-[var(--surface-muted)]">
         {pngUrl ? (
           <img
             src={pngUrl}
             alt={`${username} Rubicon earnings export card`}
-            className="block h-auto w-full"
+            className="block aspect-video h-auto w-full object-contain"
             draggable={false}
           />
         ) : (
-          <div className="aspect-[1.52/1] animate-pulse bg-[#10131a]" />
+          <div className="aspect-video animate-pulse bg-[var(--surface-muted)]" />
         )}
       </div>
 
@@ -566,7 +567,7 @@ function ExportCard({
   );
 }
 
-function renderExportPng({
+async function renderExportPng({
   username,
   amount,
   reads,
@@ -576,7 +577,6 @@ function renderExportPng({
   wallet,
   avgRead,
   trendValues,
-  topArticleShare,
 }: {
   username: string;
   amount: string;
@@ -587,100 +587,92 @@ function renderExportPng({
   wallet: string;
   avgRead: string;
   trendValues: number[];
-  topArticleShare: number;
 }) {
-  const scale = 2;
-  const width = 1200;
-  const height = 675;
+  const width = 1600;
+  const height = 900;
   const canvas = document.createElement("canvas");
-  canvas.width = width * scale;
-  canvas.height = height * scale;
+  canvas.width = width;
+  canvas.height = height;
   const ctx = canvas.getContext("2d");
   if (!ctx) return "";
 
-  ctx.scale(scale, scale);
-  ctx.fillStyle = "#f5f7fb";
+  const logo = await loadImage("/rubicon-new-dark.png").catch(() => null);
+
+  ctx.fillStyle = "#f4f7fb";
   ctx.fillRect(0, 0, width, height);
 
+  // Main card
   ctx.fillStyle = "#ffffff";
-  roundRect(ctx, 40, 40, width - 80, height - 80, 28);
+  roundRect(ctx, 48, 48, 1504, 804, 44);
   ctx.fill();
-  ctx.strokeStyle = "rgba(30,40,62,0.09)";
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = "rgba(30,40,62,0.10)";
+  ctx.lineWidth = 3;
   ctx.stroke();
 
-  ctx.save();
-  ctx.globalAlpha = 0.045;
-  ctx.fillStyle = "#1f6ae0";
-  ctx.font = "900 128px Arial, sans-serif";
-  ctx.fillText("Rubicon", 620, 166);
-  ctx.restore();
-
-  drawRubiconMark(ctx, 72, 76);
-
-  ctx.fillStyle = "#171a22";
-  ctx.font = "800 34px Arial, sans-serif";
-  ctx.fillText("Rubicon", 134, 104);
+  if (logo) {
+    drawRubiconLogo(ctx, logo, 96, 100, 330);
+  } else {
+    ctx.fillStyle = "#121722";
+    ctx.font = "800 58px Arial, sans-serif";
+    ctx.fillText("Rubicon", 96, 150);
+  }
 
   ctx.fillStyle = "#687082";
-  ctx.font = "700 19px Arial, sans-serif";
-  ctx.fillText(username, 136, 134);
+  ctx.font = "700 28px Arial, sans-serif";
+  ctx.fillText(username, 100, 192);
 
   ctx.fillStyle = "#eef4ff";
-  roundRect(ctx, 860, 76, 230, 42, 21);
+  roundRect(ctx, 1215, 96, 245, 58, 29);
   ctx.fill();
   ctx.fillStyle = "#1f6ae0";
-  ctx.font = "800 15px Arial, sans-serif";
-  ctx.fillText("CREATOR EARNINGS", 902, 103);
-
-  drawLightPanel(ctx, 72, 170, 490, 205);
-  ctx.fillStyle = "#687082";
-  ctx.font = "800 16px Arial, sans-serif";
-  ctx.fillText("TOTAL EARNINGS", 104, 220);
-
-  ctx.fillStyle = "#171a22";
-  ctx.font = "900 86px Arial, sans-serif";
-  ctx.fillText(amount, 104, 312);
-
-  ctx.fillStyle = "#687082";
-  ctx.font = "700 20px Arial, sans-serif";
-  ctx.fillText("earned from autonomous paid reads", 108, 346);
-
-  drawLightPanel(ctx, 602, 170, 486, 205);
-  ctx.fillStyle = "#171a22";
-  ctx.font = "800 24px Arial, sans-serif";
-  ctx.fillText("Activity over time", 634, 214);
-  ctx.fillStyle = "#687082";
-  ctx.font = "700 15px Arial, sans-serif";
-  ctx.fillText("Last 14 days", 634, 238);
-  drawMiniBars(ctx, trendValues, 644, 268, 380, 72);
-
-  drawLightMetric(ctx, 72, 418, 226, "READS", reads, "#1f6ae0");
-  drawLightMetric(ctx, 324, 418, 226, "PAID WORDS", words, "#58d59b");
-  drawLightMetric(ctx, 576, 418, 226, "AVG / READ", avgRead, "#f1b85b");
-  drawLightMetric(ctx, 828, 418, 260, "LIVE ARTICLES", liveArticles, "#8fb6fa");
-
-  drawLightPanel(ctx, 72, 542, 620, 78);
-
-  ctx.fillStyle = "#687082";
-  ctx.font = "800 14px Arial, sans-serif";
-  ctx.fillText("TOP ARTICLE", 104, 573);
-  ctx.fillStyle = "#171a22";
   ctx.font = "800 21px Arial, sans-serif";
-  ctx.fillText(truncateForCanvas(ctx, topArticle, 450), 104, 600);
+  ctx.textAlign = "center";
+  ctx.fillText("CREATOR EARNINGS", 1337, 132);
+  ctx.textAlign = "left";
 
-  const topShare = clamp(topArticleShare, 0, 1);
-  drawDonut(ctx, 790, 582, 38, topShare);
+  drawLightPanel(ctx, 100, 250, 640, 245);
+  ctx.fillStyle = "#687082";
+  ctx.font = "800 22px Arial, sans-serif";
+  ctx.fillText("TOTAL EARNINGS", 146, 310);
+
+  ctx.fillStyle = "#171a22";
+  ctx.font = "900 104px Arial, sans-serif";
+  ctx.fillText(amount, 146, 410);
+
+  ctx.fillStyle = "#687082";
+  ctx.font = "700 25px Arial, sans-serif";
+  ctx.fillText("earned from paid agent reads", 150, 452);
+
+  drawLightPanel(ctx, 805, 250, 655, 245);
+  ctx.fillStyle = "#171a22";
+  ctx.font = "800 40px Arial, sans-serif";
+  ctx.fillText("Activity over time", 855, 325);
+  ctx.fillStyle = "#687082";
+  ctx.font = "700 23px Arial, sans-serif";
+  ctx.fillText("Last 14 days", 856, 365);
+  drawMiniBars(ctx, trendValues, 880, 402, 490, 62);
+
+  drawLightMetric(ctx, 100, 548, 320, "READS", reads, "#1f6ae0");
+  drawLightMetric(ctx, 460, 548, 320, "PAID WORDS", words, "#58d59b");
+  drawLightMetric(ctx, 820, 548, 320, "AVG / READ", avgRead, "#f1b85b");
+  drawLightMetric(ctx, 1180, 548, 280, "LIVE ARTICLES", liveArticles, "#8fb6fa");
+
+  drawLightPanel(ctx, 100, 725, 860, 78);
+
+  ctx.fillStyle = "#687082";
+  ctx.font = "800 17px Arial, sans-serif";
+  ctx.fillText("TOP ARTICLE", 140, 758);
+  ctx.fillStyle = "#171a22";
+  ctx.font = "800 28px Arial, sans-serif";
+  ctx.fillText(truncateForCanvas(ctx, topArticle, 660), 140, 790);
+
+  drawLightPanel(ctx, 1000, 725, 460, 78);
+  ctx.fillStyle = "#687082";
+  ctx.font = "800 17px Arial, sans-serif";
+  ctx.fillText("WALLET", 1040, 758);
   ctx.fillStyle = "#171a22";
   ctx.font = "800 26px Arial, sans-serif";
-  ctx.fillText(`${Math.round(topShare * 100)}%`, 842, 576);
-  ctx.fillStyle = "#687082";
-  ctx.font = "700 14px Arial, sans-serif";
-  ctx.fillText("top article share", 842, 600);
-
-  ctx.fillStyle = "#687082";
-  ctx.font = "700 15px Arial, sans-serif";
-  ctx.fillText(`Wallet ${wallet}`, 914, 600);
+  ctx.fillText(wallet, 1040, 790);
 
   return canvas.toDataURL("image/png");
 }
@@ -696,20 +688,20 @@ function drawLightPanel(ctx: CanvasRenderingContext2D, x: number, y: number, wid
 
 function drawLightMetric(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, label: string, value: string, accent: string) {
   ctx.fillStyle = "#f1f5fb";
-  roundRect(ctx, x, y, width, 86, 18);
+  roundRect(ctx, x, y, width, 120, 22);
   ctx.fill();
 
   ctx.fillStyle = accent;
-  roundRect(ctx, x + 20, y + 18, 8, 50, 4);
+  roundRect(ctx, x + 28, y + 30, 10, 60, 5);
   ctx.fill();
 
   ctx.fillStyle = "#171a22";
-  ctx.font = "900 28px Arial, sans-serif";
-  ctx.fillText(value, x + 44, y + 39);
+  ctx.font = "900 38px Arial, sans-serif";
+  ctx.fillText(value, x + 58, y + 58);
 
   ctx.fillStyle = "#687082";
-  ctx.font = "800 12px Arial, sans-serif";
-  ctx.fillText(label, x + 44, y + 64);
+  ctx.font = "800 17px Arial, sans-serif";
+  ctx.fillText(label, x + 58, y + 88);
 }
 
 function drawMiniBars(ctx: CanvasRenderingContext2D, values: number[], x: number, y: number, width: number, height: number) {
@@ -726,29 +718,22 @@ function drawMiniBars(ctx: CanvasRenderingContext2D, values: number[], x: number
   });
 }
 
-function drawDonut(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number, pct: number) {
-  ctx.lineWidth = 12;
-  ctx.strokeStyle = "#dbe4f0";
-  ctx.beginPath();
-  ctx.arc(x, y, radius, 0, Math.PI * 2);
-  ctx.stroke();
-
-  ctx.strokeStyle = "#2f7df6";
-  ctx.lineCap = "round";
-  ctx.beginPath();
-  ctx.arc(x, y, radius, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * pct);
-  ctx.stroke();
-  ctx.lineCap = "butt";
+function drawRubiconLogo(ctx: CanvasRenderingContext2D, image: HTMLImageElement, x: number, y: number, width: number) {
+  const sourceX = 95;
+  const sourceY = 825;
+  const sourceWidth = 1745;
+  const sourceHeight = 340;
+  const height = width * (sourceHeight / sourceWidth);
+  ctx.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
 }
 
-function drawRubiconMark(ctx: CanvasRenderingContext2D, x: number, y: number) {
-  ctx.fillStyle = "#2f7df6";
-  roundRect(ctx, x, y, 42, 7, 4);
-  ctx.fill();
-  roundRect(ctx, x, y + 14, 42, 7, 4);
-  ctx.fill();
-  roundRect(ctx, x, y + 28, 42, 7, 4);
-  ctx.fill();
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = src;
+  });
 }
 
 function truncateForCanvas(ctx: CanvasRenderingContext2D, text: string, maxWidth: number) {
@@ -768,10 +753,6 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: n
   ctx.arcTo(x, y + height, x, y, radius);
   ctx.arcTo(x, y, x + width, y, radius);
   ctx.closePath();
-}
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
 }
 
 function OnchainCard({ address }: { address: string | null }) {

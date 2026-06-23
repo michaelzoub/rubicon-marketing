@@ -95,6 +95,15 @@ a {
   color: var(--ink);
 }
 
+.dashboard-theme input,
+.dashboard-theme select {
+  padding-inline: 0.875rem;
+}
+
+.dashboard-theme textarea {
+  padding: 0.875rem;
+}
+
 .dashboard-theme input::placeholder,
 .dashboard-theme textarea::placeholder {
   color: var(--quiet);
