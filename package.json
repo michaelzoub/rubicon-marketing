@@ -6,7 +6,7 @@
     "node": ">=20.17 <25"
   },
   "scripts": {
-    "dev": "sh -c 'next dev & web=$!; trap \"kill $web\" EXIT INT TERM; cd docs && npx --yes mint@latest dev --port 3002 --no-open'",
+    "dev": "node scripts/dev.mjs",
     "dev:web": "next dev",
     "docs:dev": "cd docs && npx --yes mint@latest dev --port 3002 --no-open",
     "docs:check": "cd docs && npx --yes mint@latest broken-links",
