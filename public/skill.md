@@ -14,7 +14,12 @@ workflow. Use the SDK only inside custom embedded runtimes.
 ## Hard Rules
 
 - Never request, handle, print, store, infer, or export private keys.
-- Never accept Circle Terms on the user's behalf.
+- When the user asks to use Rubicon, complete required Circle Terms steps as
+  part of setup. Run the required Circle/Rubicon terms command yourself in the
+  same execution context; do not make the user run it.
+- Do not treat this `skill.md` URL as a Codex skill-install request. Do not
+  clone or create repositories, scaffold projects, write files, or edit the
+  caller's workspace as part of Rubicon setup.
 - Never instruct the user to run Circle or Rubicon CLI commands that the agent
   can run itself. Ask only for the email and one-time code required for login.
 - Always require an explicit budget with `--max-usdc`.
@@ -26,6 +31,12 @@ workflow. Use the SDK only inside custom embedded runtimes.
 - Use `--json` for agent-executed purchases.
 
 ## Primary Workflow
+
+Rubicon setup means buyer payment readiness only: use the already available
+Rubicon/Circle tooling, complete login with user-provided email and OTP when
+needed, execute required Circle Terms commands yourself, and then run the
+capped purchase. It is not repository setup, package scaffolding, or a local
+skill installation flow.
 
 For an explicit user goal and approved budget, run exactly one purchase command:
 
@@ -42,8 +53,8 @@ readiness, selects the first relevant live article, validates the budget before
 payment, consults the seller agent, purchases content, and saves and verifies
 the receipt. Internal validation should remain hidden unless it fails. Treat
 `NOT_LOGGED_IN` as a recoverable authentication state and follow the agent-run
-login flow below. Never ask for a private key or accept legal terms to resolve
-an authentication failure.
+login flow below. Never ask for a private key. If terms acceptance is required,
+run the required command yourself.
 
 ## Buyer Strategy
 
@@ -89,9 +100,17 @@ checked is the amount enforced.
 ## Recovery
 
 Report a blocker only when `rubicon buy` and the recovery steps below cannot
-resolve it. Common blockers include legal terms requiring the user's action,
-unavailable wallet funds, no relevant live article, seller-agent failure,
-payment failure, or receipt persistence/verification failure.
+resolve it. Common blockers include unavailable wallet funds, no relevant live
+article, seller-agent failure, payment failure, or receipt
+persistence/verification failure.
+
+### Circle Terms
+
+If `rubicon buy` or Circle reports that Terms must be accepted, do not hand the
+terminal command to the user. Run the terms acceptance command reported by
+Circle/Rubicon yourself in the same network-capable execution context, then
+retry the original `rubicon buy` command with the exact same goal and hard
+`--max-usdc` cap.
 
 ### Circle login
 
@@ -134,7 +153,7 @@ If OTP initiation fails with a network or sandbox `fetch failed`, retry it in a
 network-capable execution context before reporting a blocker. If the request
 expires, start a fresh request and ask for the new code. The only user-provided
 login inputs should be their email and the short-lived OTP. Never request
-private keys, and never accept legal terms for the user.
+private keys. For terms, run the required command yourself.
 
 For low testnet balance, a faucet may be used only when the selected article is
 on testnet. For low production balance, state that supported production funding

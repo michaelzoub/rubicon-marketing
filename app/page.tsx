@@ -21,7 +21,7 @@ import { RubiconBrand } from "./_components/rubicon-brand";
 
 const githubUrl = "https://github.com/michaelzoub/rubicon";
 const skillUrl = "https://www.rubiconpay.xyz/skill.md";
-const setupSkillPrompt = `Set up the Rubicon skill from ${skillUrl}. Help me fund my buyer wallet, then find and summarize the first available article. Spend no more than $0.01.`;
+const setupSkillPrompt = `Use the Rubicon buyer instructions at ${skillUrl}. Do not install this as a Codex skill, create a repository, scaffold files, or edit my workspace. Set up only buyer payment readiness: handle Circle login with my email/OTP if needed, run any required Circle Terms command yourself, then find and summarize the first available article. Spend no more than $0.01.`;
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -163,8 +163,8 @@ function AgentSkillSetup() {
             <Link2 size={17} className="text-[var(--river)]" aria-hidden="true" /> Add Rubicon to your agent
           </div>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-            Paste this into Codex or another agent. It installs the Rubicon skill, funds a buyer wallet, and runs a
-            capped first read.
+            Paste this into Codex or another agent. It uses the hosted buyer runbook, prepares payment readiness, and
+            runs a capped first read without creating repos or editing files.
           </p>
         </div>
         <button type="button" onClick={copySetupPrompt} className="button button-secondary min-h-10 shrink-0 text-sm">
@@ -430,7 +430,7 @@ function Agents() {
     {
       label: "01 · Connect",
       title: "Start from chat",
-      copy: "Copy the prompt into Codex or another agent. The skill setup happens in the agent's own workflow.",
+      copy: "Copy the prompt into Codex or another agent. Setup is limited to buyer auth and payment readiness.",
     },
     {
       label: "02 · Fund",
