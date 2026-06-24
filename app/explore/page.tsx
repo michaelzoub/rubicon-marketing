@@ -2,7 +2,7 @@ import { ArrowRight, BookOpen, FileText, Users } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { listPublicCreators, PublicDirectoryUnavailable, type PublicCreator } from "@/lib/rubicon/public";
-import { StartPublishingLink } from "../_components/analytics-links";
+import { SignInLink, StartPublishingLink } from "../_components/analytics-links";
 import { ExploreDirectory } from "./_components/explore-directory";
 import { RubiconBrand } from "../_components/rubicon-brand";
 
@@ -26,6 +26,7 @@ function ExploreNav() {
         <div className="hidden items-center gap-7 text-sm text-[var(--muted)] md:flex">
           <Link className="site-nav-link" href="/docs">Docs</Link>
           <a className="site-nav-link" href="/explore" aria-current="page">Explore</a>
+          <SignInLink href="/dashboard" location="explore_nav" className="button button-secondary button-nav text-sm">Sign in</SignInLink>
           <StartPublishingLink href="/dashboard" location="explore_nav" className="button button-primary button-nav text-sm">Start publishing <ArrowRight size={15} /></StartPublishingLink>
         </div>
       </nav>

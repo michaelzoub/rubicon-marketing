@@ -14,7 +14,7 @@ import {
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { SellerGlyph } from "./_components/agent-glyphs";
-import { SignInLink, StartPublishingLink } from "./_components/analytics-links";
+import { ExploreLink, PageEngagementTracker, SignInLink, StartPublishingLink } from "./_components/analytics-links";
 import { HowItWorks } from "./_components/how-it-works";
 import { StreamTheater } from "./_components/stream-theater";
 import { WordStreamDemo } from "./_components/word-stream";
@@ -54,15 +54,17 @@ const cardGridProps = {
 
 function StackPanel({
   id,
+  analyticsSection,
   className,
   children,
 }: {
   id?: string;
+  analyticsSection?: string;
   className: string;
   children: ReactNode;
 }) {
   return (
-    <section id={id} className={className}>
+    <section id={id} className={className} data-analytics-section={analyticsSection}>
       {children}
     </section>
   );
@@ -194,12 +196,15 @@ function Navigation() {
           </div>
         </div>
         <div className="flex items-center gap-3">
+          <SignInLink href="/dashboard" location="nav" className="button button-secondary button-nav hidden text-sm md:inline-flex">
+            Sign in
+          </SignInLink>
           <StartPublishingLink href="/dashboard" location="nav" className="button button-primary button-nav hidden text-sm sm:inline-flex">
             Start publishing <ArrowRight size={15} aria-hidden="true" />
           </StartPublishingLink>
-          <a href="/explore" className="explore-pill text-sm">
+          <ExploreLink href="/explore" location="nav" className="explore-pill text-sm">
             Explore <ArrowRight size={15} aria-hidden="true" />
-          </a>
+          </ExploreLink>
         </div>
       </nav>
     </header>
@@ -208,7 +213,7 @@ function Navigation() {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden">
+    <section className="relative overflow-hidden" data-analytics-section="hero">
       <div className="aurora" aria-hidden="true" />
       <div className="grid-texture" aria-hidden="true" />
       <div className="container grid gap-12 pb-16 pt-12 md:grid-cols-[1.02fr_0.98fr] md:pb-28 md:pt-16">
@@ -275,7 +280,7 @@ function CreatorValue() {
     },
   ];
   return (
-    <StackPanel id="creators" className="section stack-panel stack-panel-base bg-[var(--background)]">
+    <StackPanel id="creators" analyticsSection="creators" className="section stack-panel stack-panel-base bg-[var(--background)]">
       <motion.div {...fade} className="container">
         <p className="eyebrow">For creators</p>
         <h2 className="mt-4 section-title">Built around what creators actually want.</h2>
@@ -302,7 +307,7 @@ function CreatorValue() {
 
 function SellerAgent() {
   return (
-    <StackPanel className="section stack-panel stack-panel-muted border-y border-[var(--faint)] bg-[var(--surface-muted)]">
+    <StackPanel analyticsSection="seller_agent" className="section stack-panel stack-panel-muted border-y border-[var(--faint)] bg-[var(--surface-muted)]">
       <motion.div {...fade} className="container grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
         <div>
           <p className="eyebrow">The seller agent</p>
@@ -345,7 +350,7 @@ function SellerAgent() {
 
 function StreamDemoSection() {
   return (
-    <section className="section bg-[var(--background)]">
+    <section className="section bg-[var(--background)]" data-analytics-section="word_stream">
       <motion.div {...fade} className="container grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
         <div>
           <p className="eyebrow">Word-level metering</p>
@@ -388,7 +393,7 @@ function BrandChip({ name, src }: { name: string; src: string }) {
 
 function Settlement() {
   return (
-    <StackPanel className="section stack-panel stack-panel-base bg-[var(--background)]">
+    <StackPanel analyticsSection="settlement" className="section stack-panel stack-panel-base bg-[var(--background)]">
       <motion.div {...fade} className="container grid gap-10 lg:grid-cols-[0.95fr_1.05fr] lg:items-center">
         <div>
           <p className="eyebrow">Settlement</p>
@@ -444,7 +449,7 @@ function Agents() {
     },
   ];
   return (
-    <StackPanel id="agents" className="section stack-panel stack-panel-muted border-y border-[var(--faint)] bg-[var(--surface-muted)]">
+    <StackPanel id="agents" analyticsSection="agents" className="section stack-panel stack-panel-muted border-y border-[var(--faint)] bg-[var(--surface-muted)]">
       <motion.div {...fade} className="container">
         <p className="eyebrow">For agents</p>
         <h2 className="mt-4 section-title">Add paid reading to your agent.</h2>
@@ -511,7 +516,7 @@ function Footer() {
           <a href="#product">Product</a>
           <a href="#agents">Agents</a>
           <a href="#creators">Creators</a>
-          <a href="/explore">Explore</a>
+          <ExploreLink href="/explore" location="footer">Explore</ExploreLink>
           <Link href="/docs">Docs</Link>
           <a href={githubUrl}>GitHub</a>
           <SignInLink href="/dashboard" location="footer">Sign in</SignInLink>
@@ -524,6 +529,7 @@ function Footer() {
 export default function Home() {
   return (
     <>
+      <PageEngagementTracker />
       <Navigation />
       <main>
         <Hero />

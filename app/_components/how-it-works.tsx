@@ -46,6 +46,7 @@ export function HowItWorks() {
   return (
     <section
       id="product"
+      data-analytics-section="product"
       className="section stack-panel stack-panel-muted border-y border-[var(--faint)] bg-[var(--surface-muted)]"
     >
       <motion.div
