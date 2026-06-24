@@ -65,27 +65,36 @@ a {
 }
 
 .dashboard-theme {
-  --background: #f5f7fb;
+  --background: #fafafa;
   --surface: #ffffff;
-  --surface-muted: #f1f5fb;
+  --surface-muted: #f3f4f7;
   --card: #ffffff;
-  --hovered: #e9f0fb;
-  --ink: #171a22;
-  --muted: #687082;
-  --quiet: #9a9ba5;
-  --faint: rgba(23, 26, 34, 0.07);
-  --line: rgba(30, 40, 62, 0.09);
-  --river: #2f7df6;
-  --river-deep: #1f6ae0;
-  --river-rgb: 47, 125, 246;
-  --river-pale: rgba(47, 125, 246, 0.12);
-  --river-line: rgba(47, 125, 246, 0.3);
+  --hovered: #f1f3f9;
+  /* Near-black ink for crisp, high-contrast "financial" numerals. */
+  --ink: #0e1014;
+  --muted: #6b6f78;
+  --quiet: #989ba3;
+  --faint: rgba(14, 16, 20, 0.06);
+  --line: #e5e6ea;
+  /* Blue stays the secondary accent. */
+  --river: #2f6de5;
+  --river-deep: #2461d6;
+  --river-rgb: 47, 109, 229;
+  --river-pale: rgba(47, 109, 229, 0.12);
+  --river-line: rgba(47, 109, 229, 0.34);
+  /* Slate-gray surface for the featured/hero tile. */
+  --tile-featured: #3a3f47;
+  /* Financial accents — gains, losses, and a gold tertiary. */
+  --gain: #15803d;
+  --gain-on-dark: #4ade80;
+  --loss: #c0392b;
+  --loss-on-dark: #f87171;
+  --gold: #c98a17;
   color: var(--ink);
 }
 
 .dashboard-canvas {
-  background:
-    linear-gradient(180deg, #fbfcff 0%, var(--surface-muted) 44%, #f7f9fd 100%);
+  background: #fafafa;
 }
 
 .dashboard-theme input,
@@ -110,13 +119,13 @@ a {
 }
 
 .dashboard-theme .button-secondary {
-  border: 0;
-  background: rgba(47, 125, 246, 0.08);
+  border: 1px solid var(--line);
+  background: #f4f4f6;
   color: var(--ink);
 }
 
 .dashboard-theme .button-secondary:hover {
-  background: rgba(47, 125, 246, 0.14);
+  background: #ffffff;
 }
 
 button:focus-visible,
@@ -323,7 +332,7 @@ a {
 }
 
 .button:active {
-  transform: scale(0.97);
+  transform: none;
 }
 
 .button-primary {
@@ -333,7 +342,6 @@ a {
 
 .button-primary:hover {
   background: #ffffff;
-  transform: translateY(-2px);
 }
 
 .button-nav {
@@ -351,53 +359,114 @@ a {
 
 .button-secondary:hover {
   background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-2px);
 }
 
 .dashboard-theme .button-primary {
-  background: linear-gradient(135deg, #1f6ae0, #2f7df6);
+  border: 1px solid #2864da;
+  background: #2f6de5;
   color: #ffffff;
-  box-shadow: 0 12px 26px -16px rgba(31, 106, 224, 0.8);
 }
 
 .dashboard-theme .button-primary:hover {
-  background: linear-gradient(135deg, #185bc4, #2673ec);
+  background: #2461d6;
 }
 
-/* Borderless cards: definition comes from a soft shadow, never an outline. */
+/* Dashboard buttons are semi-rounded (not full pills): New article, Open live
+ * dashboard, View, etc. all share this radius so the surface reads consistently. */
+.dashboard-theme .button {
+  border-radius: 10px;
+}
+
 .dashboard-card {
-  border: 1px solid rgba(30, 40, 62, 0.07);
-  box-shadow:
-    0 1px 2px rgba(20, 35, 60, 0.04),
-    0 18px 40px -28px rgba(20, 35, 60, 0.28);
+  border: 1px solid var(--line);
+  border-radius: 10px;
   transition:
-    box-shadow 220ms var(--ease-soft),
     background-color 220ms var(--ease-out),
     transform 220ms var(--ease-out);
 }
 
 .dashboard-card:hover {
-  box-shadow:
-    0 1px 2px rgba(20, 35, 60, 0.05),
-    0 22px 52px -28px rgba(20, 35, 60, 0.32);
+  border-color: #d9dbe1;
+}
+
+.dashboard-theme [class*="rounded-\\[16px\\]"],
+.dashboard-theme [class*="rounded-\\[18px\\]"],
+.dashboard-theme .rounded-xl {
+  border-radius: 10px;
+}
+
+.dashboard-theme [class*="rounded-\\[12px\\]"],
+.dashboard-theme [class*="rounded-\\[14px\\]"] {
+  border-radius: 8px;
 }
 
 .dashboard-sidebar {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(250, 252, 255, 0.94)),
-    #ffffff;
-  box-shadow: 18px 0 44px -42px rgba(20, 35, 60, 0.6);
+  background: #ffffff;
+  box-shadow: 1px 0 0 rgba(14, 16, 20, 0.02);
+}
+
+.dashboard-icon-button {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f6f7f9;
+  color: var(--quiet);
+  transition:
+    transform 150ms var(--ease-out),
+    background-color 180ms var(--ease-soft),
+    color 180ms var(--ease-soft),
+    box-shadow 180ms var(--ease-soft);
+}
+
+.dashboard-icon-button:active {
+  transform: scale(0.97);
+}
+
+.dashboard-icon-button:hover {
+  color: var(--ink);
+  background: #ffffff;
+}
+
+.dashboard-new-article-button {
+  min-height: 40px;
+  padding-inline: 0.875rem;
 }
 
 .dashboard-nav-link {
+  color: var(--muted);
   transition:
-    transform 180ms var(--ease-out),
     background-color 180ms var(--ease-soft),
-    color 180ms var(--ease-soft);
+    color 180ms var(--ease-soft),
+    box-shadow 180ms var(--ease-soft);
 }
 
 .dashboard-nav-link:hover {
-  transform: translateX(2px);
+  background: #f7f8fb;
+  color: var(--ink);
+}
+
+.dashboard-nav-link:active {
+  transform: scale(0.99);
+}
+
+.dashboard-nav-link.is-active {
+  background: #f1f2f5;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1px rgba(14, 16, 20, 0.04);
+}
+
+.dashboard-nav-link.is-active svg {
+  color: var(--river-deep);
+}
+
+.dashboard-nav-section-title {
+  color: var(--quiet);
+  font-size: 0.69rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
 }
 
 .card-soft {

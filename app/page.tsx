@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
 import { SellerGlyph } from "./_components/agent-glyphs";
+import { SignInLink, StartPublishingLink } from "./_components/analytics-links";
 import { HowItWorks } from "./_components/how-it-works";
 import { StreamTheater } from "./_components/stream-theater";
 import { WordStreamDemo } from "./_components/word-stream";
@@ -21,7 +22,7 @@ import { RubiconBrand } from "./_components/rubicon-brand";
 
 const githubUrl = "https://github.com/michaelzoub/rubicon";
 const skillUrl = "https://www.rubiconpay.xyz/skill.md";
-const setupSkillPrompt = `Use the Rubicon buyer instructions at ${skillUrl}. Do not install this URL as a local skill, plugin, or tool; do not create a repository, scaffold files, or edit the current project. Set up only buyer payment readiness: handle Circle login with my email/OTP if needed, run any required Circle Terms command yourself, then find and summarize the first available article. Spend no more than $0.01.`;
+const setupSkillPrompt = `Use the Rubicon buyer runbook at ${skillUrl} to set up buyer payment readiness and summarize the first available article. Max spend: $0.01.`;
 
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -163,8 +164,7 @@ function AgentSkillSetup() {
             <Link2 size={17} className="text-[var(--river)]" aria-hidden="true" /> Add Rubicon to your agent
           </div>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--muted)]">
-            Paste this into any agent. It uses the hosted buyer runbook, prepares payment readiness, and runs a capped
-            first read without creating repos or editing files.
+            Paste this into any agent. It uses the hosted buyer runbook for a capped first read.
           </p>
         </div>
         <button type="button" onClick={copySetupPrompt} className="button button-secondary min-h-10 shrink-0 text-sm">
@@ -194,9 +194,9 @@ function Navigation() {
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Link href="/dashboard" className="button button-primary button-nav hidden text-sm sm:inline-flex">
+          <StartPublishingLink href="/dashboard" location="nav" className="button button-primary button-nav hidden text-sm sm:inline-flex">
             Start publishing <ArrowRight size={15} aria-hidden="true" />
-          </Link>
+          </StartPublishingLink>
           <a href="/explore" className="explore-pill text-sm">
             Explore <ArrowRight size={15} aria-hidden="true" />
           </a>
@@ -224,9 +224,9 @@ function Hero() {
             agents can stop as soon as they have enough information.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="/dashboard" className="button button-primary">
+            <StartPublishingLink href="/dashboard" location="hero" className="button button-primary">
               Start publishing <ArrowRight size={16} aria-hidden="true" />
-            </Link>
+            </StartPublishingLink>
             <a href="#agents" className="button button-secondary">
               Set up an agent
             </a>
@@ -514,7 +514,7 @@ function Footer() {
           <a href="/explore">Explore</a>
           <Link href="/docs">Docs</Link>
           <a href={githubUrl}>GitHub</a>
-          <Link href="/dashboard">Sign in</Link>
+          <SignInLink href="/dashboard" location="footer">Sign in</SignInLink>
         </div>
       </div>
     </footer>

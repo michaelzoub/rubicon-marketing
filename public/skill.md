@@ -39,6 +39,14 @@ needed, execute required Circle Terms commands yourself, and then run the
 capped purchase. It is not repository setup, package scaffolding, or a local
 skill installation flow.
 
+When a user asks to set up buyer payment readiness or run a first read from
+this hosted runbook, keep the user-facing prompt short and treat the detailed
+setup behavior as part of this skill: do not install this URL as a local skill,
+plugin, or tool; do not create a repository, scaffold files, or edit the
+caller's workspace; handle Circle login with the user's email and OTP if
+needed; run any required Circle Terms command yourself; then find and summarize
+the first available article within the approved cap.
+
 For an explicit user goal and approved budget, run exactly one purchase command:
 
 ```bash

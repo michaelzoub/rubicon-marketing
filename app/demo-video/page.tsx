@@ -35,11 +35,9 @@ import {
   Search,
   Settings,
   Unlink,
-  Volume2,
   WalletCards,
   Waves,
 } from "lucide-react";
-import { Howl } from "howler";
 import { useEffect, useState } from "react";
 import { RubiconBrand } from "../_components/rubicon-brand";
 
@@ -77,54 +75,6 @@ const STREAM_WORDS = STREAM_TEXT.split(" ");
 const STREAM_VISIBLE_WORDS = STREAM_WORDS.slice(0, 18);
 
 const BEATS = ["Problem", "Solution", "Stream", "Settle"] as const;
-
-type DemoSound = "terminal" | "mouse" | "stream" | "error" | "block" | "confirm";
-let demoSoundEnabled = false;
-const demoSounds = new Map<DemoSound, Howl>();
-
-const DEMO_SOUND_FILES: Record<DemoSound, { src: string; volume: number }> = {
-  terminal: { src: "/sounds/terminal-tick.mp3", volume: 0.22 },
-  mouse: { src: "/sounds/mouse-click.mp3", volume: 0.32 },
-  stream: { src: "/sounds/terminal-tick.mp3", volume: 0.045 },
-  error: { src: "/sounds/error-notification.mp3", volume: 0.28 },
-  block: { src: "/sounds/block-impact.mp3", volume: 0.38 },
-  confirm: { src: "/sounds/cinematic-impact.mp3", volume: 0.24 },
-};
-
-function getDemoSound(kind: DemoSound) {
-  const cached = demoSounds.get(kind);
-  if (cached) return cached;
-  const config = DEMO_SOUND_FILES[kind];
-  const sound = new Howl({ src: [config.src], volume: config.volume, preload: true });
-  demoSounds.set(kind, sound);
-  return sound;
-}
-
-async function playDemoSound(kind: DemoSound, force = false) {
-  if (!demoSoundEnabled && !force) return false;
-  const sound = getDemoSound(kind);
-
-  return new Promise<boolean>((resolve) => {
-    let resolved = false;
-    const finish = (value: boolean) => {
-      if (resolved) return;
-      resolved = true;
-      resolve(value);
-    };
-    sound.once("play", () => finish(true));
-    sound.once("playerror", () => finish(false));
-    if (kind === "confirm") sound.stop();
-    sound.play();
-    window.setTimeout(() => finish(sound.playing()), 1400);
-  });
-}
-
-async function enableDemoAudio() {
-  (Object.keys(DEMO_SOUND_FILES) as DemoSound[]).forEach(getDemoSound);
-  const started = await playDemoSound("confirm", true);
-  demoSoundEnabled = started;
-  return started;
-}
 const beatOf: Record<SceneId, number> = {
   problem: 0,
   solution: 1,
@@ -194,8 +144,6 @@ export default function DemoVideoPage() {
   const [minimal, setMinimal] = useState(false);
   const [paused, setPaused] = useState(false);
   const [ready, setReady] = useState(false);
-  const [soundEnabled, setSoundEnabled] = useState(false);
-  const [soundBlocked, setSoundBlocked] = useState(false);
 
   const scene = SCENES[index].id;
   const isEnd = scene === "end";
@@ -238,22 +186,6 @@ export default function DemoVideoPage() {
       <DemoStyles />
       <AmbientBackground scene={scene} sceneIndex={index} />
       <div className="dv-vignette" aria-hidden="true" />
-
-      {!minimal && (
-        <button
-          type="button"
-          className={`dv-sound-toggle${soundEnabled ? " is-on" : ""}${soundBlocked ? " is-blocked" : ""}`}
-          onClick={async () => {
-            const enabled = await enableDemoAudio();
-            setSoundEnabled(enabled);
-            setSoundBlocked(!enabled);
-          }}
-          aria-pressed={soundEnabled}
-          title={soundEnabled ? "Click to test sound" : "Enable demo sounds"}
-        >
-          <Volume2 size={14} /> {soundEnabled ? "Sound on · test" : soundBlocked ? "Sound blocked" : "Enable sound"}
-        </button>
-      )}
 
       <div className="dv-stage">
         {ready && <DemoStage scene={scene} progress={progress} />}
@@ -453,7 +385,6 @@ function BuyerBlocked() {
       </div>
       <div className="dv-term-body mono">
         <div className="dv-term-cmd">
-          <TimedSoundCue delay={0.2} />
           <span className="dv-term-prompt">$</span>
           <span>
             <span className="dv-tok-fn">await fetch</span>(
@@ -469,7 +400,6 @@ function BuyerBlocked() {
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, ease: CINE, delay: request.delay }}
           >
-            <TimedSoundCue delay={request.delay} />
             <span className="dv-term-order">{request.n}</span>
             <span className="dv-term-method">{request.method}</span>
             <span className="dv-term-host">{request.path}</span>
@@ -484,21 +414,12 @@ function BuyerBlocked() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4, ease: CINE, delay: 2.5 }}
         >
-          <TimedSoundCue delay={2.5} />
           <span className="dv-term-x">✗</span> fetch() can’t complete an interactive subscription
           <span className="dv-term-cursor" aria-hidden="true" />
         </motion.div>
       </div>
     </div>
   );
-}
-
-function TimedSoundCue({ delay, sound = "terminal" }: { delay: number; sound?: DemoSound }) {
-  useEffect(() => {
-    const timeout = window.setTimeout(() => void playDemoSound(sound), delay * 1000);
-    return () => window.clearTimeout(timeout);
-  }, [delay, sound]);
-  return null;
 }
 
 function CreatorBlocked() {
@@ -541,7 +462,6 @@ function CreatorBlocked() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, ease: CINE, delay: 1.5 }}
       >
-        <TimedSoundCue delay={1.5} sound="error" />
         <span className="dv-cl-red">The transaction fails before value can move.</span>
       </motion.p>
     </div>
@@ -738,12 +658,6 @@ function DashboardPublished() {
 }
 
 function DashboardButton({ label, focused }: { label: string; focused?: boolean }) {
-  useEffect(() => {
-    if (!focused) return;
-    const timeout = window.setTimeout(() => void playDemoSound("mouse"), 635);
-    return () => window.clearTimeout(timeout);
-  }, [focused]);
-
   return <div className={`dv-dashboard-button${focused ? " is-pressing" : ""}`}>{label}<ArrowRight size={13} /></div>;
 }
 
@@ -789,11 +703,6 @@ function PaidStreamCard({ progress }: { progress: number }) {
   const spent = TARGET_SPEND * revealFrac;
   const stopped = progress >= 0.86;
   const focus = !sellerReplied ? "question" : !sessionOpened ? "route" : !streaming ? "session" : stopped ? "stop" : "stream";
-  const streamSoundStep = Math.floor(revealed / 3);
-
-  useEffect(() => {
-    if (streaming && !stopped && streamSoundStep > 0) void playDemoSound("stream");
-  }, [streamSoundStep, streaming, stopped]);
 
   return (
       <GlowCard
@@ -911,14 +820,6 @@ function SettlementCard({ progress }: { progress: number }) {
   const submitted = progress >= 0.3;
   const included = progress >= 0.58;
   const confirmed = progress >= 0.8;
-
-  useEffect(() => {
-    if (confirmed) void playDemoSound("confirm");
-  }, [confirmed]);
-
-  useEffect(() => {
-    if (included) void playDemoSound("block");
-  }, [included]);
 
   return (
     <div className="dv-simple-settlement">
@@ -1145,17 +1046,6 @@ function DemoStyles() {
         position: absolute; inset: 0; z-index: 1; pointer-events: none;
         background: radial-gradient(120% 120% at 50% 45%, transparent 58%, rgba(8,9,13,0.42) 100%);
       }
-      .dv-sound-toggle {
-        position: fixed; top: 18px; right: 20px; z-index: 30; display: inline-flex; align-items: center; gap: 7px;
-        border: 0; border-radius: 999px; padding: 8px 12px; color: var(--muted); background: rgba(22,24,29,0.82);
-        font-size: 0.68rem; font-weight: 650; backdrop-filter: blur(12px); cursor: pointer;
-        transition: color 160ms var(--ease-out), background-color 160ms var(--ease-out), transform 140ms var(--ease-out);
-      }
-      .dv-sound-toggle.is-on { color: var(--ink); background: rgba(47,128,237,0.16); }
-      .dv-sound-toggle.is-blocked { color: var(--red); background: rgba(240,120,120,0.12); }
-      .dv-sound-toggle:active { transform: scale(0.97); }
-      @media (hover: hover) and (pointer: fine) { .dv-sound-toggle:hover { color: var(--ink); } }
-
       .dv-stage {
         position: relative; z-index: 2;
         display: flex; flex-direction: column;

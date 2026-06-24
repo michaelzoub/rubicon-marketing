@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { AlertTriangle, Inbox, Loader2, LogIn, RefreshCw } from "lucide-react";
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { RubiconError } from "@/lib/rubicon/client";
 import type { ArticleState, PaymentStatus } from "@/lib/rubicon/types";
 import { ARTICLE_STATE_LABELS } from "@/lib/rubicon/types";
@@ -21,7 +21,7 @@ export function PageHeader({
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 className="text-2xl font-semibold sm:text-[1.7rem]">{title}</h1>
+        <h1 className="text-2xl font-semibold tracking-[-0.01em] sm:text-[1.7rem]">{title}</h1>
         {description && <p className="mt-1.5 max-w-2xl text-sm leading-6 text-[var(--muted)]">{description}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}
@@ -29,11 +29,25 @@ export function PageHeader({
   );
 }
 
-export function Card({ children, className = "", id }: { children: ReactNode; className?: string; id?: string }) {
-  return <div id={id} className={`dashboard-card rounded-[16px] bg-white ${className}`}>{children}</div>;
+export function Card({
+  children,
+  className = "",
+  id,
+  style,
+}: {
+  children: ReactNode;
+  className?: string;
+  id?: string;
+  style?: CSSProperties;
+}) {
+  return (
+    <div id={id} style={style} className={`dashboard-card bg-white ${className}`}>
+      {children}
+    </div>
+  );
 }
 
-export function CardHeader({ title, action }: { title: string; action?: ReactNode }) {
+export function CardHeader({ title, action }: { title: ReactNode; action?: ReactNode }) {
   return (
     <div className="flex items-center justify-between gap-3 px-5 pb-3 pt-5">
       <h2 className="text-base font-semibold">{title}</h2>
@@ -42,12 +56,31 @@ export function CardHeader({ title, action }: { title: string; action?: ReactNod
   );
 }
 
-export function StatTile({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
+export function StatTile({
+  label,
+  value,
+  hint,
+  featured = false,
+}: {
+  label: string;
+  value: ReactNode;
+  hint?: ReactNode;
+  featured?: boolean;
+}) {
   return (
-    <Card className="p-5">
-      <div className="mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--muted)]">{label}</div>
-      <div className="mt-3 text-2xl font-semibold">{value}</div>
-      {hint && <div className="mt-1 text-xs text-[var(--muted)]">{hint}</div>}
+    <Card
+      className={`grid min-h-[118px] grid-rows-[2.4rem_1fr_auto] p-5 ${featured ? "text-white" : ""}`}
+      style={featured ? { background: "var(--tile-featured)", borderColor: "transparent" } : undefined}
+    >
+      <div
+        className={`mono flex items-start text-[0.65rem] uppercase leading-4 tracking-[0.1em] ${
+          featured ? "text-white/55" : "text-[var(--muted)]"
+        }`}
+      >
+        {label}
+      </div>
+      <div className="flex items-center text-[1.7rem] font-semibold leading-none tracking-[-0.01em] tabular-nums">{value}</div>
+      {hint ? <div className="mt-1 text-xs">{hint}</div> : <div aria-hidden="true" />}
     </Card>
   );
 }
@@ -56,7 +89,7 @@ export function StatTile({ label, value, hint }: { label: string; value: ReactNo
 
 export function LoadingState({ label = "Loading…" }: { label?: string }) {
   return (
-    <div className="dashboard-card flex items-center justify-center gap-3 rounded-[16px] bg-white px-6 py-16 text-sm text-[var(--muted)]">
+    <div className="dashboard-card flex items-center justify-center gap-3 bg-white px-6 py-16 text-sm text-[var(--muted)]">
       <Loader2 size={18} className="animate-spin text-[var(--river)]" aria-hidden="true" />
       {label}
     </div>
@@ -75,8 +108,8 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="dashboard-card flex flex-col items-center rounded-[16px] bg-white px-6 py-16 text-center">
-      <span className="grid h-12 w-12 place-items-center rounded-[14px] bg-[var(--river-pale)] text-[var(--river)]">
+    <div className="dashboard-card flex flex-col items-center bg-white px-6 py-16 text-center">
+      <span className="grid h-12 w-12 place-items-center rounded-[10px] border border-[var(--river-line)] bg-[var(--river-pale)] text-[var(--river)]">
         {icon ?? <Inbox size={22} aria-hidden="true" />}
       </span>
       <h3 className="mt-4 text-lg font-semibold">{title}</h3>
@@ -90,8 +123,8 @@ export function ErrorState({ error, onRetry }: { error: RubiconError; onRetry?: 
   const isAuth = error.kind === "auth";
   const isConfig = error.code === "not_configured";
   return (
-    <div className="flex flex-col items-center rounded-xl bg-[#fdf6ec] px-6 py-14 text-center">
-      <span className="grid h-12 w-12 place-items-center rounded-full bg-[#f6e6cf] text-[#9a6516]">
+    <div className="flex flex-col items-center rounded-[10px] border border-[#f0ddbf] bg-[#fdf6ec] px-6 py-14 text-center">
+      <span className="grid h-12 w-12 place-items-center rounded-[10px] bg-[#f6e6cf] text-[#9a6516]">
         {isAuth ? <LogIn size={22} aria-hidden="true" /> : <AlertTriangle size={22} aria-hidden="true" />}
       </span>
       <h3 className="mt-4 text-lg font-semibold text-[#7b4e12]">
@@ -119,8 +152,8 @@ const stateStyles: Record<ArticleState, string> = {
 
 export function ArticleStatePill({ state }: { state: ArticleState }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold ${stateStyles[state]}`}>
-      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-70" />
+    <span className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-semibold ${stateStyles[state]}`}>
+      <span className="h-1.5 w-1.5 rounded-sm bg-current opacity-70" />
       {ARTICLE_STATE_LABELS[state]}
     </span>
   );
@@ -134,7 +167,7 @@ const paymentStyles: Record<PaymentStatus, string> = {
 
 export function PaymentStatusPill({ status }: { status: PaymentStatus }) {
   return (
-    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold capitalize ${paymentStyles[status]}`}>
+    <span className={`inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold capitalize ${paymentStyles[status]}`}>
       {status}
     </span>
   );
@@ -143,7 +176,7 @@ export function PaymentStatusPill({ status }: { status: PaymentStatus }) {
 export function WalletStatePill({ verified }: { verified: boolean }) {
   return (
     <span
-      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+      className={`inline-flex items-center rounded-md px-2.5 py-1 text-xs font-semibold ${
         verified
           ? "bg-[#e8f6ef] text-[#165c3e]"
           : "bg-[var(--surface-muted)] text-[var(--muted)]"

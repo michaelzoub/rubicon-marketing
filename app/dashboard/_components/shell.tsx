@@ -3,16 +3,39 @@
 import { usePrivy } from "@privy-io/react-auth";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { BookOpen, FileText, LayoutDashboard, Loader2, LogOut, Plus, Settings, Wallet2 } from "lucide-react";
-import { type ReactNode } from "react";
+import posthog from "posthog-js";
+import {
+  BookOpen,
+  ChevronDown,
+  FileText,
+  LayoutDashboard,
+  Loader2,
+  LogOut,
+  PanelLeft,
+  Plus,
+  Settings,
+  Wallet2,
+} from "lucide-react";
+import { type ReactNode, useState } from "react";
 import { usePrivyConfigured } from "../../providers";
 import { RubiconBrand } from "../../_components/rubicon-brand";
 
-const nav = [
-  { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
-  { href: "/dashboard/articles", label: "Articles", icon: FileText, exact: false },
-  { href: "/dashboard/earnings", label: "Earnings", icon: Wallet2, exact: true },
-  { href: "/dashboard/settings", label: "Settings", icon: Settings, exact: true },
+const navSections = [
+  {
+    label: "Workspace",
+    items: [
+      { href: "/dashboard", label: "Overview", icon: LayoutDashboard, exact: true },
+      { href: "/dashboard/articles", label: "Articles", icon: FileText, exact: false },
+      { href: "/dashboard/earnings", label: "Earnings", icon: Wallet2, exact: true },
+    ],
+  },
+  {
+    label: "Support",
+    items: [
+      { href: "/#developers", label: "Developer docs", icon: BookOpen, exact: true },
+      { href: "/dashboard/settings", label: "Settings", icon: Settings, exact: true },
+    ],
+  },
 ];
 
 export function DashboardShell({ children }: { children: ReactNode }) {
@@ -41,7 +64,18 @@ function AuthGate({ children }: { children: ReactNode }) {
         <p className="mt-3 max-w-sm text-sm leading-6 text-[#a7abb4]">
           Manage articles, pricing, and earnings from one secure creator dashboard.
         </p>
-        <button type="button" onClick={() => login()} className="mt-7 inline-flex h-12 items-center justify-center rounded-full bg-white px-8 text-sm font-semibold text-[#111318] shadow-[0_16px_40px_rgba(0,0,0,0.28)] transition hover:-translate-y-0.5 hover:bg-[#f7f7f8]">
+        <button
+          type="button"
+          onClick={() => {
+            // Funnel step: unauthenticated creator opens the sign-in modal.
+            posthog.capture("sign_in_clicked", {
+              location: "dashboard_auth_gate",
+              current_url: window.location.pathname,
+            });
+            login();
+          }}
+          className="mt-7 inline-flex h-12 items-center justify-center rounded-lg bg-white px-8 text-sm font-semibold text-[#111318] transition hover:bg-[#f7f7f8]"
+        >
           Sign in
         </button>
         <Link href="/" className="mt-5 text-sm text-[#c8cad0] transition hover:text-white">
@@ -55,19 +89,6 @@ function AuthGate({ children }: { children: ReactNode }) {
 }
 
 function Layout({ children }: { children: ReactNode }) {
-  return (
-    <div className="dashboard-theme dashboard-canvas min-h-screen bg-[var(--surface-muted)] lg:grid lg:grid-cols-[236px_1fr]">
-      <Sidebar />
-      <main className="min-w-0">
-        <MobileBar />
-        <div className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-8 lg:py-8">{children}</div>
-      </main>
-    </div>
-  );
-}
-
-function Sidebar() {
-  const pathname = usePathname();
   const { user, logout } = usePrivy();
   const identity =
     user?.twitter?.username
@@ -75,77 +96,158 @@ function Sidebar() {
       : user?.email?.address ?? (user?.wallet?.address ? `${user.wallet.address.slice(0, 6)}…` : "Creator");
 
   return (
-    <aside className="dashboard-sidebar sticky top-0 hidden h-screen flex-col border-r border-[var(--line)] bg-white lg:flex">
-      <Link href="/" className="flex items-center px-5 py-5" aria-label="Rubicon home">
-        <RubiconBrand className="h-9" onLight />
-      </Link>
+    <DashboardFrame identity={identity} onLogout={() => logout()}>
+      {children}
+    </DashboardFrame>
+  );
+}
 
-      <div className="px-4">
-        <Link href="/dashboard/articles/new" className="button button-primary w-full justify-center text-sm">
-          <Plus size={16} aria-hidden="true" /> New article
-        </Link>
-      </div>
+export function DashboardFrame({
+  children,
+  identity,
+  onLogout,
+  activePath,
+}: {
+  children: ReactNode;
+  identity: string;
+  onLogout?: () => void;
+  activePath?: string;
+}) {
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
-      <nav className="mt-6 flex-1 px-3" aria-label="Dashboard">
-        <ul className="grid gap-1">
-          {nav.map((item) => {
-            const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
-            const Icon = item.icon;
-            return (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className={`dashboard-nav-link flex items-center gap-3 rounded-[10px] px-3 py-2 text-sm font-medium transition-colors ${
-                    active ? "bg-[var(--river-pale)] text-[var(--river-deep)]" : "text-[var(--muted)] hover:bg-white hover:text-[var(--ink)]"
-                  }`}
-                >
-                  <Icon size={17} aria-hidden="true" /> {item.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+  return (
+    <div
+      className={`dashboard-theme dashboard-canvas min-h-screen bg-[var(--surface-muted)] lg:grid ${
+        sidebarOpen ? "lg:grid-cols-[224px_1fr]" : "lg:grid-cols-[64px_1fr]"
+      }`}
+    >
+      <Sidebar identity={identity} onLogout={onLogout} activePath={activePath} open={sidebarOpen} onToggle={() => setSidebarOpen((open) => !open)} />
+      <main className="min-w-0">
+        <MobileBar onLogout={onLogout} activePath={activePath} />
+        <div className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-8 lg:py-8">{children}</div>
+      </main>
+    </div>
+  );
+}
 
-      <div className="p-3">
-        <a
-          href="/#developers"
-          className="dashboard-nav-link flex items-center gap-3 rounded-[10px] px-3 py-2 text-sm font-medium text-[var(--muted)] hover:bg-white hover:text-[var(--ink)]"
-        >
-          <BookOpen size={17} aria-hidden="true" /> Developer docs
-        </a>
-        <div className="mt-2 flex items-center justify-between gap-2 rounded-[12px] bg-white px-3 py-2 shadow-[0_1px_2px_rgba(20,35,60,0.05)]">
-          <span className="mono truncate text-xs text-[var(--muted)]">{identity}</span>
-          <button type="button" onClick={() => logout()} className="text-[var(--muted)] hover:text-[var(--ink)]" aria-label="Sign out">
-            <LogOut size={16} aria-hidden="true" />
+function Sidebar({
+  identity,
+  onLogout,
+  activePath,
+  open,
+  onToggle,
+}: {
+  identity: string;
+  onLogout?: () => void;
+  activePath?: string;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  const pathname = usePathname();
+  const currentPath = activePath ?? pathname;
+
+  return (
+    <aside className="dashboard-sidebar sticky top-0 hidden h-screen border-r border-[var(--line)] bg-white lg:flex lg:flex-col">
+      {!open ? (
+        <div className="flex h-full flex-col items-center px-3 py-4">
+          <button type="button" onClick={onToggle} className="dashboard-icon-button" aria-label="Open sidebar" aria-expanded={false}>
+            <PanelLeft size={16} aria-hidden="true" />
           </button>
         </div>
-      </div>
+      ) : (
+        <>
+          <div className="border-b border-[var(--line)] px-4 py-4">
+            <div className="flex items-center justify-between gap-3">
+              <Link href="/" className="min-w-0" aria-label="Rubicon home">
+                <RubiconBrand className="h-8" onLight />
+              </Link>
+              <button type="button" onClick={onToggle} className="dashboard-icon-button" aria-label="Close sidebar" aria-expanded={true}>
+                <PanelLeft size={16} aria-hidden="true" />
+              </button>
+            </div>
+            <div className="mt-4 flex w-full items-center justify-between gap-3 rounded-[10px] border border-[var(--line)] bg-[var(--surface-muted)] px-3 py-2 text-left">
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-semibold text-[var(--ink)]">Creator workspace</span>
+                <span className="mono mt-0.5 block truncate text-[0.68rem] text-[var(--quiet)]">{identity}</span>
+              </span>
+              <ChevronDown size={15} className="shrink-0 text-[var(--quiet)]" aria-hidden="true" />
+            </div>
+          </div>
+
+          <div className="border-b border-[var(--line)] px-4 py-4">
+            <Link href="/dashboard/articles/new" className="button button-primary dashboard-new-article-button w-full justify-center text-sm">
+              <Plus size={16} aria-hidden="true" /> New article
+            </Link>
+          </div>
+
+          <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Dashboard">
+            <div className="grid gap-5">
+              {navSections.map((section) => (
+                <section key={section.label}>
+                  <div className="dashboard-nav-section-title px-3 pb-2">{section.label}</div>
+                  <ul className="grid gap-1">
+                    {section.items.map((item) => {
+                      const active = item.exact ? currentPath === item.href : currentPath.startsWith(item.href);
+                      const Icon = item.icon;
+                      return (
+                        <li key={item.href}>
+                          <Link
+                            href={item.href}
+                            className={`dashboard-nav-link flex min-h-9 items-center gap-3 rounded-[8px] px-3 py-2 text-sm font-medium ${
+                              active ? "is-active" : ""
+                            }`}
+                          >
+                            <Icon size={16} aria-hidden="true" />
+                            <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </section>
+              ))}
+            </div>
+          </nav>
+
+          <div className="border-t border-[var(--line)] p-3">
+            <div className="flex items-center justify-between gap-2 rounded-[10px] bg-[var(--surface-muted)] px-3 py-2">
+              <span className="mono truncate text-xs text-[var(--muted)]">{identity}</span>
+              {onLogout && (
+                <button type="button" onClick={onLogout} className="dashboard-icon-button" aria-label="Sign out">
+                  <LogOut size={16} aria-hidden="true" />
+                </button>
+              )}
+            </div>
+          </div>
+        </>
+      )}
     </aside>
   );
 }
 
-function MobileBar() {
+function MobileBar({ onLogout, activePath }: { onLogout?: () => void; activePath?: string }) {
   const pathname = usePathname();
-  const { logout } = usePrivy();
+  const currentPath = activePath ?? pathname;
   return (
-    <div className="sticky top-0 z-30 bg-white/90 shadow-[0_8px_24px_-20px_rgba(20,35,60,0.3)] backdrop-blur lg:hidden">
+    <div className="sticky top-0 z-30 border-b border-[var(--line)] bg-white/90 backdrop-blur lg:hidden">
       <div className="flex items-center justify-between px-5 py-3">
         <Link href="/" className="flex items-center" aria-label="Rubicon home">
           <RubiconBrand className="h-9" onLight />
         </Link>
-        <button type="button" onClick={() => logout()} className="text-[var(--muted)]" aria-label="Sign out">
-          <LogOut size={18} aria-hidden="true" />
-        </button>
+        {onLogout && (
+          <button type="button" onClick={onLogout} className="text-[var(--muted)]" aria-label="Sign out">
+            <LogOut size={18} aria-hidden="true" />
+          </button>
+        )}
       </div>
       <nav className="flex gap-1 overflow-x-auto px-3 pb-2" aria-label="Dashboard">
-        {nav.map((item) => {
-          const active = item.exact ? pathname === item.href : pathname.startsWith(item.href);
+        {navSections.flatMap((section) => section.items).map((item) => {
+          const active = item.exact ? currentPath === item.href : currentPath.startsWith(item.href);
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-medium ${
+              className={`whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ${
                 active ? "bg-[var(--river-pale)] text-[var(--river-deep)]" : "text-[var(--muted)]"
               }`}
             >
@@ -172,9 +274,9 @@ function ConfigNotice() {
       <RubiconBrand className="h-16" />
       <h1 className="mt-6 text-2xl font-semibold text-white">Connect creator login</h1>
       <p className="mt-3 max-w-md text-sm leading-6 text-[#a7abb4]">
-        Set <code className="mono rounded bg-[var(--surface-muted)] px-1.5 py-0.5">NEXT_PUBLIC_PRIVY_APP_ID</code>,{" "}
-        <code className="mono rounded bg-[var(--surface-muted)] px-1.5 py-0.5">NEXT_PUBLIC_SUPABASE_URL</code>, and{" "}
-        <code className="mono rounded bg-[var(--surface-muted)] px-1.5 py-0.5">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> to enable
+        Set <code className="mono rounded-md bg-[var(--surface-muted)] px-1.5 py-0.5">NEXT_PUBLIC_PRIVY_APP_ID</code>,{" "}
+        <code className="mono rounded-md bg-[var(--surface-muted)] px-1.5 py-0.5">NEXT_PUBLIC_SUPABASE_URL</code>, and{" "}
+        <code className="mono rounded-md bg-[var(--surface-muted)] px-1.5 py-0.5">NEXT_PUBLIC_SUPABASE_ANON_KEY</code> to enable
         sign-in and load live data.
       </p>
       <Link href="/" className="mt-6 text-sm text-[#c8cad0] transition hover:text-white">

@@ -47,6 +47,28 @@ export function formatUsd(atomic: string | null | undefined): string {
   return formatUsdNumber(atomicToUsd(atomic));
 }
 
+/**
+ * Display-oriented formatter for surfaces where micro-earnings are common
+ * (the creator dashboard). Sub-dollar amounts read as cents — "$0.1388" is
+ * legible as "13.88¢" — while a dollar or more uses the standard currency
+ * format. Keeps early, low-earning accounts from looking broken.
+ */
+export function formatUsdDisplay(usd: number): string {
+  if (!Number.isFinite(usd) || usd === 0) return "$0.00";
+  if (usd < 0) return `-${formatUsdDisplay(-usd)}`;
+  if (usd < 1) {
+    const cents = usd * 100;
+    const fixed = cents >= 0.1 ? cents.toFixed(2) : cents.toFixed(4);
+    return `${fixed.replace(/\.?0+$/, "")}¢`;
+  }
+  return formatUsdNumber(usd);
+}
+
+/** Atomic-units convenience wrapper around {@link formatUsdDisplay}. */
+export function formatUsdAtomicDisplay(atomic: string | null | undefined): string {
+  return formatUsdDisplay(atomicToUsd(atomic));
+}
+
 /** Convert a creator's "price per 1,000 words" (USD) to atomic-per-word. */
 export function per1000UsdToAtomicPerWord(usdPer1000: number): string {
   if (!Number.isFinite(usdPer1000) || usdPer1000 < 0) return "0";

@@ -15,6 +15,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@posthog/react": "^1.10.3",
     "@privy-io/node": "^0.21.0",
     "@privy-io/react-auth": "^3.31.0",
     "@supabase/supabase-js": "^2.108.2",
@@ -27,10 +28,10 @@
     "@tiptap/starter-kit": "^3.27.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.18.1",
-    "howler": "^2.2.4",
     "lucide-react": "^0.468.0",
     "next": "^15.3.3",
     "ox": "^0.14.27",
+    "posthog-js": "^1.393.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^2.6.0",
@@ -39,7 +40,6 @@
     "viem": "^2.52.0"
   },
   "devDependencies": {
-    "@types/howler": "^2.2.13",
     "@types/node": "^22.15.31",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
