@@ -46,9 +46,9 @@ npx -y @rubicon-caliga/cli@0.1.7 buy --first --goal "<goal>" --max-usdc <amount>
 ```
 
 Known good versions as of 2026-06-23: `@rubicon-caliga/cli@0.1.7` and
-`circle-cli 1.1.2`. This hosted runbook is enough; do not install a local
-Rubicon skill, clone a repo, create a project, edit workspace files, or wrap
-the command in local scripts.
+`@circle-fin/cli@0.0.6`. The official Circle npm package exposes the `circle`
+binary, not `circle-cli`. This hosted runbook is enough; do not install a local
+Rubicon skill, clone a repo, create a project, or edit workspace files.
 
 On a first run, `npx` may spend up to about a minute resolving and starting the
 package before Rubicon emits JSON. Treat that quiet period as package startup,
@@ -142,21 +142,39 @@ When the buy command returns `NOT_LOGGED_IN`, the agent owns the recovery flow:
 
 1. Ask the user which email to use for their Circle agent wallet. Do not ask
    them to run a command.
-2. In the same network-capable execution context used for Rubicon, run:
+2. Determine the required Circle auth profile from the article network. Rubicon
+   Arc Testnet articles require Circle's testnet session. Mainnet and testnet
+   sessions are separate, so a successful mainnet login does not satisfy
+   `ARC-TESTNET`.
+3. In the same network-capable execution context used for Rubicon, start OTP
+   login with the official Circle CLI package. For `ARC-TESTNET`, run:
 
    ```bash
-   circle-cli wallet login <email> --type agent --init
+   npx -y --package @circle-fin/cli@0.0.6 circle wallet login <email> --type agent --testnet --init
    ```
 
-3. Preserve the returned request id in the active session, ask the user for the
+   For mainnet articles, omit `--testnet`:
+
+   ```bash
+   npx -y --package @circle-fin/cli@0.0.6 circle wallet login <email> --type agent --init
+   ```
+
+4. Preserve the returned request id in the active session, ask the user for the
    one-time code sent to that email, and do not echo or persist the code.
-4. Immediately complete login yourself:
+5. Immediately complete login yourself with the same profile. For `ARC-TESTNET`,
+   run:
 
    ```bash
-   circle-cli wallet login --type agent --request <request-id> --otp <code>
+   npx -y --package @circle-fin/cli@0.0.6 circle wallet login --type agent --testnet --request <request-id> --otp <code>
    ```
 
-5. Retry the same original buy command with the exact same goal and hard
+   For mainnet articles, omit `--testnet`:
+
+   ```bash
+   npx -y --package @circle-fin/cli@0.0.6 circle wallet login --type agent --request <request-id> --otp <code>
+   ```
+
+6. Retry the same original buy command with the exact same goal and hard
    `--max-usdc` cap:
 
    ```bash
@@ -169,8 +187,10 @@ If login succeeds but the retry still returns `NOT_LOGGED_IN`, do not request
 another OTP immediately. Run this check yourself in the same context:
 
 ```bash
-circle-cli wallet status --type agent --output json
+npx -y --package @circle-fin/cli@0.0.6 circle wallet status --type agent --testnet --output json
 ```
+
+For mainnet articles, omit `--testnet`.
 
 If the relevant mainnet or testnet `tokenStatus` is `VALID`, authentication is
 complete and the failure is a Rubicon/Circle CLI compatibility issue, not a
@@ -225,8 +245,21 @@ Retry the exact same command in a network-capable context with the same
 `--goal`, `--max-usdc`, and `--json` flags. Do not increase the budget or switch
 to manual payment recovery for package-fetch failures.
 
-On Windows, Node/npm and Circle CLI must both be on `PATH` in the same shell
-where the buy command runs. PowerShell quoting with `--goal "..."` is
-supported. CLI internals and wrappers must avoid POSIX-only assumptions:
-do not require `/tmp`, `chmod`, shell-specific commands, Unix-only path joins,
-or a POSIX shell to complete the buyer flow.
+On Windows, run the same commands from PowerShell. PowerShell quoting with
+`--goal "..."` is supported. Prefer the `npx -y --package @circle-fin/cli@0.0.6
+circle ...` form above for Circle recovery; npm resolves the Windows
+`circle.cmd` shim. Do not call the stale `circle-cli` package.
+
+If a wrapper or custom runtime invokes Circle directly on Windows, it must not
+use POSIX assumptions. Avoid `/tmp`, `chmod`, shell-specific commands,
+Unix-only path joins, or a POSIX shell. If using Node child processes, do not
+assume `execFile("circle", ...)` can find npm's `.cmd` shim on Windows; invoke
+through npm as shown above or resolve `circle.cmd` explicitly on `win32`.
+
+If the Rubicon command fails before startup on Windows with a Node module loader
+error such as `Cannot use import statement outside a module`, classify it as
+Rubicon npm packaging friction rather than a Circle auth or payment failure.
+Retry only if the published Rubicon output or maintainer guidance provides a
+Windows-safe `tsx` fallback for the same `buy --first --goal ... --max-usdc ...
+--json` command. Do not edit payment code, create local scripts, or change the
+approved budget to work around package startup.
