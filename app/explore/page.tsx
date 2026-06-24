@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { listPublicCreators, PublicDirectoryUnavailable, type PublicCreator } from "@/lib/rubicon/public";
 import { ExploreDirectory } from "./_components/explore-directory";
-import { RubiconBrand } from "../_components/rubicon-brand";
+import { SiteHeader } from "../_components/site-header";
 
 export const metadata: Metadata = {
   title: "Explore articles · Rubicon",
@@ -14,23 +14,6 @@ export const metadata: Metadata = {
 // fresh request instead of serving an ISR or prefetched route snapshot.
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
-
-function ExploreNav() {
-  return (
-    <header className="sticky top-0 z-50 border-b border-[var(--faint)] bg-[rgba(13,14,17,0.92)] backdrop-blur-md">
-      <nav className="container flex h-16 items-center justify-between gap-6" aria-label="Main navigation">
-        <Link href="/" className="flex shrink-0 items-center" aria-label="Rubicon home">
-          <RubiconBrand className="h-8" />
-        </Link>
-        <div className="hidden items-center gap-7 text-sm text-[var(--muted)] md:flex">
-          <Link className="site-nav-link" href="/docs">Docs</Link>
-          <a className="site-nav-link" href="/explore" aria-current="page">Explore</a>
-          <Link href="/dashboard" className="button button-primary button-nav text-sm">Start publishing <ArrowRight size={15} /></Link>
-        </div>
-      </nav>
-    </header>
-  );
-}
 
 function Notice({ failed }: { failed: boolean }) {
   return (
@@ -58,7 +41,7 @@ export default async function ExplorePage() {
 
   return (
     <>
-      <ExploreNav />
+      <SiteHeader variant="explore" />
       <main className="explore-page">
         <section className="container pb-10 pt-20 md:pb-14 md:pt-28">
           <p className="eyebrow">Public directory</p>

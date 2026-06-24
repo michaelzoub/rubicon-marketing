@@ -19,7 +19,7 @@ const STEPS = [
     key: "read",
     tag: "Step 02",
     title: "Agents read",
-    copy: "Your seller agent guides buyer agents to the right section and releases each word only as it is paid for. Agents stop the moment they have enough.",
+    copy: "Your gateway agent guides buyer agents to the right section and releases each word only as it is paid for. Agents stop the moment they have enough.",
     visual: ReadVisual,
   },
   {
@@ -31,7 +31,7 @@ const STEPS = [
   },
 ] as const;
 
-export function HowItWorks() {
+export function HowItWorks({ tone = "default" }: { tone?: "default" | "hero" | "landing" }) {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
 
@@ -42,11 +42,19 @@ export function HowItWorks() {
   }, [active, paused]);
 
   const ActiveVisual = STEPS[active].visual;
+  const isHero = tone === "hero";
+  const isLanding = tone === "landing";
 
   return (
     <section
-      id="product"
-      className="section stack-panel stack-panel-muted border-y border-[var(--faint)] bg-[var(--surface-muted)]"
+      id={isLanding ? "how-it-works" : "product"}
+      className={
+        isHero
+          ? "landing-section-block landing-hero-product"
+          : isLanding
+            ? "landing-section-block creators-how-it-works"
+            : "section stack-panel stack-panel-muted border-y border-[var(--faint)] bg-[var(--surface-muted)]"
+      }
     >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -55,11 +63,25 @@ export function HowItWorks() {
         transition={{ duration: 0.6, ease }}
         className="container"
       >
-        <p className="eyebrow">How it works</p>
-        <h2 className="mt-4 section-title">From publish to paid, one word at a time.</h2>
+        {isLanding ? (
+          <div className="landing-copy-stack creators-how-header">
+            <div className="landing-section-kicker">
+              <p className="landing-section-eyebrow">How it works</p>
+              <h2 className="landing-section-title">From publish to paid, one word at a time.</h2>
+            </div>
+            <p className="landing-section-lead creators-how-lead">
+              Publish once, route agents to the right sections, and get paid for every word they read.
+            </p>
+          </div>
+        ) : (
+          <>
+            <p className="eyebrow">How it works</p>
+            <h2 className="mt-4 section-title">From publish to paid, one word at a time.</h2>
+          </>
+        )}
 
         <div
-          className="mt-12 grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch"
+          className={`grid gap-6 lg:grid-cols-[1.05fr_0.95fr] lg:items-stretch${isLanding ? " creators-how-grid" : " mt-12"}`}
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
         >
