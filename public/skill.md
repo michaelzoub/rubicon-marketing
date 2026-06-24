@@ -1,6 +1,6 @@
 ---
 name: rubicon
-version: 2.0.2
+version: 2.0.3
 description: Autonomously buy the most useful paid article content within a hard USDC budget
 homepage: https://github.com/michaelzoub/rubicon
 ---
@@ -50,6 +50,15 @@ Known good versions as of 2026-06-23: `@rubicon-caliga/cli@0.1.7` and
 Rubicon skill, clone a repo, create a project, edit workspace files, or wrap
 the command in local scripts.
 
+On a first run, `npx` may spend up to about a minute resolving and starting the
+package before Rubicon emits JSON. Treat that quiet period as package startup,
+not as a payment attempt. When the CLI is changed, it should emit an immediate
+JSON event before long package, network, wallet, or gateway work:
+
+```json
+{"type":"startup","message":"loading Rubicon CLI"}
+```
+
 Do not require or instruct the user or calling agent to run `doctor`, repository
 inspection, article inspection, navigation, dry-run, wallet status, or receipt
 commands before or after `rubicon buy`.
@@ -78,6 +87,15 @@ must not automatically begin with the introduction. With a small budget, it
 prefers concise, self-contained sections. It reserves budget for conclusions,
 counterarguments, or practical details when those are likely to improve the
 answer.
+
+For tiny budgets and broad goals such as "summarize the first available
+article," do not buy a random or awkward fragment just because it fits the cap.
+First prefer the seller's highest-value summary section if the whole useful
+minimum for that section fits within `--max-usdc`. If the best summary section
+does not fit and no seller-recommended alternative can produce a useful summary
+within the cap, stop before payment with a clear `budget_too_low_for_summary`
+reason. Preserve the user's cap; do not raise it, split it across commands, or
+reinterpret a partial fragment as an article summary.
 
 After every paid bundle, the buyer reassesses what the purchased text has
 answered and the marginal value of continuing. It switches sections when
@@ -181,8 +199,34 @@ checks, or receipt lookup steps. Report only:
 - Receipt id, session id, article id, and available payment, settlement, and
   transaction identifiers.
 - Receipt verification status and words purchased.
+- Wallet fields with clear labels. If `wallet.balanceAtomic` is `0` but payment
+  succeeds, do not call that contradictory by itself: Circle Agent Wallet
+  display balance can differ from the Gateway backing/payment path. Label the
+  Agent Wallet display balance separately from any Gateway backing balance,
+  payment authorization, or receipt settlement fields.
 - Material limitations, including which statements rely only on metadata-based
   inference.
 - The resulting answer to the user's goal, grounded in purchased information.
 
+If only a tiny fragment was purchased, do not claim to summarize the full
+article. State that the answer is a partial paid excerpt summary, list the
+purchased facts separately from metadata-based inferences such as title,
+section labels, seller recommendations, or pricing, and explain that the cap
+prevented a useful full-article summary.
+
 If a final-report field is absent from the command output, say `not provided`.
+
+## Environment Readiness
+
+If the command fails before Rubicon starts because `npx` or `npm` cannot fetch
+the package, such as `ENOTFOUND registry.npmjs.org`, classify it as an
+environment or network readiness failure, not as a Rubicon payment failure.
+Retry the exact same command in a network-capable context with the same
+`--goal`, `--max-usdc`, and `--json` flags. Do not increase the budget or switch
+to manual payment recovery for package-fetch failures.
+
+On Windows, Node/npm and Circle CLI must both be on `PATH` in the same shell
+where the buy command runs. PowerShell quoting with `--goal "..."` is
+supported. CLI internals and wrappers must avoid POSIX-only assumptions:
+do not require `/tmp`, `chmod`, shell-specific commands, Unix-only path joins,
+or a POSIX shell to complete the buyer flow.
