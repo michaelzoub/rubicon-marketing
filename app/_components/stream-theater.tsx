@@ -1,7 +1,7 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
-import { Check, Coins, ScanText, Sparkles } from "lucide-react";
+import { AnimatePresence, animate, motion, useInView } from "framer-motion";
+import { Check, Coins } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { BuyerGlyph, SellerGlyph } from "./agent-glyphs";
 
@@ -10,7 +10,62 @@ const FIRST_STOP = 34;
 const DEEP_STOP = 42;
 const ease = [0.16, 1, 0.3, 1] as const;
 
+const DEMO_SESSION_ID = "sim-7f3a9c2d";
+const DEMO_WALLET = "0x742d…demo";
+const DEMO_TX_PLACEHOLDER = "0xa4f1…example";
+const ARC_TESTNET_EXPLORER = "https://testnet.arcscan.app";
+
 type Phase = "ask" | "route" | "stream" | "followup" | "routeDeeper" | "streamDeeper" | "answer";
+
+type SettlementLogKind = "routed" | "word" | "stopped";
+
+interface SettlementLogEntry {
+  id: number;
+  kind: SettlementLogKind;
+  time: string;
+  word?: string;
+  amount?: string;
+  latencyMs?: number;
+  detail?: string;
+}
+
+let settlementLogSeq = 0;
+let sessionClockOffset = 0;
+
+function nextLogTime(): string {
+  sessionClockOffset += 0.11 + Math.random() * 0.17;
+  const totalSeconds = 14 * 3600 + 32 * 60 + sessionClockOffset;
+  const hours = Math.floor(totalSeconds / 3600) % 24;
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = Math.floor(totalSeconds % 60);
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+}
+
+function resetSessionClock() {
+  sessionClockOffset = 0;
+}
+
+function randomLatencyMs() {
+  return 180 + Math.floor(Math.random() * 161);
+}
+
+function springScrollTo(el: HTMLElement, target: number, onScroll?: () => void) {
+  const from = el.scrollTop;
+  const next = Math.max(0, target);
+  if (Math.abs(next - from) < 1) return;
+
+  onScroll?.();
+
+  animate(from, next, {
+    type: "spring",
+    stiffness: 210,
+    damping: 30,
+    mass: 0.75,
+    onUpdate: (value) => {
+      el.scrollTop = value;
+    },
+  });
+}
 
 const SECTION_HEADER = "Self-Attention Mechanism";
 const DEEP_HEADER = "Scaling the Context Window";
@@ -51,15 +106,42 @@ let paymentSeq = 0;
 type Packet = { id: number; word: string };
 type Payment = { id: number };
 
-export function StreamTheater() {
+export function StreamTheater({ compact = false, embedded = false }: { compact?: boolean; embedded?: boolean }) {
   const [phase, setPhase] = useState<Phase>("ask");
   const [words, setWords] = useState(0);
   const [packets, setPackets] = useState<Packet[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [settlementLog, setSettlementLog] = useState<SettlementLogEntry[]>([]);
+  const [scrollSweep, setScrollSweep] = useState(0);
+  const [demoActive, setDemoActive] = useState(false);
+  const revealRef = useRef<HTMLDivElement | null>(null);
   const articleRef = useRef<HTMLDivElement | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const routedSections = useRef(new Set<string>());
+  const isInView = useInView(revealRef, { once: false, amount: 0.28, margin: "0px 0px -64px 0px" });
+
+  const appendLog = (entry: Omit<SettlementLogEntry, "id" | "time"> & { time?: string }) => {
+    setSettlementLog((prev) => [...prev.slice(-14), { ...entry, id: ++settlementLogSeq, time: entry.time ?? nextLogTime() }]);
+  };
+
+  const resetDemo = () => {
+    resetSessionClock();
+    routedSections.current.clear();
+    setPhase("ask");
+    setWords(0);
+    setPackets([]);
+    setPayments([]);
+    setSettlementLog([]);
+  };
 
   useEffect(() => {
+    setDemoActive(isInView);
+    if (!isInView) resetDemo();
+  }, [isInView]);
+
+  useEffect(() => {
+    if (!demoActive) return;
+
     const t = timers.current;
     const clearAll = () => {
       t.forEach(clearTimeout);
@@ -69,6 +151,10 @@ export function StreamTheater() {
     if (phase === "ask") {
       t.push(setTimeout(() => setPhase("route"), 1900));
     } else if (phase === "route") {
+      if (!routedSections.current.has(SECTION_HEADER)) {
+        routedSections.current.add(SECTION_HEADER);
+        appendLog({ kind: "routed", detail: `opening “${SECTION_HEADER}”` });
+      }
       t.push(setTimeout(() => setPhase("stream"), 1900));
     } else if (phase === "stream" || phase === "streamDeeper") {
       let n = phase === "stream" ? 0 : FIRST_STOP;
@@ -76,11 +162,11 @@ export function StreamTheater() {
         n += 1;
         setWords(n);
         const word = ARTICLE_WORDS[READ_SEQUENCE[n - 1] ?? 0].word;
+        const latencyMs = randomLatencyMs();
+        appendLog({ kind: "word", word, amount: `$${PRICE_PER_WORD.toFixed(5)}`, latencyMs });
         const id = ++packetSeq;
         setPackets([{ id, word }]);
-        // remove packet after it finishes its glide across the channel
         t.push(setTimeout(() => setPackets((p) => p.filter((x) => x.id !== id)), 1050));
-        // once the word lands, the buyer sends a tiny micropayment back the other way
         t.push(
           setTimeout(() => {
             const pid = ++paymentSeq;
@@ -96,7 +182,6 @@ export function StreamTheater() {
           t.push(setTimeout(() => setPhase("answer"), 700));
           return;
         }
-        // ease into a quick, readable cadence
         const delay = n < 5 || n === FIRST_STOP + 1 ? 320 : n < 14 || n < FIRST_STOP + 8 ? 150 : 74;
         t.push(setTimeout(tick, delay));
       };
@@ -104,20 +189,22 @@ export function StreamTheater() {
     } else if (phase === "followup") {
       t.push(setTimeout(() => setPhase("routeDeeper"), 2100));
     } else if (phase === "routeDeeper") {
+      if (!routedSections.current.has(DEEP_HEADER)) {
+        routedSections.current.add(DEEP_HEADER);
+        appendLog({ kind: "routed", detail: `jumping to “${DEEP_HEADER}”` });
+      }
       t.push(setTimeout(() => setPhase("streamDeeper"), 1900));
     } else if (phase === "answer") {
+      appendLog({ kind: "stopped", detail: `answer found · ${TARGET_WORDS} words paid` });
       t.push(
         setTimeout(() => {
-          setWords(0);
-          setPackets([]);
-          setPayments([]);
-          setPhase("ask");
+          resetDemo();
         }, 4200),
       );
     }
 
     return clearAll;
-  }, [phase]);
+  }, [phase, demoActive]);
 
   useEffect(() => {
     const el = articleRef.current;
@@ -136,12 +223,12 @@ export function StreamTheater() {
 
       if (activeBottom > lowerComfort) {
         const target = activeBottom - el.clientHeight * 0.72;
-        el.scrollTo({ top: Math.max(target, 0), behavior: "smooth" });
+        springScrollTo(el, target, () => setScrollSweep((n) => n + 1));
       } else if (activeTop < upperComfort && visibleTop > 0) {
         const target = activeTop - el.clientHeight * 0.18;
-        el.scrollTo({ top: Math.max(target, 0), behavior: "smooth" });
+        springScrollTo(el, target, () => setScrollSweep((n) => n + 1));
       } else if (activeBottom > visibleBottom) {
-        el.scrollTo({ top: activeBottom - el.clientHeight, behavior: "smooth" });
+        springScrollTo(el, activeBottom - el.clientHeight, () => setScrollSweep((n) => n + 1));
       }
     } else if (words === 0) {
       el.scrollTo({ top: 0 });
@@ -155,51 +242,92 @@ export function StreamTheater() {
   const asking = phase === "ask" || phase === "followup";
   const done = phase === "answer";
   const readWordSet = new Set(READ_SEQUENCE.slice(0, words));
-  const collectedWords = READ_SEQUENCE.slice(0, Math.min(words, TARGET_WORDS)).map((index) => ARTICLE_WORDS[index].word);
-  const visibleCollectedWords = collectedWords.slice(-14);
   const highlightIndex = READ_SEQUENCE[Math.max(0, Math.min(words - 1, TARGET_WORDS - 1))] ?? 0;
 
+  const sessionLabel = done ? "settled" : streaming ? "streaming" : routing ? "routing" : "simulated";
+  const channelHeight = embedded ? "h-[112px]" : compact ? "h-[96px]" : "h-[120px]";
+  const articleScrollClass = embedded
+    ? "stream-theater-article-scroll--embedded overflow-y-auto"
+    : `overflow-y-auto ${compact ? "h-[140px]" : "h-[180px]"}`;
+  const settledHeight = embedded ? "min-h-[2rem]" : compact ? "min-h-[2rem]" : "min-h-[2.75rem]";
+
   return (
-    <div className="stream-theater card-soft relative min-h-[560px] w-full min-w-0 overflow-hidden p-5 sm:p-6">
-      <div className="relative flex items-center justify-between gap-4 border-b border-[var(--faint)] pb-4">
-        <div className="flex min-w-0 items-center gap-2.5">
+    <motion.div
+      ref={revealRef}
+      className="stream-theater-reveal w-full min-w-0"
+      data-hidden={isInView ? undefined : true}
+      initial={false}
+      animate={
+        embedded
+          ? { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }
+          : isInView
+            ? { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }
+            : { opacity: 0, y: 72, scale: 0.97, filter: "blur(8px)" }
+      }
+      transition={embedded ? { duration: 0 } : { type: "spring", stiffness: 92, damping: 20, mass: 0.88 }}
+    >
+    <div
+      className={`stream-theater relative w-full min-w-0${compact ? " stream-theater--compact" : ""}${embedded ? " stream-theater--embedded" : ""}`}
+    >
+      <div className="stream-theater-chrome">
+        <span className="stream-theater-demo-badge">Demo · simulated session</span>
+        <div className={`stream-theater-chrome-status${streaming || routing ? " stream-theater-chrome-status--live" : ""}`}>
           <span
-            className={`status-dot h-2.5 w-2.5 rounded-full ${done ? "bg-[var(--green)]" : "bg-[var(--river)]"}`}
+            className={`stream-theater-status-dot${done ? " stream-theater-status-dot--done" : streaming ? " stream-theater-status-dot--live" : ""}`}
+            aria-hidden="true"
           />
-          <span className="truncate text-sm font-semibold">{done ? "Session settled" : "Live agent session"}</span>
+          <span className="stream-theater-status-label">{sessionLabel}</span>
         </div>
       </div>
 
-      <div className="relative mt-6">
-        <div className="relative h-[112px] overflow-visible">
-          <div className="absolute left-[20%] right-[20%] top-[30px] h-px -translate-y-1/2 bg-[var(--line)]" />
+      <div className="stream-theater-meta" aria-label="Simulated session metadata">
+        <span>
+          Session <span className="stream-theater-meta-value">{DEMO_SESSION_ID}</span>
+        </span>
+        <span>
+          Wallet{" "}
+          <code className="stream-theater-mono" title="Example wallet — not a real address">
+            {DEMO_WALLET}
+          </code>
+        </span>
+        <span>
+          Network <span className="stream-theater-meta-value">Arc Testnet</span>
+        </span>
+      </div>
+
+      <div className="stream-theater-body">
+        <div className="stream-theater-stack">
+          <section className="stream-theater-section" aria-label="Agent channel">
+            <h3 className="stream-theater-section-title">Agents</h3>
+            <div className="stream-theater-section-body stream-theater-channel">
+              <div className={`relative overflow-visible ${channelHeight}`}>
+          <div className="absolute left-[20%] right-[20%] top-[28px] h-px -translate-y-1/2 bg-[var(--line)]" />
           <div
-            className={`river-line absolute left-[20%] right-[20%] top-[30px] h-[2px] -translate-y-1/2 rounded-full transition-opacity duration-500 ${
+            className={`river-line absolute left-[20%] right-[20%] top-[28px] h-[2px] -translate-y-1/2 rounded-full transition-opacity duration-500 ${
               streaming ? "opacity-100" : "opacity-0"
             }`}
           />
 
-          {/* buyer agent (left) */}
           <Agent
             side="left"
             icon={<BuyerGlyph />}
             name="Buyer agent"
-            sub={done ? "answer received" : phase === "streamDeeper" ? "searching" : streaming ? "receiving" : asking ? "asking" : "searching"}
+            sub={done ? "done" : streaming ? "receiving" : asking ? "asking" : "waiting"}
             active={phase === "ask" || phase === "followup" || done}
-            tint="buyer"
+            role="buyer"
+            compact={compact}
           />
 
-          {/* seller agent (right) */}
           <Agent
             side="right"
             icon={<SellerGlyph />}
-            name="Seller agent"
-            sub={streaming ? "streaming" : routing ? "routing" : "listening"}
+            name="Gateway agent"
+            sub={streaming ? "streaming" : routing ? "routing" : "ready"}
             active={streaming || routing}
-            tint="seller"
+            role="gateway"
+            compact={compact}
           />
 
-          {/* in-flight word packets gliding seller → buyer along the channel */}
           <AnimatePresence>
             {packets.map((p) => (
               <motion.div
@@ -207,14 +335,13 @@ export function StreamTheater() {
                 initial={{ left: "72%", opacity: 0, scale: 0.92 }}
                 animate={{ left: "28%", opacity: [0, 1, 1, 0], scale: 1 }}
                 transition={{ duration: 1.0, ease, times: [0, 0.18, 0.8, 1] }}
-                className="mono pointer-events-none absolute top-[30px] z-10 w-[116px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#262b33] px-2.5 py-1 text-center text-[0.62rem] text-[var(--river-deep)]"
+                className="stream-theater-packet pointer-events-none absolute top-[28px] z-10 w-[116px] -translate-x-1/2 -translate-y-1/2 rounded-[var(--radius-ui)] bg-[rgba(255,255,255,0.06)] px-2.5 py-1 text-center text-[0.75rem] text-[var(--ink)] ring-1 ring-[var(--faint)]"
               >
                 {p.word}
               </motion.div>
             ))}
           </AnimatePresence>
 
-          {/* tiny micropayments drifting buyer → seller for each word received */}
           <AnimatePresence>
             {payments.map((p) => (
               <motion.div
@@ -223,52 +350,33 @@ export function StreamTheater() {
                 animate={{ left: "72%", opacity: [0, 0.7, 0.7, 0], scale: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.7, ease, times: [0, 0.25, 0.8, 1] }}
-                className="mono pointer-events-none absolute top-[42px] z-20 flex -translate-x-1/2 -translate-y-1/2 items-center gap-0.5 rounded-full bg-[rgba(88,213,155,0.18)] px-1.5 py-[1px] text-[0.5rem] font-medium text-[var(--green)]"
+                className="stream-theater-payment pointer-events-none absolute top-[40px] z-20 flex -translate-x-1/2 -translate-y-1/2 items-center gap-0.5 rounded-[var(--radius-ui)] bg-[rgba(255,255,255,0.05)] px-1.5 py-[3px] text-[0.68rem] font-medium text-[var(--muted)] ring-1 ring-[var(--faint)]"
                 aria-hidden="true"
               >
                 <Coins size={8} aria-hidden="true" />
-                +$0.00001
+                <span className="stream-theater-mono text-[var(--stream-accent,#2d91ed)]">+$0.00001</span>
               </motion.div>
             ))}
-          </AnimatePresence>
-        </div>
+            </AnimatePresence>
+              </div>
+            </div>
+          </section>
 
-        <div className="mt-2 grid h-[132px] content-start gap-2">
-          <AnimatePresence>
-            {(phase === "ask" || phase === "route" || phase === "stream") && (
-              <Bubble key="ask" side="left">
-                Explain self-attention in practical terms and stop once the mechanism is clear.
-              </Bubble>
-            )}
-            {(phase === "route" || phase === "stream") && (
-              <Bubble key="route" side="right" tone="seller" icon={<ScanText size={13} aria-hidden="true" />}>
-                Opening <span className="font-medium">“{SECTION_HEADER}.”</span> Streaming until the mechanism is clear.
-              </Bubble>
-            )}
-            {(phase === "followup" || phase === "routeDeeper" || phase === "streamDeeper") && (
-              <Bubble key="followup" side="left">
-                Now check whether it covers long-context cost and when more paid text is worth it.
-              </Bubble>
-            )}
-            {(phase === "routeDeeper" || phase === "streamDeeper") && (
-              <Bubble key="route-deeper" side="right" tone="seller" icon={<ScanText size={13} aria-hidden="true" />}>
-                Opening <span className="font-medium">“{DEEP_HEADER}.”</span> Continuing from the section start.
-              </Bubble>
-            )}
-            {done && (
-              <Bubble key="answer" side="left" tone="answer" icon={<Sparkles size={13} aria-hidden="true" />}>
-                Answer grounded. Stopping before the full article is read.
-              </Bubble>
-            )}
-          </AnimatePresence>
-        </div>
+          <section className="stream-theater-section" aria-label="Settlement log">
+            <h3 className="stream-theater-section-title">Settlement log</h3>
+            <div className="stream-theater-section-body">
+              <SettlementEventLog events={settlementLog} demoActive={demoActive} compact={compact || embedded} />
+            </div>
+          </section>
 
-        <div className="mt-3 min-w-0 overflow-hidden rounded-[24px] bg-[rgba(25,25,28,0.82)]">
-          <div
-            ref={articleRef}
-            className="article-scroll h-[154px] overflow-y-auto px-3.5 py-3 text-sm leading-6 text-[var(--quiet)]"
-            aria-label="Streaming article excerpt"
-          >
+          <section className="stream-theater-section stream-theater-article-panel" aria-label="Article stream">
+            <h3 className="stream-theater-section-title">Article stream</h3>
+            <div className="stream-theater-section-body stream-theater-article-viewport">
+              <div
+                ref={articleRef}
+                className={`article-scroll ${articleScrollClass}`}
+                aria-label="Streaming article excerpt"
+              >
             {ARTICLE_SECTIONS.map((section, sectionIndex) => {
               let offset = 0;
               for (let i = 0; i < sectionIndex; i += 1) offset += ARTICLE_SECTIONS[i].words.split(" ").length;
@@ -276,12 +384,15 @@ export function StreamTheater() {
 
               return (
                 <div key={section.header} className={sectionIndex > 0 ? "mt-5" : undefined}>
-                  <div className="mb-2 text-sm font-semibold tracking-[-0.01em] text-[var(--ink)]">{section.header}</div>
+                  <div className="mb-2 text-[0.875rem] font-medium tracking-[-0.01em] text-[var(--ink)]">
+                    {section.header}
+                  </div>
                   <p className="flex flex-wrap gap-x-1 gap-y-1">
                     {sectionWords.map((word, index) => {
                       const globalIndex = offset + index;
                       const active = streaming && globalIndex === highlightIndex;
                       const delivered = readWordSet.has(globalIndex);
+                      const locked = !delivered && !active;
                       return (
                         <motion.span
                           key={`${section.header}-${word}-${index}`}
@@ -289,24 +400,27 @@ export function StreamTheater() {
                           animate={
                             active
                               ? {
-                                  color: "var(--ink)",
-                                  backgroundColor: "rgba(var(--river-rgb), 0.24)",
-                                  // borderColor: "rgba(var(--river-rgb), 0.42)",
+                                  color: "var(--river)",
+                                  backgroundColor: "rgba(var(--river-rgb), 0.18)",
+                                  filter: "blur(0px)",
+                                  opacity: 1,
                                 }
                               : delivered
                                 ? {
-                                    color: "var(--river-deep)",
-                                    backgroundColor: "rgba(var(--river-rgb), 0.11)",
-                                    // borderColor: "rgba(var(--river-rgb), 0.2)",
+                                    color: "var(--river)",
+                                    backgroundColor: "rgba(var(--river-rgb), 0.12)",
+                                    filter: "blur(0px)",
+                                    opacity: 1,
                                   }
                                 : {
                                     color: "var(--quiet)",
                                     backgroundColor: "rgba(255, 255, 255, 0)",
-                                    // borderColor: "rgba(255, 255, 255, 0)",
+                                    filter: "blur(5px)",
+                                    opacity: 0.42,
                                   }
                           }
                           transition={{ duration: 0.24, ease }}
-                          className="inline-flex rounded-md border border-transparent px-1"
+                          className={`inline-flex rounded px-1 text-[0.875rem] leading-relaxed${locked ? " stream-theater-word--locked" : ""}`}
                         >
                           {word}
                         </motion.span>
@@ -316,59 +430,99 @@ export function StreamTheater() {
                 </div>
               );
             })}
-          </div>
-          <div className="mono h-[54px] border-t border-[var(--faint)] px-3.5 py-2 text-[0.66rem] leading-5 text-[var(--muted)]">
-            {visibleCollectedWords.length > 0 ? visibleCollectedWords.join(" ") : "Awaiting a precise query from the buyer agent."}
-          </div>
+                </div>
+                <AnimatePresence>
+                  {scrollSweep > 0 && (
+                    <motion.div
+                      key={scrollSweep}
+                      className="article-scroll-sweep"
+                      initial={{ y: "-120%", opacity: 0.55 }}
+                      animate={{ y: "120%", opacity: 0 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.62, ease }}
+                      onAnimationComplete={() => {
+                        setScrollSweep((current) => (current === scrollSweep ? 0 : current));
+                      }}
+                      aria-hidden="true"
+                    />
+                  )}
+                </AnimatePresence>
+            </div>
+          </section>
         </div>
       </div>
 
-      {/* meter */}
-      <div className="mt-5 border-t border-[var(--faint)] pt-4">
-        <div className="flex items-end justify-between">
-          <div>
-            <div className="text-2xl font-bold tracking-[-0.02em]">
+      <div className="stream-theater-footer">
+        <div className="stream-theater-ticker">
+          <div className="stream-theater-metric">
+            <span className="stream-theater-metric-label">Words read</span>
+            <motion.strong
+              key={words}
+              className="stream-theater-metric-value"
+              initial={{ opacity: 0.55, y: 3 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.22, ease }}
+            >
               {words}
-              <span className="ml-1.5 text-sm font-medium text-[var(--muted)]">{words === 1 ? "word" : "words"} read</span>
-            </div>
+            </motion.strong>
           </div>
-          <div className="text-right">
-            <div className="mono text-lg font-bold text-[var(--river-deep)]">${paid}</div>
-            <div className="mono text-[0.62rem] uppercase tracking-[0.12em] text-[var(--muted)]">paid · usdc</div>
+          <div className="stream-theater-metric">
+            <span className="stream-theater-metric-label">Paid · USDC</span>
+            <motion.strong
+              key={paid}
+              className="stream-theater-metric-value stream-theater-metric-value--accent stream-theater-mono"
+              initial={{ opacity: 0.55, y: 3 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.22, ease }}
+            >
+              ${paid}
+            </motion.strong>
           </div>
         </div>
-
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-[var(--surface-muted)]">
+        <div className="stream-theater-progress-track">
           <motion.div
-            className={`h-full rounded-full ${done ? "bg-[var(--green)]" : "bg-[var(--river-deep)]"}`}
+            className={`stream-theater-progress-fill h-full${done ? " stream-theater-progress-fill--done" : ""}`}
             animate={{ width: `${Math.max(pct, 3)}%` }}
             transition={{ duration: 0.5, ease }}
           />
         </div>
-
-        {/* fixed-height slot keeps the panel from resizing when the banner appears */}
-        <div className="mt-3 h-[54px]">
+        <div className={`stream-theater-settled-slot ${settledHeight}`}>
           <AnimatePresence>
             {done && (
               <motion.div
-                initial={{ opacity: 0, y: 8 }}
+                initial={{ opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.5, ease }}
-                className="flex h-full items-center justify-between gap-3 rounded-xl bg-[rgba(88,213,155,0.14)] px-3.5"
+                transition={{ duration: 0.45, ease }}
+                className="stream-theater-settled"
               >
-                <span className="flex min-w-0 items-center gap-2 text-sm font-semibold text-[var(--ink)]">
-                  <Check size={15} aria-hidden="true" /> Answer found · agent stopped
-                </span>
-                <span className="mono flex shrink-0 items-center gap-1.5 text-xs text-[var(--green)]">
-                  <Coins size={13} aria-hidden="true" /> creator earned ${paid}
+                <span className="stream-theater-settled-text">
+                  <Check size={15} aria-hidden="true" /> Simulated session complete · {TARGET_WORDS} words ·{" "}
+                  <span className="stream-theater-mono">${paid}</span>
                 </span>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
+        <div className="stream-theater-proof">
+          <span className="stream-theater-proof-tx">
+            Last tx{" "}
+            <code className="stream-theater-mono" title="Example hash — not a real transaction">
+              {DEMO_TX_PLACEHOLDER}
+            </code>
+          </span>
+          <a
+            href={ARC_TESTNET_EXPLORER}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="stream-theater-explorer-link"
+          >
+            Arc testnet explorer
+          </a>
+        </div>
       </div>
     </div>
+    </motion.div>
   );
 }
 
@@ -378,78 +532,94 @@ function Agent({
   name,
   sub,
   active,
-  tint,
+  role = "buyer",
+  compact = false,
 }: {
   side: "left" | "right";
   icon: React.ReactNode;
   name: string;
   sub: string;
   active: boolean;
-  tint: "buyer" | "seller";
+  role?: "buyer" | "gateway";
+  compact?: boolean;
 }) {
-  // Solid, fixed token fills, the theater is always dark, so these don't follow
-  // the theme vars. Two distinct blues read as two distinct agents.
-  const color = tint === "buyer" ? "#2f567c" : "#3f7da1";
   const pos = side === "left" ? "left-0 items-start" : "right-0 items-end";
+  const tokenSize = compact ? "h-10 w-10" : "h-[52px] w-[52px]";
   return (
-    <div className={`absolute top-0 flex w-[40%] min-w-0 flex-col gap-2.5 ${pos}`}>
+    <div className={`absolute top-0 flex w-[40%] min-w-0 flex-col gap-2 ${pos}`}>
       <div
-        className={`agent-token grid h-[58px] w-[58px] place-items-center rounded-full text-white transition-shadow duration-500 ${
+        className={`agent-token agent-token--${role} grid ${tokenSize} place-items-center rounded-full transition-shadow duration-500 ${
           active ? "is-active" : ""
         }`}
-        style={{ backgroundColor: color }}
       >
         {icon}
       </div>
-      <div className={`flex min-w-0 max-w-full flex-col gap-1.5 ${side === "right" ? "items-end" : "items-start"}`}>
-        <div className="text-[0.8rem] font-semibold leading-tight text-[var(--ink)]">{name}</div>
-        <span
-          className={`mono inline-flex items-center gap-1.5 rounded-md px-1.5 py-[3px] text-[0.55rem] uppercase tracking-[0.1em] transition-colors duration-300 ${
-            active
-              ? "bg-[rgba(63,125,161,0.22)] text-[var(--river-deep)]"
-              : "bg-[rgba(255,255,255,0.05)] text-[var(--muted)]"
-          }`}
-        >
-          <span
-            className={`h-1.5 w-1.5 rounded-full ${active ? "status-dot bg-[var(--river-deep)]" : "bg-[var(--muted)]"}`}
-            aria-hidden="true"
-          />
-          {sub}
-        </span>
+      <div className={`flex min-w-0 max-w-full flex-col gap-1 ${side === "right" ? "items-end" : "items-start"}`}>
+        <div className={`stream-theater-agent-name${compact ? " stream-theater-agent-name--compact" : ""}`}>{name}</div>
+        <span className={`stream-theater-agent-status${active ? " stream-theater-agent-status--active" : ""}`}>{sub}</span>
       </div>
     </div>
   );
 }
 
-function Bubble({
-  side,
-  tone = "buyer",
-  icon,
-  children,
+const chatEase = [0.22, 1, 0.36, 1] as const;
+
+function SettlementEventLog({
+  events,
+  demoActive,
+  compact,
 }: {
-  side: "left" | "right";
-  tone?: "buyer" | "seller" | "answer";
-  icon?: React.ReactNode;
-  children: React.ReactNode;
+  events: SettlementLogEntry[];
+  demoActive: boolean;
+  compact: boolean;
 }) {
-  const styles =
-    tone === "seller"
-      ? "bg-[var(--river-pale)] text-[var(--ink)]"
-      : tone === "answer"
-        ? "bg-[rgba(88,213,155,0.14)] text-[var(--ink)]"
-        : "bg-[#20242b] text-[var(--ink)]";
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!demoActive) return;
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const frame = requestAnimationFrame(() => {
+      springScrollTo(el, el.scrollHeight - el.clientHeight);
+    });
+
+    return () => cancelAnimationFrame(frame);
+  }, [events, demoActive]);
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -6, scale: 0.97 }}
-      transition={{ duration: 0.45, ease }}
-      className={`flex max-w-[92%] items-start gap-2 rounded-2xl px-3.5 py-2 text-[0.78rem] leading-5 ${styles} ${
-        side === "right" ? "ml-auto rounded-br-sm" : "mr-auto rounded-bl-sm"
-      }`}
-    >
-      {icon && <span className="mt-0.5 shrink-0 opacity-70">{icon}</span>}
-      <span className="min-w-0">{children}</span>
-    </motion.div>
+    <div className={`stream-theater-messages-viewport stream-theater-settlement-log${compact ? " stream-theater-settlement-log--compact" : ""}`}>
+      <div ref={scrollRef} className="stream-theater-messages-scroll">
+        <div className="stream-theater-settlement-log-inner">
+          {events.length === 0 ? (
+            <p className="stream-theater-settlement-log-empty">Waiting for simulated session…</p>
+          ) : (
+            events.map((entry, index) => (
+              <motion.p
+                key={entry.id}
+                initial={index === events.length - 1 ? { opacity: 0, y: 6 } : false}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.28, ease: chatEase }}
+                className="stream-theater-settlement-log-line"
+              >
+                <span className="stream-theater-settlement-log-time stream-theater-mono">{entry.time}</span>
+                {entry.kind === "word" ? (
+                  <>
+                    <span className="stream-theater-settlement-log-action">bought</span>
+                    <span className="stream-theater-settlement-log-word">&apos;{entry.word}&apos;</span>
+                    <span className="stream-theater-settlement-log-amount stream-theater-mono">{entry.amount}</span>
+                    <span className="stream-theater-settlement-log-latency">settled {entry.latencyMs}ms</span>
+                  </>
+                ) : entry.kind === "routed" ? (
+                  <span className="stream-theater-settlement-log-detail">routed · {entry.detail}</span>
+                ) : (
+                  <span className="stream-theater-settlement-log-detail">stopped · {entry.detail}</span>
+                )}
+              </motion.p>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

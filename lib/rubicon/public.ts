@@ -25,6 +25,8 @@ export interface PublicArticle {
   totalWords: number;
   /** Navigable section headings agents can steer toward (no body text). */
   sectionHeadings: string[];
+  popularityScore: number;
+  readCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -36,6 +38,7 @@ export interface PublicCreator {
   bio: string | null;
   avatarUrl: string | null;
   createdAt: string;
+  popularityScore: number;
   articles: PublicArticle[];
 }
 
@@ -55,6 +58,7 @@ type ArticleRow = {
 type SectionRow = { article_id: string; heading: string; ordinal: number };
 type CreatorRow = { id: string; username: string; display_name: string; created_at: string };
 type ProfileRow = { creator_id: string; bio: string | null; avatar_url: string | null };
+type PopularityRow = { id: string; article_id: string; session_id: string | null };
 
 export class PublicDirectoryUnavailable extends Error {
   constructor(message: string) {
@@ -96,7 +100,7 @@ export async function listPublicCreators(): Promise<PublicCreator[]> {
   const articleIds = articles.map((a) => a.id);
   const creatorIds = Array.from(new Set(articles.map((a) => a.creator_id)));
 
-  const [sectionsRes, creatorsRes, profilesRes] = await Promise.all([
+  const [sectionsRes, creatorsRes, profilesRes, popularityRes] = await Promise.all([
     supabase
       .from("article_sections")
       .select("article_id, heading, ordinal")
@@ -113,6 +117,11 @@ export async function listPublicCreators(): Promise<PublicCreator[]> {
       .select("creator_id, bio, avatar_url")
       .in("creator_id", creatorIds)
       .returns<ProfileRow[]>(),
+    supabase
+      .from("word_payments")
+      .select("id, article_id, session_id")
+      .in("article_id", articleIds)
+      .returns<PopularityRow[]>(),
   ]);
 
   if (creatorsRes.error) {
@@ -124,6 +133,13 @@ export async function listPublicCreators(): Promise<PublicCreator[]> {
     const list = sectionsByArticle.get(row.article_id) ?? [];
     list.push(row.heading);
     sectionsByArticle.set(row.article_id, list);
+  }
+
+  const popularityByArticle = new Map<string, Set<string>>();
+  for (const row of popularityRes.data ?? []) {
+    const reads = popularityByArticle.get(row.article_id) ?? new Set<string>();
+    reads.add(row.session_id || row.id);
+    popularityByArticle.set(row.article_id, reads);
   }
 
   const profileByCreator = new Map((profilesRes.data ?? []).map((p) => [p.creator_id, p]));
@@ -144,10 +160,14 @@ export async function listPublicCreators(): Promise<PublicCreator[]> {
         bio: profile?.bio ?? null,
         avatarUrl: profile?.avatar_url ?? null,
         createdAt: creatorRow.created_at,
+        popularityScore: 0,
         articles: [],
       };
       byCreator.set(article.creator_id, creator);
     }
+
+    const readCount = popularityByArticle.get(article.id)?.size ?? 0;
+    creator.popularityScore += readCount;
 
     creator.articles.push({
       id: article.id,
@@ -157,6 +177,8 @@ export async function listPublicCreators(): Promise<PublicCreator[]> {
       maxArticlePriceAtomic: article.max_article_price_atomic,
       totalWords: article.total_words,
       sectionHeadings: sectionsByArticle.get(article.id) ?? [],
+      popularityScore: readCount,
+      readCount,
       createdAt: article.created_at,
       updatedAt: article.updated_at,
     });

@@ -17,7 +17,7 @@ import {
 import type { ArticleState, PaymentStatus } from "@/lib/rubicon/types";
 import { formatUsdDisplay, formatUsdNumber } from "@/lib/rubicon/pricing";
 import { RubiconBrand } from "../../_components/rubicon-brand";
-import { CountUp, Donut, InsightTile, Reveal, TrendChart, type DonutSlice, type TrendBar } from "./charts";
+import { CountUp, Donut, InsightTile, Reveal, type DonutSlice, type TrendBar } from "./charts";
 import {
   ArticleStatePill,
   Card,
@@ -83,14 +83,18 @@ export interface DashboardOverviewContentProtection {
   stats: Array<{ label: string; value: string }>;
 }
 
+export interface DashboardActivityDay {
+  date: string;
+  count: number;
+}
+
 export interface DashboardOverviewProps {
   greeting: string;
   contentProtection: DashboardOverviewContentProtection;
   exportData?: DashboardOverviewExport;
+  activityCalendar: DashboardActivityDay[];
   stats: DashboardOverviewStat[];
   trendBars: TrendBar[];
-  trendMetric: "earnings" | "words";
-  onTrendMetricChange?: (metric: "earnings" | "words") => void;
   topArticle?: {
     id?: string;
     title: string;
@@ -112,17 +116,15 @@ export function DashboardOverviewContent({
   greeting,
   contentProtection,
   exportData,
+  activityCalendar,
   stats,
   trendBars,
-  trendMetric,
-  onTrendMetricChange,
   topArticle,
   breakdown,
   paymentRows,
   articleRows,
   wallet,
 }: DashboardOverviewProps) {
-  const hasTrend = trendBars.some((bar) => bar.value > 0);
   return (
     <div className="grid gap-5">
       <PageHeader
@@ -150,36 +152,12 @@ export function DashboardOverviewContent({
           </Reveal>
 
           <div className="grid gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.95fr)]">
-            {hasTrend && (
-              <Reveal delay={0.08}>
-                <Card className="h-full p-5">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <h2 className="text-base font-semibold">Activity over time</h2>
-                      <p className="text-xs text-[var(--muted)]">Last 14 days</p>
-                    </div>
-                    <div className="inline-flex w-fit items-center gap-1 rounded-[10px] border border-[var(--line)] bg-[var(--surface-muted)] p-1.5 text-sm">
-                      <SegButton active={trendMetric === "earnings"} onClick={() => onTrendMetricChange?.("earnings")}>
-                        Earnings
-                      </SegButton>
-                      <SegButton active={trendMetric === "words"} onClick={() => onTrendMetricChange?.("words")}>
-                        Words read
-                      </SegButton>
-                    </div>
-                  </div>
-                  <div className="mt-6">
-                    <TrendChart
-                      bars={trendBars}
-                      formatValue={trendMetric === "earnings" ? formatUsdNumber : formatInt}
-                      height={220}
-                    />
-                  </div>
-                </Card>
-              </Reveal>
-            )}
+            <Reveal delay={0.08} className="h-full">
+              <AgentActivityCalendar days={activityCalendar} />
+            </Reveal>
 
             {topArticle && (
-              <Reveal delay={0.1}>
+              <Reveal delay={0.1} className="h-full">
                 <Card className="flex h-full flex-col justify-between gap-6 overflow-hidden p-5">
                   <div className="flex min-h-[13rem] flex-col">
                     <h2 className="text-base font-semibold">Top article</h2>
@@ -237,6 +215,80 @@ export function DashboardOverviewContent({
       </div>
     </div>
   );
+}
+
+function AgentActivityCalendar({ days }: { days: DashboardActivityDay[] }) {
+  const max = Math.max(...days.map((day) => day.count), 0);
+  const activeDays = days.filter((day) => day.count > 0).length;
+  const interactions = days.reduce((sum, day) => sum + day.count, 0);
+  const monthLabels = days.reduce<Array<{ key: string; label: string; index: number }>>((labels, day, index) => {
+    const date = new Date(`${day.date}T00:00:00`);
+    const key = `${date.getFullYear()}-${date.getMonth()}`;
+    if (labels.some((label) => label.key === key)) return labels;
+    labels.push({ key, label: date.toLocaleDateString(undefined, { month: "short" }), index });
+    return labels;
+  }, []);
+  const leadingBlanks = days[0] ? new Date(`${days[0].date}T00:00:00`).getDay() : 0;
+  const cells = [
+    ...Array.from({ length: leadingBlanks }, (_, index) => ({ type: "blank" as const, key: `blank-${index}` })),
+    ...days.map((day) => ({ type: "day" as const, key: day.date, day })),
+  ];
+  const weekColumns = Math.max(1, Math.ceil(cells.length / 7));
+
+  return (
+    <Card className="flex h-full min-h-[18rem] flex-col overflow-hidden p-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-base font-semibold">Recent activity</h2>
+          <p className="text-xs text-[var(--muted)]">Agent interactions with your author profile</p>
+        </div>
+        <div className="flex items-center gap-3 text-xs text-[var(--muted)]">
+          <span>{activeDays} active days</span>
+          <span>{interactions} interactions</span>
+        </div>
+      </div>
+
+      <div className="flex flex-1 items-center pb-1 pt-3">
+        <div className="w-full">
+          <div
+            className="relative ml-[2px] grid gap-1.5 text-xs text-[var(--muted)]"
+            style={{ gridTemplateColumns: `repeat(${weekColumns}, minmax(0, 1fr))` }}
+          >
+            {monthLabels.map((month) => (
+              <span key={month.key} className="whitespace-nowrap" style={{ gridColumnStart: Math.max(1, Math.floor((month.index + leadingBlanks) / 7) + 1) }}>
+                {month.label}
+              </span>
+            ))}
+          </div>
+          <div
+            className="mt-3 grid grid-flow-col gap-1.5"
+            style={{ gridTemplateColumns: `repeat(${weekColumns}, minmax(0, 1fr))`, gridTemplateRows: "repeat(7, auto)" }}
+          >
+            {cells.map((cell) =>
+              cell.type === "blank" ? (
+                <span key={cell.key} className="aspect-square w-full" aria-hidden="true" />
+              ) : (
+                <span
+                  key={cell.key}
+                  title={`${cell.day.date}: ${cell.day.count} interaction${cell.day.count === 1 ? "" : "s"}`}
+                  className={`aspect-square w-full rounded-[4px] ${activityCellClass(cell.day.count, max)}`}
+                  aria-label={`${cell.day.date}: ${cell.day.count} interaction${cell.day.count === 1 ? "" : "s"}`}
+                />
+              ),
+            )}
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+function activityCellClass(count: number, max: number) {
+  if (count <= 0 || max <= 0) return "bg-[#f0f1f3]";
+  const ratio = count / max;
+  if (ratio > 0.75) return "bg-[#2f6de5]";
+  if (ratio > 0.45) return "bg-[#5f94f1]";
+  return "bg-[#a8c8ff]";
 }
 
 function ContentProtectionPolicy({ stats }: { stats: Array<{ label: string; value: string }> }) {
@@ -598,92 +650,111 @@ async function renderExportPng({
 }) {
   const width = 1200;
   const height = 720;
+  // Render at 2x so the exported PNG stays crisp on retina displays and when
+  // scaled up on social. All drawing below uses logical (1x) coordinates.
+  const scale = 2;
   const canvas = document.createElement("canvas");
-  canvas.width = width;
-  canvas.height = height;
+  canvas.width = width * scale;
+  canvas.height = height * scale;
   const ctx = canvas.getContext("2d");
   if (!ctx) return "";
+  ctx.scale(scale, scale);
 
-  ctx.fillStyle = "#e9edf5";
+  ctx.fillStyle = "#edf0f4";
   ctx.fillRect(0, 0, width, height);
   const cardX = 32;
   const cardY = 32;
   const cardW = width - 64;
   const cardH = height - 64;
   const cardGradient = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
-  cardGradient.addColorStop(0, "#ffffff");
-  cardGradient.addColorStop(1, "#f7f9fc");
-  drawExportGradientPanel(ctx, cardX, cardY, cardW, cardH, 30, cardGradient, "rgba(18,24,38,0.12)");
+  cardGradient.addColorStop(0, "#fffaf4");
+  cardGradient.addColorStop(0.48, "#ffffff");
+  cardGradient.addColorStop(1, "#edf5ff");
+  drawExportGradientPanel(ctx, cardX, cardY, cardW, cardH, 18, cardGradient, "rgba(18,24,38,0.12)");
 
   const logo = await loadImage("/rubicon-new-dark.png");
   const padX = 84;
 
   if (logo && logo.width > 0) {
-    const logoW = 188;
-    const logoH = logoW * (logo.height / logo.width);
+    const bgLogoW = 760;
+    const bgLogoH = bgLogoW * (logo.height / logo.width);
     ctx.save();
-    ctx.globalAlpha = 0.96;
-    ctx.drawImage(logo, padX, 78, logoW, logoH);
+    ctx.globalAlpha = 0.035;
+    ctx.drawImage(logo, width - bgLogoW - 26, 96, bgLogoW, bgLogoH);
     ctx.restore();
   }
 
+  const orangeOrb = ctx.createRadialGradient(188, 590, 0, 188, 590, 230);
+  orangeOrb.addColorStop(0, "rgba(255,122,26,0.22)");
+  orangeOrb.addColorStop(1, "rgba(255,122,26,0)");
+  ctx.fillStyle = orangeOrb;
+  ctx.fillRect(cardX, cardY, cardW, cardH);
+
+  const blueOrb = ctx.createRadialGradient(960, 184, 0, 960, 184, 250);
+  blueOrb.addColorStop(0, "rgba(47,109,229,0.18)");
+  blueOrb.addColorStop(1, "rgba(47,109,229,0)");
+  ctx.fillStyle = blueOrb;
+  ctx.fillRect(cardX, cardY, cardW, cardH);
+
   ctx.fillStyle = "#0e1014";
-  ctx.font = "750 46px Arial, sans-serif";
-  ctx.fillText("Earnings snapshot", padX, 160);
+  ctx.font = "760 48px Arial, sans-serif";
+  ctx.fillText("Agent read earnings", padX, 166);
   ctx.fillStyle = "#69707c";
   ctx.font = "600 22px Arial, sans-serif";
-  ctx.fillText(`${username} on Rubicon`, padX, 193);
+  ctx.fillText(`${username} on Rubicon`, padX, 200);
 
   drawExportPill(ctx, width - padX - 132, 86, 132, 48, "14 days");
 
   const heroX = padX;
-  const heroY = 232;
-  const heroW = 410;
-  const heroH = 156;
+  const heroY = 240;
+  const heroW = 430;
+  const heroH = 172;
   const heroGradient = ctx.createLinearGradient(heroX, heroY, heroX + heroW, heroY + heroH);
   heroGradient.addColorStop(0, "#111827");
-  heroGradient.addColorStop(1, "#2b3343");
-  drawExportGradientPanel(ctx, heroX, heroY, heroW, heroH, 20, heroGradient, "rgba(18,24,38,0.10)");
-  ctx.fillStyle = "rgba(255,255,255,0.58)";
+  heroGradient.addColorStop(0.58, "#274d9c");
+  heroGradient.addColorStop(1, "#2f6de5");
+  drawExportGradientPanel(ctx, heroX, heroY, heroW, heroH, 16, heroGradient, "rgba(18,24,38,0.10)");
+  drawExportHatch(ctx, heroX + heroW - 118, heroY + 20, 92, 126, "rgba(255,255,255,0.16)");
+  ctx.fillStyle = "rgba(255,255,255,0.66)";
   ctx.font = "700 14px Arial, sans-serif";
-  ctx.fillText("TOTAL EARNED", heroX + 28, heroY + 42);
+  ctx.fillText("TOTAL EARNED", heroX + 30, heroY + 44);
   ctx.fillStyle = "#ffffff";
-  ctx.font = "800 56px Arial, sans-serif";
-  ctx.fillText(truncateForCanvas(ctx, amount, heroW - 56), heroX + 28, heroY + 104);
-  ctx.fillStyle = "#7dd3fc";
+  ctx.font = "820 62px Arial, sans-serif";
+  ctx.fillText(truncateForCanvas(ctx, amount, heroW - 76), heroX + 30, heroY + 114);
+  ctx.fillStyle = "#b7f7d3";
   ctx.font = "600 18px Arial, sans-serif";
-  ctx.fillText("Revenue from agent reads", heroX + 28, heroY + 134);
+  ctx.fillText("Creator revenue from agent reads", heroX + 30, heroY + 146);
 
   const metricX = heroX + heroW + 22;
   const metricY = heroY;
   const metricGap = 16;
   const metricW = (width - padX - metricX - metricGap * 2) / 3;
-  drawStatTile(ctx, metricX, metricY, metricW, heroH, "Words", words);
-  drawStatTile(ctx, metricX + metricW + metricGap, metricY, metricW, heroH, "Reads", reads);
-  drawStatTile(ctx, metricX + (metricW + metricGap) * 2, metricY, metricW, heroH, "Avg / read", avgRead);
+  drawStatTile(ctx, metricX, metricY, metricW, heroH, "Words", words, "#12b886");
+  drawStatTile(ctx, metricX + metricW + metricGap, metricY, metricW, heroH, "Reads", reads, "#ff7a1a");
+  drawStatTile(ctx, metricX + (metricW + metricGap) * 2, metricY, metricW, heroH, "Avg / read", avgRead, "#2f6de5");
 
   const chartX = padX;
-  const chartY = 412;
+  const chartY = 438;
   const chartW = width - padX * 2;
-  const chartH = 188;
-  drawExportPanel(ctx, chartX, chartY, chartW, chartH, 20, "#ffffff", "rgba(18,24,38,0.08)");
+  const chartH = 164;
+  drawExportPanel(ctx, chartX, chartY, chartW, chartH, 16, "rgba(255,255,255,0.84)", "rgba(18,24,38,0.08)");
   ctx.fillStyle = "#0e1014";
   ctx.font = "700 22px Arial, sans-serif";
-  ctx.fillText("14-day earning trend", chartX + 24, chartY + 42);
+  ctx.fillText("14-day agent activity", chartX + 24, chartY + 42);
   ctx.fillStyle = "#8a9099";
   ctx.font = "600 15px Arial, sans-serif";
-  ctx.fillText("Paid word activity over time", chartX + 24, chartY + 66);
-  drawBarChart(ctx, chartX + 24, chartY + 76, chartW - 48, chartH - 104, trendValues);
+  ctx.fillText("Paid reads and word purchases over time", chartX + 24, chartY + 66);
+  drawBarChart(ctx, chartX + 24, chartY + 78, chartW - 48, chartH - 106, trendValues);
 
   const footY = height - 58;
-  ctx.fillStyle = "#eef2f7";
-  roundRect(ctx, padX, footY - 34, width - padX * 2, 46, 14);
+  ctx.fillStyle = "rgba(255,255,255,0.7)";
+  roundRect(ctx, padX, footY - 34, width - padX * 2, 46, 10);
   ctx.fill();
 
   ctx.font = "700 16px Arial, sans-serif";
   ctx.fillStyle = "#7b838f";
   ctx.fillText("Top article", padX + 18, footY - 5);
-  ctx.fillStyle = "#0e1014";
+  ctx.fillStyle = "#111827";
   ctx.font = "700 17px Arial, sans-serif";
   ctx.fillText(truncateForCanvas(ctx, topArticle, 470), padX + 112, footY - 5);
 
@@ -701,17 +772,20 @@ async function renderExportPng({
   return canvas.toDataURL("image/png");
 }
 
-function drawStatTile(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, label: string, value: string) {
+function drawStatTile(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, label: string, value: string, accent: string) {
   const tileGradient = ctx.createLinearGradient(x, y, x, y + height);
   tileGradient.addColorStop(0, "#ffffff");
-  tileGradient.addColorStop(1, "#f4f6fa");
-  drawExportGradientPanel(ctx, x, y, width, height, 18, tileGradient, "rgba(18,24,38,0.09)");
+  tileGradient.addColorStop(1, "#f8fafc");
+  drawExportGradientPanel(ctx, x, y, width, height, 16, tileGradient, "rgba(18,24,38,0.09)");
+  ctx.fillStyle = accent;
+  roundRect(ctx, x + 22, y + 22, 34, 7, 4);
+  ctx.fill();
   ctx.fillStyle = "#8d95a1";
   ctx.font = "700 14px Arial, sans-serif";
-  ctx.fillText(label.toUpperCase(), x + 22, y + 44);
+  ctx.fillText(label.toUpperCase(), x + 22, y + 58);
   ctx.fillStyle = "#0e1014";
   ctx.font = "760 38px Arial, sans-serif";
-  ctx.fillText(truncateForCanvas(ctx, value, width - 44), x + 22, y + 104);
+  ctx.fillText(truncateForCanvas(ctx, value, width - 44), x + 22, y + 122);
 }
 
 function drawBarChart(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, values: number[]) {
@@ -734,12 +808,35 @@ function drawBarChart(ctx: CanvasRenderingContext2D, x: number, y: number, width
     const barH = max > 0 && value > 0 ? Math.max((value / max) * height, 7) : 0;
     const bx = x + i * (barW + gap);
     const barGradient = ctx.createLinearGradient(bx, baseline - barH, bx, baseline);
-    barGradient.addColorStop(0, "#4f8cff");
-    barGradient.addColorStop(1, "#2563eb");
+    if (i % 3 === 1) {
+      barGradient.addColorStop(0, "#ff9a3c");
+      barGradient.addColorStop(1, "#ff5b1a");
+    } else if (i % 3 === 2) {
+      barGradient.addColorStop(0, "#20c997");
+      barGradient.addColorStop(1, "#0aa36f");
+    } else {
+      barGradient.addColorStop(0, "#6b8cff");
+      barGradient.addColorStop(1, "#2f6de5");
+    }
     ctx.fillStyle = barGradient;
     roundRect(ctx, bx, baseline - barH, barW, barH, 7);
     ctx.fill();
   });
+}
+
+function drawExportHatch(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, stroke: string) {
+  ctx.save();
+  roundRect(ctx, x, y, width, height, 18);
+  ctx.clip();
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 5;
+  for (let offset = -height; offset < width + height; offset += 18) {
+    ctx.beginPath();
+    ctx.moveTo(x + offset, y + height);
+    ctx.lineTo(x + offset + height, y);
+    ctx.stroke();
+  }
+  ctx.restore();
 }
 
 function drawExportPill(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, label: string) {
@@ -813,20 +910,6 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
     img.onerror = () => resolve(null);
     img.src = src;
   });
-}
-
-function SegButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded px-3 py-1 text-sm font-medium transition-colors ${
-        active ? "bg-white text-[var(--ink)] shadow-sm" : "text-[var(--muted)] hover:text-[var(--ink)]"
-      }`}
-    >
-      {children}
-    </button>
-  );
 }
 
 function DeltaHint({ pct, onDark = false }: { pct: number | null; onDark?: boolean }) {

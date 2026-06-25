@@ -26,7 +26,7 @@ import { ACTIVE_CHAIN } from "@/lib/chain";
 import { explorerAddressUrl, formatBalance, useNativeBalance } from "@/lib/onchain";
 import { WithdrawDialog } from "./_components/withdraw-dialog";
 import { AgentPreviewDialog, AGENT_PREVIEW_EVENT, hasSeenAgentPreview } from "./articles/_components/agent-preview-dialog";
-import { CountUp, Donut, DONUT_COLORS, InsightTile, Reveal, TrendChart, type DonutSlice, type TrendBar } from "./_components/charts";
+import { CountUp, Donut, DONUT_COLORS, InsightTile, Reveal, type DonutSlice, type TrendBar } from "./_components/charts";
 import { DashboardOverviewContent, type DashboardOverviewProps } from "./_components/overview-content";
 import {
   ArticleStatePill,
@@ -63,14 +63,10 @@ export default function OverviewPage() {
   const [previewSeen, setPreviewSeen] = useState(false);
   const [previewArticle, setPreviewArticle] = useState<Article | null>(null);
 
-  const [trendMetric, setTrendMetric] = useState<"earnings" | "words">("earnings");
-
   const trendBars = useMemo(
-    () => buildTrend(activity.data ?? [], trendMetric),
-    [activity.data, trendMetric],
+    () => buildTrend(activity.data ?? [], "earnings"),
+    [activity.data],
   );
-  const hasTrend = useMemo(() => trendBars.some((b) => b.value > 0), [trendBars]);
-
   const earningsSlices = useMemo(() => buildEarningsSlices(articles.data ?? []), [articles.data]);
   const hasBreakdown = earningsSlices.length > 0;
 
@@ -140,6 +136,7 @@ export default function OverviewPage() {
         walletAddress: wallet.data.address ?? null,
         trendBars,
       },
+      activityCalendar: buildActivityCalendar(activity.data ?? []),
       stats: [
         { label: "Total earnings", value: totalEarned, format: formatUsdDisplay, deltaPct: weeklyDeltas.earnings },
         { label: "Words read", value: earnings.data.wordsPaidFor ?? 0, format: formatInt, deltaPct: weeklyDeltas.words },
@@ -147,8 +144,6 @@ export default function OverviewPage() {
         { label: "Live articles", value: earnings.data.liveArticles ?? 0, format: formatInt },
       ],
       trendBars,
-      trendMetric,
-      onTrendMetricChange: setTrendMetric,
       topArticle: earnings.data.topArticle
         ? {
             id: earnings.data.topArticle.id,
@@ -190,7 +185,6 @@ export default function OverviewPage() {
     onboardingComplete,
     totalEarned,
     trendBars,
-    trendMetric,
     wallet.data,
     weeklyDeltas.earnings,
     weeklyDeltas.reads,
@@ -216,7 +210,7 @@ export default function OverviewPage() {
 
   return (
     <div className="grid gap-5">
-      {!onboardingComplete && (
+      {!loading && !onboardingComplete && (
         <PageHeader
           title="Overview"
           description={`Welcome back, ${greeting}.`}
@@ -974,20 +968,6 @@ function OnchainCard({ address }: { address: string | null }) {
   );
 }
 
-function SegButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded px-3 py-1 text-sm font-medium transition-colors ${
-        active ? "bg-white text-[var(--ink)] shadow-sm" : "text-[var(--muted)] hover:text-[var(--ink)]"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
 function formatInt(n: number): string {
   return Math.round(n).toLocaleString();
 }
@@ -1024,6 +1004,31 @@ function buildWeeklyDeltas(activity: PaymentActivity[]): WeeklyDeltas {
     words: pct(cur.words, prev.words),
     reads: pct(cur.reads, prev.reads),
   };
+}
+
+function buildActivityCalendar(activity: PaymentActivity[], weeks = 12): Array<{ date: string; count: number }> {
+  const now = new Date();
+  const start = new Date(now);
+  start.setDate(start.getDate() - weeks * 7 + 1);
+  start.setHours(0, 0, 0, 0);
+  const counts = new Map<string, number>();
+
+  for (const row of activity) {
+    const date = new Date(row.date);
+    if (Number.isNaN(date.getTime()) || date < start || date > now) continue;
+    const key = date.toISOString().slice(0, 10);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  const days: Array<{ date: string; count: number }> = [];
+  const cursor = new Date(start);
+  while (cursor <= now) {
+    const key = cursor.toISOString().slice(0, 10);
+    days.push({ date: key, count: counts.get(key) ?? 0 });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return days;
 }
 
 function DeltaHint({ pct, onDark = false }: { pct: number | null; onDark?: boolean }) {

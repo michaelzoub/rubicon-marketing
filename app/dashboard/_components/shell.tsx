@@ -6,7 +6,6 @@ import { usePathname } from "next/navigation";
 import posthog from "posthog-js";
 import {
   BookOpen,
-  ChevronDown,
   FileText,
   LayoutDashboard,
   Loader2,
@@ -59,7 +58,7 @@ function AuthGate({ children }: { children: ReactNode }) {
   if (!authenticated) {
     return (
       <CenteredScreen>
-        <RubiconBrand className="h-16" />
+        <RubiconBrand className="h-10" />
         <h1 className="mt-6 text-2xl font-semibold text-white">Sign in to Rubicon</h1>
         <p className="mt-3 max-w-sm text-sm leading-6 text-[#a7abb4]">
           Manage articles, pricing, and earnings from one secure creator dashboard.
@@ -157,20 +156,13 @@ function Sidebar({
       ) : (
         <>
           <div className="border-b border-[var(--line)] px-4 py-4">
-            <div className="flex items-center justify-between gap-3">
+            <div className="flex min-h-8 items-center justify-between gap-3">
               <Link href="/" className="min-w-0" aria-label="Rubicon home">
-                <RubiconBrand className="h-8" onLight />
+                <RubiconBrand className="h-7" onLight />
               </Link>
               <button type="button" onClick={onToggle} className="dashboard-icon-button" aria-label="Close sidebar" aria-expanded={true}>
                 <PanelLeft size={16} aria-hidden="true" />
               </button>
-            </div>
-            <div className="mt-4 flex w-full items-center justify-between gap-3 rounded-[10px] border border-[var(--line)] bg-[var(--surface-muted)] px-3 py-2 text-left">
-              <span className="min-w-0">
-                <span className="block truncate text-sm font-semibold text-[var(--ink)]">Creator workspace</span>
-                <span className="mono mt-0.5 block truncate text-[0.68rem] text-[var(--quiet)]">{identity}</span>
-              </span>
-              <ChevronDown size={15} className="shrink-0 text-[var(--quiet)]" aria-hidden="true" />
             </div>
           </div>
 
@@ -232,7 +224,7 @@ function MobileBar({ onLogout, activePath }: { onLogout?: () => void; activePath
     <div className="sticky top-0 z-30 border-b border-[var(--line)] bg-white/90 backdrop-blur lg:hidden">
       <div className="flex items-center justify-between px-5 py-3">
         <Link href="/" className="flex items-center" aria-label="Rubicon home">
-          <RubiconBrand className="h-9" onLight />
+          <RubiconBrand className="h-7" onLight />
         </Link>
         {onLogout && (
           <button type="button" onClick={onLogout} className="text-[var(--muted)]" aria-label="Sign out">
@@ -271,7 +263,7 @@ function CenteredScreen({ children }: { children: ReactNode }) {
 function ConfigNotice() {
   return (
     <CenteredScreen>
-      <RubiconBrand className="h-16" />
+      <RubiconBrand className="h-10" />
       <h1 className="mt-6 text-2xl font-semibold text-white">Connect creator login</h1>
       <p className="mt-3 max-w-md text-sm leading-6 text-[#a7abb4]">
         Set <code className="mono rounded-md bg-[var(--surface-muted)] px-1.5 py-0.5">NEXT_PUBLIC_PRIVY_APP_ID</code>,{" "}
