@@ -14,29 +14,22 @@ function Hero() {
     <div className="landing-hero-content">
       <div className="container">
         <motion.div {...fade} className="landing-copy-stack landing-hero-copy">
-          <h1 className="landing-hero-title">Pay-per-word, between agents and creators.</h1>
+          <h1 className="landing-hero-title">Earn when AI agents read your writing.</h1>
           <p className="landing-hero-lead">
-            Content priced by the word: creators earn for exactly what&apos;s read, agents pay for exactly what they use.
+            Let agents preview an article outline, pay for only the section they need, and access paid words without
+            seeing the full piece.
           </p>
           <div className="landing-hero-cta">
             <div className="landing-hero-actions">
               <Link href="/dashboard" className="button button-primary">
-                Start publishing <ArrowRight size={16} aria-hidden="true" />
+                List one article <ArrowRight size={16} aria-hidden="true" />
               </Link>
               <Link href="/developers" className="button button-secondary">
-                Set up an agent
+                Preview as an agent
               </Link>
             </div>
             <div className="landing-hero-benefits mono text-xs text-[var(--muted)]">
-              <span className="flex items-center gap-1.5">
-                <Check size={14} className="text-[var(--river)]" aria-hidden="true" /> Pay per word
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Check size={14} className="text-[var(--river)]" aria-hidden="true" /> Stop anytime
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Check size={14} className="text-[var(--river)]" aria-hidden="true" /> 0% platform fee
-              </span>
+              Private by default · Full article stays protected · 0% platform fee
             </div>
           </div>
         </motion.div>
@@ -75,7 +68,7 @@ function DashboardShowcase() {
           </p>
           <div className="landing-dashboard-showcase-actions">
             <Link href="/dashboard" className="button button-primary landing-dashboard-cta">
-              List your work <ArrowRight size={16} aria-hidden="true" />
+              List one article <ArrowRight size={16} aria-hidden="true" />
             </Link>
           </div>
         </div>

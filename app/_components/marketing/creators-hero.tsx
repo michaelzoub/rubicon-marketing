@@ -31,7 +31,7 @@ export function CreatorsHero() {
             </blockquote>
             <div className="creators-hero-cta">
               <Link href="/dashboard" className="button button-primary">
-                Start publishing <ArrowRight size={16} aria-hidden="true" />
+                Create a private demo <ArrowRight size={16} aria-hidden="true" />
               </Link>
             </div>
           </motion.div>

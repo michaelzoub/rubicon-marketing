@@ -63,7 +63,7 @@ export function CreatorsHowItWorks() {
               List your work, set your per-word price, and start earning when agents read.
             </p>
             <Link href="/dashboard" className="button button-primary creators-how-cta-button">
-              Start publishing <ArrowRight size={16} aria-hidden="true" />
+              Create a private demo <ArrowRight size={16} aria-hidden="true" />
             </Link>
           </div>
         </div>

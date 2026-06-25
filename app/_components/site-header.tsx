@@ -60,9 +60,14 @@ export function SiteHeader({
           ))}
         </div>
 
-        <Link href="/dashboard" className="site-nav-cta">
-          List your work
-        </Link>
+        <div className="site-header-actions" aria-label="Primary actions">
+          <Link href="/dashboard" className="site-nav-cta site-nav-cta--creator">
+            List an article
+          </Link>
+          <Link href="https://calendly.com/michaezl/new-meeting" className="site-nav-cta site-nav-cta--sales">
+            Book a call
+          </Link>
+        </div>
       </nav>
     </header>
   );
