@@ -15,7 +15,7 @@ import {
   X,
 } from "lucide-react";
 import type { ArticleState, PaymentStatus } from "@/lib/rubicon/types";
-import { formatUsdDisplay, formatUsdNumber } from "@/lib/rubicon/pricing";
+import { formatUsdDisplay } from "@/lib/rubicon/pricing";
 import { RubiconBrand } from "../../_components/rubicon-brand";
 import { CountUp, Donut, InsightTile, Reveal, type DonutSlice, type TrendBar } from "./charts";
 import {
@@ -514,8 +514,7 @@ function ExportButton({
 }: DashboardOverviewExport) {
   const [open, setOpen] = useState(false);
   const [pngUrl, setPngUrl] = useState<string | null>(null);
-  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "downloaded">("idle");
-  const publicSummary = `Rubicon writer ${username} has earned ${formatUsdNumber(totalEarned)} from ${formatInt(agentReads)} agent reads across ${formatInt(wordsRead)} paid words.`;
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "blocked">("idle");
 
   useEffect(() => {
     let cancelled = false;
@@ -548,17 +547,17 @@ function ExportButton({
   const copyImage = async () => {
     if (!pngUrl) return;
     try {
-      const response = await fetch(pngUrl);
-      const blob = await response.blob();
-      if ("ClipboardItem" in window && navigator.clipboard?.write) {
-        await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
-      } else {
-        await navigator.clipboard.writeText(publicSummary);
+      if (!("ClipboardItem" in window) || !navigator.clipboard?.write) {
+        throw new Error("Image clipboard is not available in this browser.");
       }
+      const clipboard = ClipboardItem as typeof ClipboardItem & { supports?: (type: string) => boolean };
+      if (clipboard.supports && !clipboard.supports("image/png")) {
+        throw new Error("PNG clipboard writes are not supported in this browser.");
+      }
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": dataUrlToPngBlob(pngUrl) })]);
       setCopyStatus("copied");
     } catch {
-      download();
-      setCopyStatus("downloaded");
+      setCopyStatus("blocked");
     }
     window.setTimeout(() => setCopyStatus("idle"), 2200);
   };
@@ -615,11 +614,11 @@ function ExportButton({
                   <Download size={15} aria-hidden="true" /> Download
                 </button>
                 <button type="button" onClick={copyImage} className="button button-secondary justify-center text-sm" disabled={!pngUrl}>
-                  <Copy size={15} aria-hidden="true" /> {copyStatus === "copied" ? "Copied" : copyStatus === "downloaded" ? "Downloaded" : "Copy PNG"}
+                  <Copy size={15} aria-hidden="true" /> {copyStatus === "copied" ? "Copied" : copyStatus === "blocked" ? "Copy blocked" : "Copy PNG"}
                 </button>
               </div>
-              {copyStatus === "downloaded" && (
-                <p className="mt-2 text-xs text-[var(--muted)]">Image copy was blocked, so the PNG was downloaded instead.</p>
+              {copyStatus === "blocked" && (
+                <p className="mt-2 text-xs text-[var(--muted)]">This browser blocked image clipboard access. Use Download as a fallback.</p>
               )}
             </div>
           </div>
@@ -631,7 +630,7 @@ function ExportButton({
 
 /**
  * Renders the share card as a portrait "device" poster: a dark squircle card
- * with a blue top glow floating on a faint blueprint grid, holding a white
+ * with a blue top field on a faint blueprint grid, holding a white
  * earnings panel. Numbers are drawn two-tone (solid integer, greyed decimals).
  * Palette is strictly white / black / Rubicon blue, plus a green gain accent.
  */
@@ -676,6 +675,7 @@ async function renderExportPng({
   const GREEN_BG = "#e7f6ec";
   const GREEN = "#1f8f4e";
   const FONT = '"Helvetica Neue", Arial, sans-serif';
+  const logo = await loadImage("/rubicon-logo.png");
 
   // letterSpacing lands on the 2d context in modern browsers but isn't yet in
   // the TS DOM lib; cast so the source type-checks.
@@ -719,31 +719,25 @@ async function renderExportPng({
     ctx.lineTo(W, y);
   }
   ctx.stroke();
-  // soft center light so the grid fades toward the edges
-  const wash = ctx.createRadialGradient(W / 2, 600, 80, W / 2, 640, 780);
-  wash.addColorStop(0, "rgba(255,255,255,0.85)");
-  wash.addColorStop(1, "rgba(244,246,249,0)");
-  ctx.fillStyle = wash;
+  ctx.fillStyle = "rgba(255,255,255,0.34)";
   ctx.fillRect(0, 0, W, H);
 
   // ---- top bar -----------------------------------------------------------
-  ctx.font = `700 15px ${FONT}`;
-  const chipLabel = "RUBICON";
-  const chipTextW = ctx.measureText(chipLabel).width;
-  const chipPadX = 18;
-  const chipDot = 18;
+  const chipPadX = 16;
   const chipH = 40;
   const chipX = 64;
   const chipY = 72;
-  const chipW = chipPadX * 2 + chipDot + chipTextW;
+  const logoW = 116;
+  const logoH = logo ? logoW * (logo.height / logo.width) : 28;
+  const chipW = chipPadX * 2 + logoW;
   panel(chipX, chipY, chipW, chipH, chipH / 2, "#ffffff", "rgba(15,22,38,0.10)");
-  ctx.fillStyle = BLUE;
-  ctx.beginPath();
-  ctx.arc(chipX + chipPadX + 4, chipY + chipH / 2, 4, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = INK;
-  ctx.font = `700 15px ${FONT}`;
-  ctx.fillText(chipLabel, chipX + chipPadX + chipDot, chipY + chipH / 2 + 5);
+  if (logo) {
+    ctx.drawImage(logo, chipX + chipPadX, chipY + (chipH - logoH) / 2, logoW, logoH);
+  } else {
+    ctx.fillStyle = INK;
+    ctx.font = `700 15px ${FONT}`;
+    ctx.fillText("RUBICON", chipX + chipPadX, chipY + chipH / 2 + 5);
+  }
   ctx.fillStyle = MUTE;
   ctx.font = `600 18px ${FONT}`;
   ctx.textAlign = "right";
@@ -751,10 +745,10 @@ async function renderExportPng({
   ctx.textAlign = "left";
 
   // ---- earn card ---------------------------------------------------------
-  const cardW = 588;
+  const cardW = 676;
   const cardX = (W - cardW) / 2;
-  const cardY = 300;
-  const cardH = 712;
+  const cardY = 258;
+  const cardH = 780;
   const cardR = 64;
 
   // back "stacked layer" lip peeking above the dark card
@@ -767,38 +761,27 @@ async function renderExportPng({
   ctx.fillStyle = backLip;
   ctx.fill();
 
-  // dark card with a soft drop shadow
-  ctx.save();
-  ctx.shadowColor = "rgba(15,23,45,0.22)";
-  ctx.shadowBlur = 70;
-  ctx.shadowOffsetY = 46;
   ctx.fillStyle = "#0b0d12";
   roundRect(ctx, cardX, cardY, cardW, cardH, cardR);
   ctx.fill();
-  ctx.restore();
 
-  // blue glow bleeding from the top edge / top-right corner
+  // blue field across the top edge
   ctx.save();
   roundRect(ctx, cardX, cardY, cardW, cardH, cardR);
   ctx.clip();
   const topSheen = ctx.createLinearGradient(0, cardY, 0, cardY + 160);
-  topSheen.addColorStop(0, "rgba(47,109,229,0.45)");
+  topSheen.addColorStop(0, "rgba(47,109,229,0.72)");
   topSheen.addColorStop(1, "rgba(47,109,229,0)");
   ctx.fillStyle = topSheen;
-  ctx.fillRect(cardX, cardY, cardW, 160);
-  const corner = ctx.createRadialGradient(cardX + cardW - 30, cardY + 10, 0, cardX + cardW - 30, cardY + 10, 360);
-  corner.addColorStop(0, "rgba(86,140,255,0.55)");
-  corner.addColorStop(1, "rgba(47,109,229,0)");
-  ctx.fillStyle = corner;
-  ctx.fillRect(cardX, cardY, cardW, 320);
+  ctx.fillRect(cardX, cardY, cardW, 210);
   ctx.restore();
 
   // dark-card header: title + brand orb
   ctx.fillStyle = "#ffffff";
   ctx.font = `700 34px ${FONT}`;
-  ctx.fillText("Earnings", cardX + 46, cardY + 90);
+  ctx.fillText("Earnings", cardX + 50, cardY + 92);
   const orbR = 30;
-  const orbCx = cardX + cardW - 46 - orbR;
+  const orbCx = cardX + cardW - 50 - orbR;
   const orbCy = cardY + 48 + orbR;
   ctx.fillStyle = "#ffffff";
   ctx.beginPath();
@@ -810,14 +793,9 @@ async function renderExportPng({
   // ---- white inner card --------------------------------------------------
   const innerX = cardX + 38;
   const innerW = cardW - 76;
-  const innerY = cardY + 150;
-  const innerH = cardH - 150 - 40;
-  ctx.save();
-  ctx.shadowColor = "rgba(18,26,48,0.12)";
-  ctx.shadowBlur = 34;
-  ctx.shadowOffsetY = 18;
+  const innerY = cardY + 154;
+  const innerH = cardH - 154 - 44;
   panel(innerX, innerY, innerW, innerH, 44, "#ffffff");
-  ctx.restore();
 
   const pad = 40;
   const cx = innerX + pad;
@@ -853,42 +831,14 @@ async function renderExportPng({
   ctx.lineTo(cr, div1);
   ctx.stroke();
 
-  // two stat columns
-  const col2 = cx + (innerW - pad * 2) / 2 + 8;
-  const statLabelY = div1 + 46;
-  const statValueY = statLabelY + 46;
-  drawLabel("AGENT READS", cx, statLabelY);
-  drawLabel("AVG / READ", col2, statLabelY);
-  ctx.font = `800 34px ${FONT}`;
-  drawTwoTone(ctx, reads, cx, statValueY, INK, FRAC);
-  drawTwoTone(ctx, avgRead, col2, statValueY, INK, FRAC);
-
-  // divider
-  const div2 = statValueY + 46;
-  ctx.strokeStyle = LINE;
-  ctx.beginPath();
-  ctx.moveTo(cx, div2);
-  ctx.lineTo(cr, div2);
-  ctx.stroke();
-
-  // cta row
-  const ctaY = div2 + 58;
-  ctx.fillStyle = BLUE;
-  ctx.font = `700 22px ${FONT}`;
-  ctx.fillText("Earn on Rubicon", cx, ctaY);
-  const plusCx = cr - 22;
-  const plusCy = ctaY - 8;
-  ctx.strokeStyle = BLUE;
-  ctx.lineWidth = 2.2;
-  ctx.beginPath();
-  ctx.arc(plusCx, plusCy, 22, 0, Math.PI * 2);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(plusCx - 9, plusCy);
-  ctx.lineTo(plusCx + 9, plusCy);
-  ctx.moveTo(plusCx, plusCy - 9);
-  ctx.lineTo(plusCx, plusCy + 9);
-  ctx.stroke();
+  // activity chart
+  const chartY = div1 + 44;
+  const chartH = innerY + innerH - chartY - 42;
+  drawLabel("PAID WORD ACTIVITY", cx, chartY);
+  ctx.fillStyle = MUTE;
+  ctx.font = `600 13px ${FONT}`;
+  ctx.fillText(`${reads} reads · ${avgRead} avg / read`, cx, chartY + 28);
+  drawMiniActivityChart(ctx, cx, chartY + 54, cr - cx, chartH - 54, trendValues, BLUE, "rgba(47,109,229,0.14)", LINE);
 
   // ---- footer ------------------------------------------------------------
   const footY = H - 70;
@@ -965,6 +915,49 @@ function drawEye(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: s
   ctx.stroke();
 }
 
+function drawMiniActivityChart(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  values: number[],
+  blue: string,
+  blueWash: string,
+  line: string,
+) {
+  const data = values.length > 0 ? values : [0, 2, 1, 4, 3, 5, 7, 4, 6, 8, 5, 9, 7, 10];
+  const max = Math.max(...data, 0);
+  const baseline = y + height;
+
+  ctx.strokeStyle = line;
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 2; i += 1) {
+    const gy = y + (height / 2) * i;
+    ctx.beginPath();
+    ctx.moveTo(x, gy);
+    ctx.lineTo(x + width, gy);
+    ctx.stroke();
+  }
+
+  const gap = 8;
+  const barW = Math.max(8, (width - gap * (data.length - 1)) / data.length);
+  data.forEach((value, i) => {
+    const barH = max > 0 && value > 0 ? Math.max((value / max) * height, 8) : 4;
+    const bx = x + i * (barW + gap);
+    ctx.fillStyle = i >= data.length - 4 ? blue : blueWash;
+    roundRect(ctx, bx, baseline - barH, barW, barH, Math.min(9, barW / 2));
+    ctx.fill();
+  });
+
+  ctx.fillStyle = "#6b7280";
+  ctx.font = "600 11px \"Helvetica Neue\", Arial, sans-serif";
+  ctx.fillText("14D", x, baseline + 24);
+  ctx.textAlign = "right";
+  ctx.fillText("NOW", x + width, baseline + 24);
+  ctx.textAlign = "left";
+}
+
 /**
  * Derives a green "gain" figure from the 14-day trend by comparing the recent
  * half against the earlier half. Falls back to "New" when there's no baseline.
@@ -996,6 +989,25 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: n
   ctx.arcTo(x, y + height, x, y, radius);
   ctx.arcTo(x, y, x + width, y, radius);
   ctx.closePath();
+}
+
+function dataUrlToPngBlob(dataUrl: string) {
+  const [, base64 = ""] = dataUrl.split(",");
+  const binary = window.atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: "image/png" });
+}
+
+function loadImage(src: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
 }
 
 function DeltaHint({ pct, onDark = false }: { pct: number | null; onDark?: boolean }) {

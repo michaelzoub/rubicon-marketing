@@ -130,82 +130,161 @@ a {
   min-height: 100vh;
   place-items: center;
   overflow: hidden;
-  padding: clamp(1.25rem, 4vw, 3rem);
-  background: #0d0e11;
+  padding: clamp(1rem, 5vw, 3.5rem);
+  background:
+    linear-gradient(rgba(23, 26, 34, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(23, 26, 34, 0.055) 1px, transparent 1px),
+    #f3f3f2;
+  background-size: 7.2rem 7.2rem;
 }
 
 .writer-auth-card {
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(17rem, 0.55fr);
-  width: min(100%, 66rem);
-  min-height: min(78vh, 38rem);
+  grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.54fr);
+  width: min(100%, 80rem);
+  min-height: min(76vh, 42rem);
   overflow: hidden;
-  border: 1px solid #cfd2d8;
-  border-radius: 18px;
+  border: 1px solid rgba(23, 26, 34, 0.22);
+  border-radius: 20px;
   background: #ffffff;
 }
 
 .writer-auth-story {
+  position: relative;
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 3rem;
+  gap: 3.25rem;
   min-height: 100%;
-  padding: clamp(2rem, 5vw, 4rem);
+  padding: clamp(2.2rem, 5vw, 4rem);
   background:
-    linear-gradient(90deg, rgba(10, 12, 16, 0.82), rgba(10, 12, 16, 0.54)),
-    linear-gradient(135deg, #12141a 0%, #30343b 56%, #5a5d63 100%);
+    linear-gradient(90deg, rgba(3, 4, 7, 0.96), rgba(5, 7, 12, 0.9)),
+    linear-gradient(135deg, #040507 0%, #111721 54%, #050608 100%);
   color: #ffffff;
 }
 
+.writer-auth-story::before {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: url("/writer-auth-laurel.png");
+  background-position: 50% 44%;
+  background-size: min(118%, 52rem) auto;
+  background-repeat: no-repeat;
+  opacity: 0.22;
+  content: "";
+}
+
+.writer-auth-story::after {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background:
+    linear-gradient(90deg, rgba(2, 3, 6, 0.48), rgba(2, 3, 6, 0.18)),
+    linear-gradient(0deg, rgba(0, 0, 0, 0.42), transparent 42%);
+  content: "";
+}
+
 .writer-auth-story h1 {
-  max-width: 34rem;
+  max-width: 32rem;
   color: #ffffff;
-  font-size: clamp(2.4rem, 5vw, 4.7rem);
-  font-weight: 760;
-  line-height: 1.02;
+  font-size: 3.05rem;
+  font-weight: 720;
+  line-height: 1.18;
   letter-spacing: 0;
 }
 
 .writer-auth-copy {
-  margin: 1.25rem 0 0;
-  max-width: 33rem;
+  margin: 1.2rem 0 0;
+  max-width: 30rem;
   color: rgba(255, 255, 255, 0.78);
-  font-size: clamp(0.98rem, 1.5vw, 1.14rem);
+  font-size: 1rem;
   line-height: 1.62;
 }
 
 .writer-auth-benefits {
-  color: rgba(255, 255, 255, 0.78);
-  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.74rem;
+  line-height: 1.5;
 }
 
 .writer-auth-panel {
   display: grid;
   place-items: center;
-  align-content: center;
-  gap: 1.35rem;
+  align-content: start;
+  gap: 1.45rem;
   min-height: 100%;
-  padding: clamp(2rem, 4vw, 3rem);
+  padding: clamp(4.25rem, 9vh, 6.25rem) clamp(2rem, 4vw, 3rem) clamp(2rem, 4vw, 3rem);
   background: #ffffff;
   text-align: center;
+}
+
+.writer-auth-actions {
+  display: grid;
+  justify-items: center;
+  gap: 0.72rem;
+  width: min(100%, 21rem);
+}
+
+.writer-auth-quote {
+  position: relative;
+  width: min(100%, 21rem);
+  border: 1px solid rgba(23, 26, 34, 0.09);
+  border-radius: 12px;
+  background: #f8f9fb;
+  margin: 0;
+  padding: 1.55rem 1.35rem 1.25rem;
+  text-align: left;
+}
+
+.writer-auth-quote::before {
+  display: block;
+  margin-bottom: 0.65rem;
+  color: var(--river);
+  content: "“";
+  font-family: Georgia, serif;
+  font-size: 3.1rem;
+  font-weight: 700;
+  line-height: 0.55;
+}
+
+.writer-auth-quote blockquote {
+  margin: 0;
+  color: #171717;
+  font-size: 1.18rem;
+  font-weight: 650;
+  line-height: 1.48;
+}
+
+.writer-auth-quote strong {
+  font-weight: 820;
+}
+
+.writer-auth-quote figcaption {
+  display: block;
+  margin-top: 1.25rem;
+  color: #8e929b;
+  font-size: 0.78rem;
+  font-weight: 680;
 }
 
 .writer-auth-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: min(100%, 17rem);
-  min-height: 3.1rem;
+  width: min(100%, 19.5rem);
+  min-height: 3.35rem;
   border: 0;
-  border-radius: 9px;
+  border-radius: 6px;
   background: #171717;
   padding: 0 1.5rem;
   color: #ffffff;
-  font-size: 0.95rem;
-  font-weight: 800;
+  font-size: 0.86rem;
+  font-weight: 780;
+  letter-spacing: 0;
   transition:
     background-color 180ms var(--ease-soft),
     transform 200ms var(--ease-out);
@@ -217,32 +296,40 @@ a {
 }
 
 .writer-auth-privy {
-  width: min(100%, 9.5rem);
-}
-
-.writer-auth-privy img {
-  display: block;
-  width: 100%;
-  height: auto;
-  border-radius: 6px;
+  margin: 0;
+  color: #a8a8ad;
+  font-size: 0.72rem;
+  font-weight: 620;
+  letter-spacing: 0;
 }
 
 @media (max-width: 640px) {
   .writer-auth-screen {
-    padding: 1rem;
+    padding: 0.9rem;
+    background-size: 4.7rem 4.7rem;
   }
 
   .writer-auth-card {
     grid-template-columns: 1fr;
     min-height: auto;
+    width: min(100%, 34rem);
   }
 
   .writer-auth-story {
-    min-height: 26rem;
+    min-height: 25rem;
+  }
+
+  .writer-auth-story h1 {
+    font-size: 2.2rem;
+  }
+
+  .writer-auth-story::before {
+    background-size: 145% auto;
   }
 
   .writer-auth-panel {
-    padding: 1.4rem;
+    align-content: center;
+    padding: 2.25rem 1.4rem;
   }
 
   .writer-auth-copy {

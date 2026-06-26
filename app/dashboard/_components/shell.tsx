@@ -78,22 +78,28 @@ function WriterAuthScreen({ onLogin }: { onLogin: () => void }) {
           <div className="writer-auth-benefits mono">Private by default · 0% platform fee · Paid per word</div>
         </section>
         <section className="writer-auth-panel" aria-label="Sign up">
-          <button
-            type="button"
-            onClick={() => {
-              // Funnel step: unauthenticated writer opens the sign-in modal.
-              posthog.capture("sign_in_clicked", {
-                location: "dashboard_auth_gate",
-                current_url: window.location.pathname,
-              });
-              onLogin();
-            }}
-            className="writer-auth-button"
-          >
-            Sign up
-          </button>
-          <div className="writer-auth-privy">
-            <img src="/privy-protected-by.png" alt="Protected by Privy" />
+          <figure className="writer-auth-quote">
+            <blockquote>
+              The <strong>creator economy</strong> is being <strong>left out</strong>, loudly and notably.
+            </blockquote>
+            <figcaption>Jack Conte, CEO of Patreon</figcaption>
+          </figure>
+          <div className="writer-auth-actions">
+            <button
+              type="button"
+              onClick={() => {
+                // Funnel step: unauthenticated writer opens the sign-in modal.
+                posthog.capture("sign_in_clicked", {
+                  location: "dashboard_auth_gate",
+                  current_url: window.location.pathname,
+                });
+                onLogin();
+              }}
+              className="writer-auth-button"
+            >
+              Sign up
+            </button>
+            <p className="writer-auth-privy">Powered by Privy</p>
           </div>
         </section>
       </div>
