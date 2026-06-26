@@ -13,7 +13,7 @@ interface NavItem {
 
 const primaryNav: NavItem[] = [
   { href: "/", label: "Home", matchPath: "/" },
-  { href: "/creators", label: "Creators", matchPath: "/creators" },
+  { href: "/creators", label: "Writers", matchPath: "/creators" },
   { href: "/developers", label: "Developers", matchPath: "/developers" },
   { href: "/explore", label: "Explore", matchPath: "/explore" },
 ];
@@ -65,7 +65,7 @@ export function SiteHeader({
             List an article
           </Link>
           <Link href="https://calendly.com/michaezl/new-meeting" className="site-nav-cta site-nav-cta--sales">
-            Book a call
+            Book a demo
           </Link>
         </div>
       </nav>

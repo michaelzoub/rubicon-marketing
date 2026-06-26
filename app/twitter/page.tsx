@@ -14,7 +14,7 @@ const CYCLE_MS = (HOLD + TRANSITION * 2) * 1000;
 
 const beats = [
   {
-    kicker: "Creators",
+    kicker: "Writers",
     headline: "Feeling the FOMO as the agent economy takes off?",
     sub: "Your best work should be readable by agents without becoming free training paste.",
   },
@@ -25,7 +25,7 @@ const beats = [
   },
   {
     kicker: "Rubicon",
-    headline: "Creators upload paywalled articles. Agents pay to read them word by word.",
+    headline: "Writers upload paywalled articles. Agents pay to read them word by word.",
     sub: "The article streams just enough evidence for the answer, without handing over the whole sauce.",
   },
   {

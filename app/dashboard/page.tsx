@@ -5,14 +5,13 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   ArrowRight,
-  CheckCircle2,
-  Circle,
   Copy,
   Download,
   ExternalLink,
   FileText,
   Eye,
   Link2,
+  MousePointerClick,
   RefreshCw,
   ShieldCheck,
   Wallet2,
@@ -53,7 +52,7 @@ export default function OverviewPage() {
   const loading = [articles, wallet, earnings].some((q) => q.status === "loading");
   const firstError = [articles, wallet, earnings].find((q) => q.status === "error");
 
-  const greeting = user?.twitter?.username ? `@${user.twitter.username}` : user?.email?.address ?? "creator";
+  const greeting = user?.twitter?.username ? `@${user.twitter.username}` : user?.email?.address ?? "writer";
 
   const walletConnected = Boolean(wallet.data?.address);
   const hasArticles = (articles.data?.length ?? 0) > 0;
@@ -330,19 +329,29 @@ function OnboardingChecklistCard({
   const firstUnpriced = articles.find((article) => Number(article.pricePerWordAtomic) <= 0);
   const firstDraft = articles.find((article) => article.state !== "live");
 
+  let guideTitle = "Create or import an article";
+  let guideDescription = "Start with one draft or a supported URL. Agents need a listed article before paid reads can begin.";
   let cta: React.ReactNode = <PrimaryLink href="/dashboard/articles/new">Create article</PrimaryLink>;
   if (hasArticles && !hasPricedArticle) {
+    guideTitle = "Set a price per word";
+    guideDescription = "Choose what agents pay for each delivered word before you publish.";
     cta = <PrimaryLink href={`/dashboard/articles/${firstUnpriced?.id ?? articles[0].id}`}>Set pricing</PrimaryLink>;
   } else if (hasArticles && !previewSeen) {
+    guideTitle = "Preview what agents see";
+    guideDescription = "Check the outline-only agent view before publishing the article.";
     cta = (
       <button type="button" onClick={onPreview} className="button button-primary text-sm">
         <Eye size={15} aria-hidden="true" /> Preview as agent
       </button>
     );
   } else if (hasDraftOnly) {
+    guideTitle = "Publish the article";
+    guideDescription = "Make one priced article available so agents can start paid reads.";
     cta = <PrimaryLink href={`/dashboard/articles/${firstDraft?.id ?? articles[0].id}`}>Publish article</PrimaryLink>;
   } else if (!walletConnected) {
-    cta = <PrimaryLink href="/dashboard/settings">Connect wallet</PrimaryLink>;
+    guideTitle = "Confirm your connection";
+    guideDescription = "Confirm the secure account connection Rubicon uses for payouts. No crypto setup language needed.";
+    cta = <PrimaryLink href="/dashboard/settings">Confirm connection</PrimaryLink>;
   }
 
   return (
@@ -350,17 +359,24 @@ function OnboardingChecklistCard({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold">Start earning from agent reads</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">Complete the setup steps agents need before paid reads can begin.</p>
+          <p className="mt-1 text-sm text-[var(--muted)]">Follow the next guided action to make your first article readable by agents.</p>
         </div>
-        <div className="shrink-0">{cta}</div>
+        <div className="guided-action-target shrink-0">
+          <span className="guided-action-cue" aria-hidden="true">
+            <MousePointerClick size={16} />
+          </span>
+          {cta}
+        </div>
       </div>
-      <ol className="mt-5 grid gap-3">
-        <ChecklistItem done={hasArticles} title="Create or import an article" description="Start from a draft or a supported URL." />
-        <ChecklistItem done={hasPricedArticle} title="Set price per word" description="Add pricing to at least one article." />
-        <ChecklistItem done={previewSeen} title="Preview what agents see" description="Check the metadata-only view before publishing." />
-        <ChecklistItem done={hasLive} title="Publish article" description="Make one article available for paid reads." />
-        <ChecklistItem done={walletConnected} title="Connect wallet / confirm payout details" description="Use a connected wallet for creator payouts." />
-      </ol>
+      <div className="guided-action-panel mt-5">
+        <div className="guided-action-icon" aria-hidden="true">
+          <MousePointerClick size={18} />
+        </div>
+        <div>
+          <div className="text-sm font-semibold">{guideTitle}</div>
+          <p className="mt-1 text-sm leading-6 text-[var(--muted)]">{guideDescription}</p>
+        </div>
+      </div>
     </Card>
   );
 }
@@ -480,7 +496,7 @@ function ExportButton({
   const [open, setOpen] = useState(false);
   const [pngUrl, setPngUrl] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "downloaded">("idle");
-  const publicSummary = `Rubicon creator ${username} has earned ${formatUsdNumber(totalEarned)} from ${formatInt(agentReads)} agent reads across ${formatInt(wordsRead)} paid words.`;
+  const publicSummary = `Rubicon writer ${username} has earned ${formatUsdNumber(totalEarned)} from ${formatInt(agentReads)} agent reads across ${formatInt(wordsRead)} paid words.`;
 
   useEffect(() => {
     let cancelled = false;
@@ -506,7 +522,7 @@ function ExportButton({
     if (!pngUrl) return;
     const link = document.createElement("a");
     link.href = pngUrl;
-    link.download = `rubicon-${username.replace(/[^a-z0-9_-]+/gi, "-").replace(/^-|-$/g, "") || "creator"}-earnings.png`;
+    link.download = `rubicon-${username.replace(/[^a-z0-9_-]+/gi, "-").replace(/^-|-$/g, "") || "writer"}-earnings.png`;
     link.click();
   };
 
@@ -880,7 +896,7 @@ function OnchainCard({ address }: { address: string | null }) {
         <WithdrawDialog open={withdrawOpen} onClose={() => setWithdrawOpen(false)} walletAddress={address} />
       )}
       <CardHeader
-        title="Wallet & payouts"
+        title="Payout connection"
         action={
           address ? (
             <div className="flex items-center gap-4">
@@ -906,14 +922,14 @@ function OnchainCard({ address }: { address: string | null }) {
         <div className="p-5">
           <EmptyState
             icon={<Wallet2 size={22} aria-hidden="true" />}
-            title="No wallet set up yet"
-            description="Set up your Privy wallet to see your on-chain address, network, and balance."
-            action={<PrimaryLink href="/dashboard/settings">Set up wallet</PrimaryLink>}
+            title="Connection not confirmed"
+            description="Confirm the secure Privy connection Rubicon uses for payouts."
+            action={<PrimaryLink href="/dashboard/settings">Confirm connection</PrimaryLink>}
           />
         </div>
       ) : (
         <div className="grid gap-3 px-3 pb-3">
-          <p className="px-2 text-xs text-[var(--muted)]">Withdrawable earnings are sent to your connected wallet.</p>
+          <p className="px-2 text-xs text-[var(--muted)]">Withdrawable earnings are sent through your confirmed payout connection.</p>
           <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
           {/* Wallet address */}
           <div className="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-5">
@@ -1118,38 +1134,4 @@ function buildEarningsSlices(articles: Article[]): DonutSlice[] {
     });
   }
   return slices;
-}
-
-function ChecklistItem({
-  done,
-  title,
-  description,
-  href,
-  cta,
-}: {
-  done: boolean;
-  title: string;
-  description: string;
-  href?: string;
-  cta?: string;
-}) {
-  return (
-    <li className="flex items-start gap-3 rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4">
-      {done ? (
-        <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-[var(--green)]" aria-hidden="true" />
-      ) : (
-        <Circle size={20} className="mt-0.5 shrink-0 text-[var(--line)]" aria-hidden="true" />
-      )}
-      <div className="min-w-0 flex-1">
-        <div className="font-medium">{title}</div>
-        <div className="mt-0.5 text-sm text-[var(--muted)]">{description}</div>
-      </div>
-      {!done && href && cta && (
-        <Link href={href} className="button button-secondary shrink-0 text-sm">
-          {href.includes("wallet") || href.includes("settings") ? <Wallet2 size={15} aria-hidden="true" /> : null}
-          {cta}
-        </Link>
-      )}
-    </li>
-  );
 }

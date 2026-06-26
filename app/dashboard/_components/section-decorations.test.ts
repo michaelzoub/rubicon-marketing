@@ -43,4 +43,18 @@ describe("SectionDecorations", () => {
 
     editor.destroy();
   });
+
+  it("does not mark third-level headings as section starts", () => {
+    const editor = makeEditor("<h3>Body subhead</h3><p>Detail</p><h2>Real section</h2><p>Body</p>");
+    const blocks = Array.from(editor.view.dom.children);
+
+    expect(blocks.map((block) => block.className)).toEqual([
+      "md-block md-lead-block md-section-start",
+      "md-block md-section-end",
+      "md-block md-heading-block md-section-start",
+      "md-block md-section-end",
+    ]);
+
+    editor.destroy();
+  });
 });

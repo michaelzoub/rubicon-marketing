@@ -72,7 +72,7 @@ export function CreatorDashboardPreview({ embedded = false }: { embedded?: boole
 
   const overviewProps: DashboardOverviewProps = useMemo(
     () => ({
-      greeting: "@creator",
+      greeting: "@writer",
       contentProtection: {
         stats: [
           { label: "Full article hidden", value: "4 articles" },
@@ -82,7 +82,7 @@ export function CreatorDashboardPreview({ embedded = false }: { embedded?: boole
         ],
       },
       exportData: {
-        username: "@previewcreator",
+        username: "@previewwriter",
         totalEarned: 501.09,
         wordsRead: 50005,
         agentReads: 183,
@@ -148,7 +148,7 @@ export function CreatorDashboardPreview({ embedded = false }: { embedded?: boole
   );
 
   const frame = (
-    <DashboardFrame identity="@previewcreator" activePath="/dashboard">
+    <DashboardFrame identity="@previewwriter" activePath="/dashboard">
       <DashboardOverviewContent {...overviewProps} />
     </DashboardFrame>
   );

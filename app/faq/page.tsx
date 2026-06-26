@@ -5,7 +5,7 @@ import { SiteHeader } from "../_components/site-header";
 
 export const metadata: Metadata = {
   title: "FAQ · Rubicon",
-  description: "Answers about word-level metering, micropayments, USDC settlement, and how Rubicon works for creators and agents.",
+  description: "Answers about word-level metering, micropayments, USDC settlement, and how Rubicon works for writers and agents.",
 };
 
 export default function FaqPage() {

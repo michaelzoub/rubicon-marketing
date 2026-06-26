@@ -56,35 +56,49 @@ function AuthGate({ children }: { children: ReactNode }) {
   }
 
   if (!authenticated) {
-    return (
-      <CenteredScreen>
-        <RubiconBrand className="h-10" />
-        <h1 className="mt-6 text-2xl font-semibold text-white">Sign in to Rubicon</h1>
-        <p className="mt-3 max-w-sm text-sm leading-6 text-[#a7abb4]">
-          Manage articles, pricing, and earnings from one secure creator dashboard.
-        </p>
-        <button
-          type="button"
-          onClick={() => {
-            // Funnel step: unauthenticated creator opens the sign-in modal.
-            posthog.capture("sign_in_clicked", {
-              location: "dashboard_auth_gate",
-              current_url: window.location.pathname,
-            });
-            login();
-          }}
-          className="mt-7 inline-flex h-12 items-center justify-center rounded-lg bg-white px-8 text-sm font-semibold text-[#111318] transition hover:bg-[#f7f7f8]"
-        >
-          Sign in
-        </button>
-        <Link href="/" className="mt-5 text-sm text-[#c8cad0] transition hover:text-white">
-          Back to home
-        </Link>
-      </CenteredScreen>
-    );
+    return <WriterAuthScreen onLogin={login} />;
   }
 
   return <Layout>{children}</Layout>;
+}
+
+function WriterAuthScreen({ onLogin }: { onLogin: () => void }) {
+  return (
+    <div className="writer-auth-screen">
+      <div className="writer-auth-card">
+        <section className="writer-auth-story">
+          <RubiconBrand className="h-9" />
+          <div>
+            <h1>Start earning when agents read your work</h1>
+            <p className="writer-auth-copy">
+              List one article, set a per-word price, and let agents pay for only the sections they need. Your full piece
+              stays private until words are paid for.
+            </p>
+          </div>
+          <div className="writer-auth-benefits mono">Private by default · 0% platform fee · Paid per word</div>
+        </section>
+        <section className="writer-auth-panel" aria-label="Sign up">
+          <button
+            type="button"
+            onClick={() => {
+              // Funnel step: unauthenticated writer opens the sign-in modal.
+              posthog.capture("sign_in_clicked", {
+                location: "dashboard_auth_gate",
+                current_url: window.location.pathname,
+              });
+              onLogin();
+            }}
+            className="writer-auth-button"
+          >
+            Sign up
+          </button>
+          <div className="writer-auth-privy">
+            <img src="/privy-protected-by.png" alt="Protected by Privy" />
+          </div>
+        </section>
+      </div>
+    </div>
+  );
 }
 
 function Layout({ children }: { children: ReactNode }) {
@@ -92,7 +106,7 @@ function Layout({ children }: { children: ReactNode }) {
   const identity =
     user?.twitter?.username
       ? `@${user.twitter.username}`
-      : user?.email?.address ?? (user?.wallet?.address ? `${user.wallet.address.slice(0, 6)}…` : "Creator");
+      : user?.email?.address ?? (user?.wallet?.address ? `${user.wallet.address.slice(0, 6)}…` : "Writer");
 
   return (
     <DashboardFrame identity={identity} onLogout={() => logout()}>
@@ -148,10 +162,28 @@ function Sidebar({
   return (
     <aside className="dashboard-sidebar sticky top-0 hidden h-screen border-r border-[var(--line)] bg-white lg:flex lg:flex-col">
       {!open ? (
-        <div className="flex h-full flex-col items-center px-3 py-4">
+        <div className="flex h-full flex-col items-center gap-4 px-3 py-4">
           <button type="button" onClick={onToggle} className="dashboard-icon-button" aria-label="Open sidebar" aria-expanded={false}>
             <PanelLeft size={16} aria-hidden="true" />
           </button>
+          <nav className="grid gap-2" aria-label="Dashboard sections">
+            {navSections.flatMap((section) => section.items).map((item) => {
+              const active = item.exact ? currentPath === item.href : currentPath.startsWith(item.href);
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`dashboard-nav-icon-link${active ? " is-active" : ""}`}
+                  onClick={onToggle}
+                  aria-label={item.label}
+                  title={item.label}
+                >
+                  <Icon size={16} aria-hidden="true" />
+                </Link>
+              );
+            })}
+          </nav>
         </div>
       ) : (
         <>
@@ -264,7 +296,7 @@ function ConfigNotice() {
   return (
     <CenteredScreen>
       <RubiconBrand className="h-10" />
-      <h1 className="mt-6 text-2xl font-semibold text-white">Connect creator login</h1>
+      <h1 className="mt-6 text-2xl font-semibold text-white">Connect writer login</h1>
       <p className="mt-3 max-w-md text-sm leading-6 text-[#a7abb4]">
         Set <code className="mono rounded-md bg-[var(--surface-muted)] px-1.5 py-0.5">NEXT_PUBLIC_PRIVY_APP_ID</code>,{" "}
         <code className="mono rounded-md bg-[var(--surface-muted)] px-1.5 py-0.5">NEXT_PUBLIC_SUPABASE_URL</code>, and{" "}

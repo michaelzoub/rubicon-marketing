@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, FileText, Search, Sparkles, Terminal, UserRound } from "lucide-react";
+import { Check, Copy, ExternalLink, FileText, Search, Sparkles, Terminal, UserRound } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { PublicCreator } from "@/lib/rubicon/public";
 import { atomicPerWordToPer1000Usd, formatUsdNumber } from "@/lib/rubicon/pricing";
@@ -31,6 +31,11 @@ function creatorAvatarSrc(creator: PublicCreator): string {
   return creator.avatarUrl || xAvatarUrl(creator.username);
 }
 
+function xProfileUrl(username: string): string {
+  const handle = username.replace(/^@/, "").trim();
+  return handle ? `https://x.com/${encodeURIComponent(handle)}` : "";
+}
+
 function articlePrice(article: PublicCreator["articles"][number]) {
   return atomicPerWordToPer1000Usd(article.pricePerWordAtomic);
 }
@@ -46,7 +51,7 @@ function sortArticles(articles: PublicCreator["articles"], sort: SortMode) {
 
 function sortCreators(creators: PublicCreator[], sort: SortMode) {
   return [...creators].sort((a, b) => {
-    if (sort === "popular") return b.popularityScore - a.popularityScore || b.articles.length - a.articles.length;
+    if (sort === "popular") return b.popularityScore - a.popularityScore || b.articles.length - a.articles.length || totalWords(b) - totalWords(a);
     if (sort === "price") return Math.min(...a.articles.map(articlePrice)) - Math.min(...b.articles.map(articlePrice));
     if (sort === "depth") return totalWords(b) - totalWords(a);
     return latestUpdated(b) - latestUpdated(a);
@@ -59,6 +64,14 @@ function totalWords(creator: PublicCreator) {
 
 function totalReads(articles: PublicCreator["articles"]) {
   return articles.reduce((sum, article) => sum + article.readCount, 0);
+}
+
+function xSourcedArticles(articles: PublicCreator["articles"]) {
+  return articles.filter((article) => article.sourcePlatform === "x").length;
+}
+
+function sourceHandle(article: PublicCreator["articles"][number]) {
+  return article.sourceAuthorHandle?.replace(/^@/, "").trim();
 }
 
 function latestUpdated(creator: PublicCreator) {
@@ -104,8 +117,14 @@ function ArticleCard({ article }: { article: PublicCreator["articles"][number] }
         <div className="explore-preview-label">Featured article</div>
         <h3>{article.title}</h3>
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[var(--muted)]">
+          <span>{article.readCount.toLocaleString()} paid read{article.readCount === 1 ? "" : "s"}</span>
           <span>{article.totalWords.toLocaleString()} words</span>
           <span className="text-[var(--river)]">{price} / 1k words</span>
+          {article.sourcePlatform === "x" && article.sourceUrl && (
+            <a href={article.sourceUrl} target="_blank" rel="noopener noreferrer" className="explore-social-link">
+              X source{sourceHandle(article) ? ` · @${sourceHandle(article)}` : ""} <ExternalLink size={11} aria-hidden="true" />
+            </a>
+          )}
         </div>
       </div>
       <button type="button" onClick={copy} className="explore-row-action" aria-label={`Copy command for ${article.title}`}>
@@ -120,8 +139,11 @@ function CreatorRoom({ creator, sort }: { creator: PublicCreator; sort: SortMode
   const articles = sortArticles(creator.articles, sort);
   const featuredArticle = articles[0];
   const remainingArticles = Math.max(0, articles.length - 1);
-  const readLabel = `${totalReads(articles).toLocaleString()} reads`;
+  const readCount = totalReads(articles);
+  const xArticleCount = xSourcedArticles(articles);
+  const readLabel = `${readCount.toLocaleString()} reads`;
   const avatarSrc = creatorAvatarSrc(creator);
+  const profileUrl = xProfileUrl(creator.username);
   return (
     <section id={`creator-${creator.id}`} className="explore-room">
       <span className="explore-read-badge">{readLabel}</span>
@@ -139,6 +161,18 @@ function CreatorRoom({ creator, sort }: { creator: PublicCreator; sort: SortMode
           </div>
           <p>@{creator.username}{creator.bio ? ` · ${creator.bio}` : ""}</p>
         </div>
+      </div>
+
+      <div className="explore-social-proof" aria-label="Social proof">
+        {profileUrl && (
+          <a href={profileUrl} target="_blank" rel="noopener noreferrer">
+            X profile <ExternalLink size={11} aria-hidden="true" />
+          </a>
+        )}
+        <span>{readCount.toLocaleString()} paid read{readCount === 1 ? "" : "s"}</span>
+        {xArticleCount > 0 && (
+          <span>{xArticleCount} from X</span>
+        )}
       </div>
 
       <div className="explore-room-meta">
@@ -169,7 +203,7 @@ export function ExploreDirectory({ creators }: { creators: PublicCreator[] }) {
       ...creator,
       articles: creator.articles.filter((article) => {
         if (!normalizedQuery) return true;
-        return [creator.displayName, creator.username, creator.bio ?? "", article.title, article.author, ...article.sectionHeadings]
+        return [creator.displayName, creator.username, creator.bio ?? "", article.title, article.author, article.sourceAuthorHandle ?? "", ...article.sectionHeadings]
           .join(" ")
           .toLowerCase()
           .includes(normalizedQuery);
@@ -206,6 +240,7 @@ export function ExploreDirectory({ creators }: { creators: PublicCreator[] }) {
                   <span>{initials(creator.displayName)}</span>
                 )}
                 <span className="min-w-0 truncate">{creator.displayName}</span>
+                <span className="explore-author-proof">{totalReads(creator.articles).toLocaleString()} reads</span>
               </a>
             );
           })}

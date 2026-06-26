@@ -23,7 +23,7 @@ export default function SettingsPage() {
 
   return (
     <div className="grid gap-6">
-      <PageHeader title="Settings" description="Manage your creator profile, receiving wallet, and developer access." />
+      <PageHeader title="Settings" description="Manage your writer profile, receiving wallet, and developer access." />
 
       {creator.status === "loading" && <LoadingState />}
       {creator.status === "error" && creator.error && <ErrorState error={creator.error} onRetry={creator.refetch} />}
@@ -53,9 +53,9 @@ export default function SettingsPage() {
             </div>
           </Card>
 
-          {/* Creator identity */}
+          {/* Writer identity */}
           <Card>
-            <CardHeader title="Creator identity" />
+            <CardHeader title="Writer identity" />
             <div className="grid gap-2 p-3">
               <div className="flex items-center justify-between gap-4 p-5">
                 <div>
@@ -69,9 +69,9 @@ export default function SettingsPage() {
             </div>
           </Card>
 
-          {/* Receiving wallet */}
+          {/* Payout connection */}
           <Card>
-            <CardHeader title="Receiving wallet" />
+            <CardHeader title="Payout connection" />
             <div className="p-5">
               {wallet.status === "loading" && <LoadingState />}
               {wallet.status === "error" && wallet.error && <ErrorState error={wallet.error} onRetry={wallet.refetch} />}
@@ -299,7 +299,7 @@ function WalletEditor({
   return (
     <div className="grid gap-4">
       <div className="flex items-center justify-between">
-        <span className="text-sm font-medium">Receiving wallet</span>
+        <span className="text-sm font-medium">Connection details</span>
         {address && <WalletStatePill verified={verified} />}
       </div>
 
@@ -308,12 +308,12 @@ function WalletEditor({
           <div className="grid gap-0.5 min-w-0">
             <span className="mono truncate text-sm">{address}</span>
             <span className="text-xs text-[var(--muted)]">
-              {isConnected ? "Privy wallet" : "External address"} · {networkLabel}
+              {isConnected ? "Privy connection" : "External payout address"} · {networkLabel}
             </span>
           </div>
           {!isConnected && (
             <button type="button" onClick={connect} disabled={working || !ready} className="button button-secondary text-sm disabled:opacity-50">
-              {working ? "Connecting…" : "Use my Privy wallet"}
+              {working ? "Confirming…" : "Use Privy connection"}
             </button>
           )}
         </div>
@@ -324,14 +324,14 @@ function WalletEditor({
           disabled={working || !ready}
           className="button button-primary inline-flex w-fit items-center gap-2 text-sm disabled:opacity-50"
         >
-          <Wallet size={15} aria-hidden="true" /> {working ? "Setting up…" : "Set up wallet"}
+          <Wallet size={15} aria-hidden="true" /> {working ? "Confirming…" : "Confirm connection"}
         </button>
       )}
 
       {shownError && <p className="rounded-lg bg-[#fff1f0] px-4 py-3 text-sm text-[#8d2f2d]">{shownError}</p>}
       <p className="rounded-lg bg-[var(--surface-muted)] px-4 py-3 text-xs leading-5 text-[var(--muted)]">
-        Payments for your articles are routed directly to this wallet. Rubicon never takes custody of your funds. Your
-        wallet is created and secured by Privy when you sign in.
+        Payments for your articles are routed through this Privy-secured payout connection. Rubicon never takes custody
+        of your funds.
       </p>
     </div>
   );
@@ -348,7 +348,7 @@ function DeveloperInfo({ creatorId, privyId }: { creatorId: string; privyId: str
       {open && (
         <div className="grid gap-3 bg-[var(--surface-muted)] p-5 text-sm">
           <DevRow label="Privy ID" value={<code className="mono">{privyId || "—"}</code>} />
-          <DevRow label="Creator ID" value={<code className="mono">{creatorId || "—"}</code>} />
+          <DevRow label="Writer ID" value={<code className="mono">{creatorId || "—"}</code>} />
         </div>
       )}
     </Card>

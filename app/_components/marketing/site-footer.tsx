@@ -6,7 +6,7 @@ const githubUrl = "https://github.com/michaelzoub/rubicon";
 const footerLinks = {
   product: [
     { href: "/", label: "Home" },
-    { href: "/creators", label: "Creators" },
+    { href: "/creators", label: "Writers" },
     { href: "/developers", label: "Developers" },
     { href: "/explore", label: "Explore" },
   ],
@@ -53,7 +53,7 @@ export function SiteFooter() {
       <div className="container site-footer-main">
         <div className="site-footer-brand">
           <RubiconBrand className="h-7" />
-          <p className="site-footer-tagline">Pay-per-word, between agents and creators.</p>
+          <p className="site-footer-tagline">Pay-per-word, between agents and writers.</p>
           <div className="site-footer-caliga">
             <span className="site-footer-caliga-logo">
               <img src="/caliga-logo.png" alt="" className="site-footer-caliga-image" />

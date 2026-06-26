@@ -20,7 +20,7 @@ export function parseSections(content: string): ParsedSection[] {
   let sawHeading = false;
 
   for (const line of lines) {
-    const heading = line.match(/^(#{1,3})\s+(.+)$/);
+    const heading = line.match(/^(#{1,2})\s+(.+)$/);
     if (heading) {
       if (sawHeading || current.body.trim()) {
         sections.push({ ...current, body: current.body.trim() });

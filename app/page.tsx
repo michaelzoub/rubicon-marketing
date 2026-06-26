@@ -57,9 +57,9 @@ function DashboardShowcase() {
       <motion.div {...fade} className="container landing-dashboard-showcase-inner">
         <div className="landing-copy-stack landing-dashboard-showcase-header">
           <div className="landing-section-kicker">
-            <p className="landing-section-eyebrow">Creator dashboard</p>
+            <p className="landing-section-eyebrow">Writer dashboard</p>
             <h2 id="dashboard-showcase-heading" className="landing-section-title">
-              The dashboard creators get.
+              The dashboard writers get.
             </h2>
           </div>
           <p className="landing-section-lead landing-dashboard-showcase-lead">
@@ -79,7 +79,7 @@ function DashboardShowcase() {
               <div className="landing-dashboard-frame">
                 <img
                   src="/creator-dashboard.png"
-                  alt="Rubicon creator dashboard showing total earnings, words read, agent reads, recent activity, and wallet payouts"
+                  alt="Rubicon writer dashboard showing total earnings, words read, agent reads, recent activity, and wallet payouts"
                   className="landing-dashboard-image"
                   decoding="async"
                 />
@@ -100,11 +100,11 @@ function ProductSection() {
           <div className="landing-section-kicker">
             <p className="landing-section-eyebrow">Our product</p>
             <h2 id="product-heading" className="landing-section-title">
-              How agents pay creators, word by word.
+              How agents pay writers, word by word.
             </h2>
           </div>
           <p className="landing-section-lead landing-product-showcase-lead">
-            Agents read only the sections they need and pay per word. Creators earn for exactly what&apos;s read.
+            Agents read only the sections they need and pay per word. Writers earn for exactly what&apos;s read.
           </p>
           <ul className="landing-product-points">
             <li>
@@ -113,7 +113,7 @@ function ProductSection() {
             </li>
             <li>
               <Check size={14} className="text-[var(--river)]" aria-hidden="true" />
-              Creators earn for every word read
+              Writers earn for every word read
             </li>
             <li>
               <Check size={14} className="text-[var(--river)]" aria-hidden="true" />

@@ -11,7 +11,7 @@
  * SELECT on live articles + creators).
  */
 import { createClient } from "@supabase/supabase-js";
-import type { ArticleState } from "./types";
+import type { ArticleSourcePlatform, ArticleState } from "./types";
 
 export interface PublicArticle {
   id: string;
@@ -27,6 +27,9 @@ export interface PublicArticle {
   sectionHeadings: string[];
   popularityScore: number;
   readCount: number;
+  sourcePlatform: ArticleSourcePlatform | null;
+  sourceUrl: string | null;
+  sourceAuthorHandle: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -51,6 +54,9 @@ type ArticleRow = {
   price_per_word_atomic: string;
   max_article_price_atomic: string | null;
   total_words: number;
+  source_platform: ArticleSourcePlatform | null;
+  source_url: string | null;
+  source_author_handle: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -80,14 +86,14 @@ function publicClient() {
 
 /**
  * List every creator that has at least one live article, each with their live
- * catalog. Sorted by most recently updated article first.
+ * catalog. Sorted by paid-read popularity first.
  */
 export async function listPublicCreators(): Promise<PublicCreator[]> {
   const supabase = publicClient();
 
   const { data: articles, error: articlesError } = await supabase
     .from("articles")
-    .select("id, creator_id, title, author, state, price_per_word_atomic, max_article_price_atomic, total_words, created_at, updated_at")
+    .select("id, creator_id, title, author, state, price_per_word_atomic, max_article_price_atomic, total_words, source_platform, source_url, source_author_handle, created_at, updated_at")
     .eq("state", "live")
     .order("updated_at", { ascending: false })
     .returns<ArticleRow[]>();
@@ -179,13 +185,18 @@ export async function listPublicCreators(): Promise<PublicCreator[]> {
       sectionHeadings: sectionsByArticle.get(article.id) ?? [],
       popularityScore: readCount,
       readCount,
+      sourcePlatform: article.source_platform,
+      sourceUrl: article.source_url,
+      sourceAuthorHandle: article.source_author_handle,
       createdAt: article.created_at,
       updatedAt: article.updated_at,
     });
   }
 
-  // Most recently active creators first.
+  // Most popular creators first; recency is only a tie-breaker.
   return Array.from(byCreator.values()).sort((a, b) => {
+    if (b.popularityScore !== a.popularityScore) return b.popularityScore - a.popularityScore;
+    if (b.articles.length !== a.articles.length) return b.articles.length - a.articles.length;
     const aLatest = a.articles[0]?.updatedAt ?? a.createdAt;
     const bLatest = b.articles[0]?.updatedAt ?? b.createdAt;
     return bLatest < aLatest ? -1 : bLatest > aLatest ? 1 : 0;

@@ -25,13 +25,13 @@ export function CreatorsHero() {
             <blockquote className="creators-hero-quote">
               <p className="creators-hero-quote-text">
                 &ldquo;I&apos;m angry that we aren&apos;t being paid for the value that we created for these models.
-                Creators deserve consent, <strong>credit</strong> and <strong>compensation</strong>.&rdquo;
+                Writers deserve consent, <strong>credit</strong> and <strong>compensation</strong>.&rdquo;
               </p>
               <footer className="creators-hero-quote-attribution">&mdash; Jack Conte, Patreon CEO</footer>
             </blockquote>
             <div className="creators-hero-cta">
               <Link href="/dashboard" className="button button-primary">
-                Create a private demo <ArrowRight size={16} aria-hidden="true" />
+                List one article <ArrowRight size={16} aria-hidden="true" />
               </Link>
             </div>
           </motion.div>

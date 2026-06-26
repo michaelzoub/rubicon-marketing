@@ -8,8 +8,10 @@ import {
   ArrowRight,
   ChevronDown,
   ChevronUp,
+  FileText,
   Link2,
-  Upload,
+  PenLine,
+  Puzzle,
 } from "lucide-react";
 import { useRubiconMutation, useRubiconQuery } from "@/lib/rubicon/hooks";
 import {
@@ -177,10 +179,13 @@ export default function NewArticlePage() {
   const submitting = createArticle.pending || publishArticle.pending;
 
   return (
-    <div className="grid gap-6">
-      <PageHeader title="New article" description="Saved as a draft first. Nothing goes live until you publish." />
-
-      <Stepper current={step} />
+    <div className={step === 0 ? "article-compose-page" : "grid gap-6"}>
+      {step === 0 ? null : (
+        <>
+          <PageHeader title="New article" description="Saved as a draft first. Nothing goes live until you publish." />
+          <Stepper current={step} />
+        </>
+      )}
 
       {step === 0 && (
         <StepAddArticle
@@ -358,51 +363,105 @@ function StepAddArticle({
   const stillPartial = source ? isStillPartial(source, content) : false;
 
   return (
-    <Card className="p-6">
-      {source && (
-        <div className="mb-5 grid gap-3">
-          <ImportedSourceBanner source={source} partial={stillPartial} />
-          {stillPartial && (
-            <div className="rounded-lg bg-[#fdf6ec] px-4 py-3 text-sm leading-5 text-[#7b4e12]">
-              {/* Prefer the importer's source-specific guidance; fall back to the
-                  generic preview-only notice when it didn't supply one. */}
-              {source.warnings[0] ?? PARTIAL_IMPORT_NOTICE}
-            </div>
-          )}
+    <div className="substack-compose">
+      <header className="substack-compose-topbar">
+        <Link href="/dashboard/articles" className="substack-compose-back" aria-label="Back to articles">
+          <ArrowLeft size={21} aria-hidden="true" />
+        </Link>
+        <div className="substack-compose-status">
+          <span aria-hidden="true" />
+          Draft
         </div>
-      )}
-      <div className="grid gap-5">
-        <Field label="Article title">
-          <input value={title} onChange={(e) => onTitle(e.target.value)} placeholder="A clear, descriptive title" className={inputClass} />
-        </Field>
-        <Field label="Author">
-          <input value={author} onChange={(e) => onAuthor(e.target.value)} placeholder="Author name" className={inputClass} />
-        </Field>
-        <Field label="Editor" hint="Paste a whole article from Substack or X, or write it here. Each heading starts a new section — shown boxed below — and becomes a section agents can navigate.">
-          <MarkdownEditor
-            value={content}
-            onChange={onContent}
-            placeholder="Paste your article from Substack or X, or start writing…"
-          />
-        </Field>
-        <div className="flex flex-wrap items-center gap-3">
-          <input ref={fileRef} type="file" accept=".md,.markdown,.txt" onChange={onUpload} className="hidden" />
-          <button type="button" onClick={() => fileRef.current?.click()} className="button button-secondary text-sm">
-            <Upload size={15} aria-hidden="true" /> Upload Markdown
+        <div className="substack-compose-actions">
+          <button type="button" className="substack-compose-preview" disabled>
+            Preview
           </button>
-          {!source && (
-            <Link href="/dashboard/articles/import" className="button button-secondary text-sm">
-              <Link2 size={15} aria-hidden="true" /> Import from URL
-            </Link>
-          )}
+          <button type="button" onClick={onNext} disabled={!ready} className="substack-compose-continue">
+            Continue
+          </button>
         </div>
-      </div>
-      <div className="mt-6 flex justify-end pt-2">
-        <button type="button" onClick={onNext} disabled={!ready} className="button button-primary disabled:opacity-50">
-          Review sections <ArrowRight size={16} aria-hidden="true" />
-        </button>
-      </div>
-    </Card>
+      </header>
+
+      <main className="substack-compose-main">
+        {source && (
+          <div className="mb-7 grid gap-3">
+            <ImportedSourceBanner source={source} partial={stillPartial} />
+            {stillPartial && (
+              <div className="rounded-lg bg-[#fdf6ec] px-4 py-3 text-sm leading-5 text-[#7b4e12]">
+                {/* Prefer the importer's source-specific guidance; fall back to the
+                    generic preview-only notice when it didn't supply one. */}
+                {source.warnings[0] ?? PARTIAL_IMPORT_NOTICE}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="substack-compose-meta">
+          <textarea
+            value={title}
+            onChange={(e) => onTitle(e.target.value)}
+            placeholder="Title"
+            rows={1}
+            className="substack-title-input"
+          />
+          <input
+            value={author}
+            onChange={(e) => onAuthor(e.target.value)}
+            placeholder="Add author..."
+            className="substack-subtitle-input"
+          />
+          <div className="substack-compose-chips">
+            {author.trim() && (
+              <span className="substack-topic-chip">
+                {author.trim()}
+                <span aria-hidden="true">×</span>
+              </span>
+            )}
+          </div>
+        </div>
+
+        <section className="substack-import-panel" aria-label="Import article">
+          <div className="substack-import-copy">
+            <span>Bring in an existing article</span>
+            <p>Import from URL, upload Markdown, or use the Chrome extension. Writing manually is below if nothing else works.</p>
+          </div>
+          <div className="substack-import-actions">
+            {!source && (
+              <Link href="/dashboard/articles/import" className="substack-import-action is-primary">
+                <Link2 size={16} aria-hidden="true" />
+                Import URL
+              </Link>
+            )}
+            <button type="button" onClick={() => fileRef.current?.click()} className="substack-import-action">
+              <FileText size={16} aria-hidden="true" />
+              Import Markdown
+            </button>
+            <a
+              href="https://chromewebstore.google.com/detail/rubicon/allmdpfkdgdcjfgeijembjfpnkfpocab"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="substack-import-action"
+            >
+              <Puzzle size={16} aria-hidden="true" />
+              Chrome extension
+            </a>
+          </div>
+        </section>
+
+        <input ref={fileRef} type="file" accept=".md,.markdown,.txt" onChange={onUpload} className="hidden" />
+        <div className="substack-manual-editor">
+          <div className="substack-manual-editor-label">
+            <PenLine size={15} aria-hidden="true" />
+            <span>Write manually</span>
+          </div>
+        <MarkdownEditor
+          value={content}
+          onChange={onContent}
+          placeholder="Start writing..."
+        />
+        </div>
+      </main>
+    </div>
   );
 }
 
@@ -437,7 +496,7 @@ function StepReviewSections({
 
       {sections.length === 0 ? (
         <p className="mt-6 rounded-lg bg-[var(--surface-muted)] p-6 text-center text-sm text-[var(--muted)]">
-          No headings detected. Your article will be offered as a single section. Add Markdown <code className="mono">#</code> headings to split it.
+          No headers or subheaders detected. Your article will be offered as a single section. Use Header or Subheader to split it.
         </p>
       ) : (
         <ul className="mt-5 grid gap-3">

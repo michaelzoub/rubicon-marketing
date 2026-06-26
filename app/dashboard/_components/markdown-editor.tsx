@@ -9,12 +9,16 @@ import { Markdown } from "tiptap-markdown";
 import { HeadingEnter, SectionDecorations } from "./editor-extensions";
 import {
   Bold,
+  Code2,
+  Heading1,
+  Heading2,
   Heading,
   ImagePlus,
   Italic,
   List,
   ListOrdered,
   Quote,
+  Strikethrough,
 } from "lucide-react";
 
 // tiptap-markdown augments editor.storage at runtime but not in the types.
@@ -26,7 +30,7 @@ function getMarkdown(editor: Editor): string {
 // heading. Top-level ProseMirror nodes are DOM siblings, so we decorate those
 // nodes with explicit section classes instead of asking CSS to infer structure
 // from adjacent selectors.
-const HEADING_RE = /^#{1,3}\s+\S/;
+const HEADING_RE = /^#{1,2}\s+\S/;
 
 export function MarkdownEditor({
   value,
@@ -44,7 +48,7 @@ export function MarkdownEditor({
     immediatelyRender: false,
     extensions: useMemo(
       () => [
-        StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
+        StarterKit.configure({ heading: { levels: [1, 2] } }),
         Placeholder.configure({ placeholder: placeholder ?? "Start writing, or paste your article here…" }),
         Image.configure({ inline: false, allowBase64: true }),
         Markdown.configure({ transformPastedText: true, transformCopiedText: true }),
@@ -75,14 +79,14 @@ export function MarkdownEditor({
   const sectionCount = value.split(/\r?\n/).filter((line) => HEADING_RE.test(line)).length;
 
   return (
-    <div className="overflow-hidden rounded-xl bg-[var(--surface-muted)]">
+    <div className="substack-editor">
       <Toolbar editor={editor} />
 
-      <div className="p-4">
+      <div className="substack-editor-body">
         <EditorContent editor={editor} />
       </div>
 
-      <div className="flex items-center justify-between bg-[var(--surface-muted)] px-4 py-2 text-xs text-[var(--muted)]">
+      <div className="substack-editor-footer">
         <span>
           {sectionCount} {sectionCount === 1 ? "section" : "sections"}
         </span>
@@ -107,17 +111,33 @@ function Toolbar({ editor }: { editor: Editor | null }) {
   };
 
   return (
-    <div className="sticky top-0 z-10 flex flex-wrap items-center gap-1 bg-[var(--surface-muted)] px-3 py-2">
+    <div className="substack-toolbar">
       <ToolButton
-        label="Section heading"
+        label="Paragraph"
+        disabled={disabled}
+        active={!!editor?.isActive("paragraph")}
+        onClick={() => run((c) => c.setParagraph())}
+      >
+        <Heading size={16} aria-hidden="true" />
+      </ToolButton>
+      <ToolButton
+        label="Header"
+        disabled={disabled}
+        active={!!editor?.isActive("heading", { level: 1 })}
+        onClick={() => run((c) => c.toggleHeading({ level: 1 }))}
+      >
+        <Heading1 size={17} aria-hidden="true" />
+      </ToolButton>
+      <ToolButton
+        label="Subheader"
         disabled={disabled}
         active={!!editor?.isActive("heading", { level: 2 })}
         onClick={() => run((c) => c.toggleHeading({ level: 2 }))}
       >
-        <Heading size={16} aria-hidden="true" />
+        <Heading2 size={17} aria-hidden="true" />
       </ToolButton>
 
-      <span className="mx-1 h-5 w-px bg-[var(--line)]" aria-hidden="true" />
+      <span className="substack-toolbar-rule" aria-hidden="true" />
 
       <ToolButton label="Bold" disabled={disabled} active={!!editor?.isActive("bold")} onClick={() => run((c) => c.toggleBold())}>
         <Bold size={16} aria-hidden="true" />
@@ -125,8 +145,14 @@ function Toolbar({ editor }: { editor: Editor | null }) {
       <ToolButton label="Italic" disabled={disabled} active={!!editor?.isActive("italic")} onClick={() => run((c) => c.toggleItalic())}>
         <Italic size={16} aria-hidden="true" />
       </ToolButton>
+      <ToolButton label="Strikethrough" disabled={disabled} active={!!editor?.isActive("strike")} onClick={() => run((c) => c.toggleStrike())}>
+        <Strikethrough size={16} aria-hidden="true" />
+      </ToolButton>
+      <ToolButton label="Code" disabled={disabled} active={!!editor?.isActive("code")} onClick={() => run((c) => c.toggleCode())}>
+        <Code2 size={16} aria-hidden="true" />
+      </ToolButton>
 
-      <span className="mx-1 h-5 w-px bg-[var(--line)]" aria-hidden="true" />
+      <span className="substack-toolbar-rule" aria-hidden="true" />
 
       <ToolButton label="Bullet list" disabled={disabled} active={!!editor?.isActive("bulletList")} onClick={() => run((c) => c.toggleBulletList())}>
         <List size={16} aria-hidden="true" />
@@ -138,14 +164,14 @@ function Toolbar({ editor }: { editor: Editor | null }) {
         <Quote size={16} aria-hidden="true" />
       </ToolButton>
 
-      <span className="mx-1 h-5 w-px bg-[var(--line)]" aria-hidden="true" />
+      <span className="substack-toolbar-rule" aria-hidden="true" />
 
       <ToolButton label="Insert image" disabled={disabled} active={false} onClick={addImage}>
         <ImagePlus size={16} aria-hidden="true" />
       </ToolButton>
 
-      <span className="ml-auto hidden pr-1 text-xs text-[var(--muted)] sm:block">
-        Each heading starts a new section
+      <span className="substack-toolbar-note">
+        Headers and subheaders become sections
       </span>
     </div>
   );
@@ -174,8 +200,8 @@ function ToolButton({
       // Keep the editor selection while clicking the toolbar.
       onMouseDown={(e) => e.preventDefault()}
       onClick={onClick}
-      className={`grid h-8 w-8 place-items-center rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-35 ${
-        active ? "bg-[var(--river-pale)] text-[var(--river-deep)]" : "text-[var(--muted)] hover:bg-[var(--surface-muted)] hover:text-[var(--ink)]"
+      className={`substack-tool-button ${
+        active ? "is-active" : ""
       }`}
     >
       {children}

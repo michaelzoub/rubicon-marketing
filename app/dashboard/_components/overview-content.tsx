@@ -190,12 +190,12 @@ export function DashboardOverviewContent({
                   <h2 className="text-base font-semibold">Earnings breakdown</h2>
                   <p className="text-xs text-[var(--muted)]">Where your revenue comes from</p>
                 </div>
-                <div className="mt-6 grid gap-5 lg:grid-cols-[0.85fr_1.25fr]">
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+                <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.25fr)]">
+                  <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-1">
                     <InsightTile value={<CountUp value={breakdown.avgPerRead} format={formatUsdDisplay} />} caption="Average earned per agent read" />
                     <InsightTile value={<CountUp value={breakdown.wordsAvailable} format={formatInt} />} caption="Words live and available to agents" />
                   </div>
-                  <div className="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-5">
+                  <div className="min-w-0 rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-5">
                     <Donut slices={breakdown.slices} centerValue={breakdown.totalEarned} centerLabel="Total earned" />
                   </div>
                 </div>
@@ -425,7 +425,7 @@ function WalletCard({ wallet }: { wallet: DashboardOverviewWallet }) {
   return (
     <Card>
       <CardHeader
-        title="Wallet & payouts"
+        title="Payout connection"
         action={
           wallet.address ? (
             <div className="flex items-center gap-4">
@@ -447,18 +447,18 @@ function WalletCard({ wallet }: { wallet: DashboardOverviewWallet }) {
         <div className="p-5">
           <EmptyState
             icon={<Wallet2 size={22} aria-hidden="true" />}
-            title="No wallet set up yet"
-            description="Set up your Privy wallet to see your on-chain address, network, and balance."
+            title="Connection not confirmed"
+            description="Confirm the secure Privy connection Rubicon uses for payouts."
             action={
               <Link href={wallet.settingsHref ?? "/dashboard/settings"} className="button button-primary text-sm">
-                Set up wallet
+                Confirm connection
               </Link>
             }
           />
         </div>
       ) : (
         <div className="grid gap-3 px-3 pb-3">
-          <p className="px-2 text-xs text-[var(--muted)]">Withdrawable earnings are sent to your connected wallet.</p>
+          <p className="px-2 text-xs text-[var(--muted)]">Withdrawable earnings are sent through your confirmed payout connection.</p>
           <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
             <div className="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-5">
               <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Wallet address</div>
@@ -515,7 +515,7 @@ function ExportButton({
   const [open, setOpen] = useState(false);
   const [pngUrl, setPngUrl] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "downloaded">("idle");
-  const publicSummary = `Rubicon creator ${username} has earned ${formatUsdNumber(totalEarned)} from ${formatInt(agentReads)} agent reads across ${formatInt(wordsRead)} paid words.`;
+  const publicSummary = `Rubicon writer ${username} has earned ${formatUsdNumber(totalEarned)} from ${formatInt(agentReads)} agent reads across ${formatInt(wordsRead)} paid words.`;
 
   useEffect(() => {
     let cancelled = false;
@@ -541,7 +541,7 @@ function ExportButton({
     if (!pngUrl) return;
     const link = document.createElement("a");
     link.href = pngUrl;
-    link.download = `rubicon-${username.replace(/[^a-z0-9_-]+/gi, "-").replace(/^-|-$/g, "") || "creator"}-earnings.png`;
+    link.download = `rubicon-${username.replace(/[^a-z0-9_-]+/gi, "-").replace(/^-|-$/g, "") || "writer"}-earnings.png`;
     link.click();
   };
 
@@ -578,13 +578,13 @@ function ExportButton({
           aria-label="Export card"
         >
           <div
-            className="w-full max-w-2xl overflow-hidden rounded-[var(--radius-lg)] border border-[var(--line)] bg-white"
+            className="w-full max-w-md overflow-hidden rounded-[var(--radius-lg)] border border-[var(--line)] bg-white"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-[var(--faint)] px-5 py-4">
               <div>
                 <h2 className="text-base font-semibold">Export card</h2>
-                <p className="text-xs text-[var(--muted)]">Twitter-ready PNG · 1200 × 720</p>
+                <p className="text-xs text-[var(--muted)]">X-ready PNG · 1080 × 1350</p>
               </div>
               <button
                 type="button"
@@ -597,16 +597,16 @@ function ExportButton({
             </div>
 
             <div className="p-5">
-              <div className="overflow-hidden rounded-lg border border-[var(--line)] bg-[#eceef4]">
+              <div className="mx-auto w-full max-w-[320px] overflow-hidden rounded-[18px] border border-[var(--line)] bg-[#eceef4]">
                 {pngUrl ? (
                   <img
                     src={pngUrl}
                     alt={`${username} Rubicon earnings export card`}
-                    className="block aspect-[5/3] h-auto w-full object-cover"
+                    className="block aspect-[4/5] h-auto w-full object-cover"
                     draggable={false}
                   />
                 ) : (
-                  <div className="aspect-[5/3] animate-pulse bg-[var(--surface-muted)]" />
+                  <div className="aspect-[4/5] animate-pulse bg-[var(--surface-muted)]" />
                 )}
               </div>
 
@@ -629,6 +629,12 @@ function ExportButton({
   );
 }
 
+/**
+ * Renders the share card as a portrait "device" poster: a dark squircle card
+ * with a blue top glow floating on a faint blueprint grid, holding a white
+ * earnings panel. Numbers are drawn two-tone (solid integer, greyed decimals).
+ * Palette is strictly white / black / Rubicon blue, plus a green gain accent.
+ */
 async function renderExportPng({
   username,
   amount,
@@ -648,240 +654,329 @@ async function renderExportPng({
   avgRead: string;
   trendValues: number[];
 }) {
-  const width = 1200;
-  const height = 720;
-  // Render at 2x so the exported PNG stays crisp on retina displays and when
-  // scaled up on social. All drawing below uses logical (1x) coordinates.
+  const W = 1080;
+  const H = 1350;
+  // Render at 2x so the exported PNG stays crisp on retina and when scaled up
+  // on social. All drawing below uses logical (1x) coordinates.
   const scale = 2;
   const canvas = document.createElement("canvas");
-  canvas.width = width * scale;
-  canvas.height = height * scale;
+  canvas.width = W * scale;
+  canvas.height = H * scale;
   const ctx = canvas.getContext("2d");
   if (!ctx) return "";
   ctx.scale(scale, scale);
+  ctx.textBaseline = "alphabetic";
 
-  ctx.fillStyle = "#edf0f4";
-  ctx.fillRect(0, 0, width, height);
-  const cardX = 32;
-  const cardY = 32;
-  const cardW = width - 64;
-  const cardH = height - 64;
-  const cardGradient = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
-  cardGradient.addColorStop(0, "#fffaf4");
-  cardGradient.addColorStop(0.48, "#ffffff");
-  cardGradient.addColorStop(1, "#edf5ff");
-  drawExportGradientPanel(ctx, cardX, cardY, cardW, cardH, 18, cardGradient, "rgba(18,24,38,0.12)");
+  const INK = "#0b0d12";
+  const BLUE = "#2f6de5";
+  const LABEL = "#9aa2af";
+  const MUTE = "#6b7280";
+  const FRAC = "#c4cad4"; // greyed decimal part of two-tone numbers
+  const LINE = "rgba(15,22,38,0.08)";
+  const GREEN_BG = "#e7f6ec";
+  const GREEN = "#1f8f4e";
+  const FONT = '"Helvetica Neue", Arial, sans-serif';
 
-  const logo = await loadImage("/rubicon-new-dark.png");
-  const padX = 84;
+  // letterSpacing lands on the 2d context in modern browsers but isn't yet in
+  // the TS DOM lib; cast so the source type-checks.
+  const setSpacing = (v: string) => {
+    (ctx as unknown as { letterSpacing: string }).letterSpacing = v;
+  };
 
-  if (logo && logo.width > 0) {
-    const bgLogoW = 760;
-    const bgLogoH = bgLogoW * (logo.height / logo.width);
-    ctx.save();
-    ctx.globalAlpha = 0.035;
-    ctx.drawImage(logo, width - bgLogoW - 26, 96, bgLogoW, bgLogoH);
-    ctx.restore();
+  const panel = (x: number, y: number, w: number, h: number, r: number, fill: string, stroke?: string) => {
+    ctx.fillStyle = fill;
+    roundRect(ctx, x, y, w, h, r);
+    ctx.fill();
+    if (stroke) {
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+  };
+
+  const drawLabel = (text: string, x: number, y: number, align: CanvasTextAlign = "left") => {
+    ctx.font = `700 13px ${FONT}`;
+    ctx.fillStyle = LABEL;
+    ctx.textAlign = align;
+    setSpacing("1.4px");
+    ctx.fillText(text, x, y);
+    setSpacing("0px");
+    ctx.textAlign = "left";
+  };
+
+  // ---- backdrop: faint blueprint grid ------------------------------------
+  ctx.fillStyle = "#f4f6f9";
+  ctx.fillRect(0, 0, W, H);
+  ctx.strokeStyle = "rgba(20,40,80,0.05)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  for (let x = 40; x < W; x += 40) {
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, H);
   }
+  for (let y = 40; y < H; y += 40) {
+    ctx.moveTo(0, y);
+    ctx.lineTo(W, y);
+  }
+  ctx.stroke();
+  // soft center light so the grid fades toward the edges
+  const wash = ctx.createRadialGradient(W / 2, 600, 80, W / 2, 640, 780);
+  wash.addColorStop(0, "rgba(255,255,255,0.85)");
+  wash.addColorStop(1, "rgba(244,246,249,0)");
+  ctx.fillStyle = wash;
+  ctx.fillRect(0, 0, W, H);
 
-  const orangeOrb = ctx.createRadialGradient(188, 590, 0, 188, 590, 230);
-  orangeOrb.addColorStop(0, "rgba(255,122,26,0.22)");
-  orangeOrb.addColorStop(1, "rgba(255,122,26,0)");
-  ctx.fillStyle = orangeOrb;
-  ctx.fillRect(cardX, cardY, cardW, cardH);
+  // ---- top bar -----------------------------------------------------------
+  ctx.font = `700 15px ${FONT}`;
+  const chipLabel = "RUBICON";
+  const chipTextW = ctx.measureText(chipLabel).width;
+  const chipPadX = 18;
+  const chipDot = 18;
+  const chipH = 40;
+  const chipX = 64;
+  const chipY = 72;
+  const chipW = chipPadX * 2 + chipDot + chipTextW;
+  panel(chipX, chipY, chipW, chipH, chipH / 2, "#ffffff", "rgba(15,22,38,0.10)");
+  ctx.fillStyle = BLUE;
+  ctx.beginPath();
+  ctx.arc(chipX + chipPadX + 4, chipY + chipH / 2, 4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = INK;
+  ctx.font = `700 15px ${FONT}`;
+  ctx.fillText(chipLabel, chipX + chipPadX + chipDot, chipY + chipH / 2 + 5);
+  ctx.fillStyle = MUTE;
+  ctx.font = `600 18px ${FONT}`;
+  ctx.textAlign = "right";
+  ctx.fillText(truncateForCanvas(ctx, username, 320), W - 64, chipY + chipH / 2 + 6);
+  ctx.textAlign = "left";
 
-  const blueOrb = ctx.createRadialGradient(960, 184, 0, 960, 184, 250);
-  blueOrb.addColorStop(0, "rgba(47,109,229,0.18)");
-  blueOrb.addColorStop(1, "rgba(47,109,229,0)");
-  ctx.fillStyle = blueOrb;
-  ctx.fillRect(cardX, cardY, cardW, cardH);
+  // ---- earn card ---------------------------------------------------------
+  const cardW = 588;
+  const cardX = (W - cardW) / 2;
+  const cardY = 300;
+  const cardH = 712;
+  const cardR = 64;
 
-  ctx.fillStyle = "#0e1014";
-  ctx.font = "760 48px Arial, sans-serif";
-  ctx.fillText("Agent read earnings", padX, 166);
-  ctx.fillStyle = "#69707c";
-  ctx.font = "600 22px Arial, sans-serif";
-  ctx.fillText(`${username} on Rubicon`, padX, 200);
-
-  drawExportPill(ctx, width - padX - 132, 86, 132, 48, "14 days");
-
-  const heroX = padX;
-  const heroY = 240;
-  const heroW = 430;
-  const heroH = 172;
-  const heroGradient = ctx.createLinearGradient(heroX, heroY, heroX + heroW, heroY + heroH);
-  heroGradient.addColorStop(0, "#111827");
-  heroGradient.addColorStop(0.58, "#274d9c");
-  heroGradient.addColorStop(1, "#2f6de5");
-  drawExportGradientPanel(ctx, heroX, heroY, heroW, heroH, 16, heroGradient, "rgba(18,24,38,0.10)");
-  drawExportHatch(ctx, heroX + heroW - 118, heroY + 20, 92, 126, "rgba(255,255,255,0.16)");
-  ctx.fillStyle = "rgba(255,255,255,0.66)";
-  ctx.font = "700 14px Arial, sans-serif";
-  ctx.fillText("TOTAL EARNED", heroX + 30, heroY + 44);
-  ctx.fillStyle = "#ffffff";
-  ctx.font = "820 62px Arial, sans-serif";
-  ctx.fillText(truncateForCanvas(ctx, amount, heroW - 76), heroX + 30, heroY + 114);
-  ctx.fillStyle = "#b7f7d3";
-  ctx.font = "600 18px Arial, sans-serif";
-  ctx.fillText("Creator revenue from agent reads", heroX + 30, heroY + 146);
-
-  const metricX = heroX + heroW + 22;
-  const metricY = heroY;
-  const metricGap = 16;
-  const metricW = (width - padX - metricX - metricGap * 2) / 3;
-  drawStatTile(ctx, metricX, metricY, metricW, heroH, "Words", words, "#12b886");
-  drawStatTile(ctx, metricX + metricW + metricGap, metricY, metricW, heroH, "Reads", reads, "#ff7a1a");
-  drawStatTile(ctx, metricX + (metricW + metricGap) * 2, metricY, metricW, heroH, "Avg / read", avgRead, "#2f6de5");
-
-  const chartX = padX;
-  const chartY = 438;
-  const chartW = width - padX * 2;
-  const chartH = 164;
-  drawExportPanel(ctx, chartX, chartY, chartW, chartH, 16, "rgba(255,255,255,0.84)", "rgba(18,24,38,0.08)");
-  ctx.fillStyle = "#0e1014";
-  ctx.font = "700 22px Arial, sans-serif";
-  ctx.fillText("14-day agent activity", chartX + 24, chartY + 42);
-  ctx.fillStyle = "#8a9099";
-  ctx.font = "600 15px Arial, sans-serif";
-  ctx.fillText("Paid reads and word purchases over time", chartX + 24, chartY + 66);
-  drawBarChart(ctx, chartX + 24, chartY + 78, chartW - 48, chartH - 106, trendValues);
-
-  const footY = height - 58;
-  ctx.fillStyle = "rgba(255,255,255,0.7)";
-  roundRect(ctx, padX, footY - 34, width - padX * 2, 46, 10);
+  // back "stacked layer" lip peeking above the dark card
+  const backX = cardX + 26;
+  const backW = cardW - 52;
+  const backLip = ctx.createLinearGradient(0, cardY - 26, 0, cardY + 60);
+  backLip.addColorStop(0, "#cfe0ff");
+  backLip.addColorStop(1, "#eef4ff");
+  roundRect(ctx, backX, cardY - 26, backW, 120, 58);
+  ctx.fillStyle = backLip;
   ctx.fill();
 
-  ctx.font = "700 16px Arial, sans-serif";
-  ctx.fillStyle = "#7b838f";
-  ctx.fillText("Top article", padX + 18, footY - 5);
-  ctx.fillStyle = "#111827";
-  ctx.font = "700 17px Arial, sans-serif";
-  ctx.fillText(truncateForCanvas(ctx, topArticle, 470), padX + 112, footY - 5);
+  // dark card with a soft drop shadow
+  ctx.save();
+  ctx.shadowColor = "rgba(15,23,45,0.22)";
+  ctx.shadowBlur = 70;
+  ctx.shadowOffsetY = 46;
+  ctx.fillStyle = "#0b0d12";
+  roundRect(ctx, cardX, cardY, cardW, cardH, cardR);
+  ctx.fill();
+  ctx.restore();
 
-  ctx.font = "700 16px Arial, sans-serif";
-  const walletLabel = "Wallet";
-  const walletValue = wallet;
-  const walletValueW = ctx.measureText(walletValue).width;
-  const walletLabelW = ctx.measureText(walletLabel).width;
-  const walletX = width - padX - 18 - walletValueW - walletLabelW - 12;
-  ctx.fillStyle = "#7b838f";
-  ctx.fillText(walletLabel, walletX, footY - 5);
-  ctx.fillStyle = "#0e1014";
-  ctx.fillText(walletValue, walletX + walletLabelW + 12, footY - 5);
+  // blue glow bleeding from the top edge / top-right corner
+  ctx.save();
+  roundRect(ctx, cardX, cardY, cardW, cardH, cardR);
+  ctx.clip();
+  const topSheen = ctx.createLinearGradient(0, cardY, 0, cardY + 160);
+  topSheen.addColorStop(0, "rgba(47,109,229,0.45)");
+  topSheen.addColorStop(1, "rgba(47,109,229,0)");
+  ctx.fillStyle = topSheen;
+  ctx.fillRect(cardX, cardY, cardW, 160);
+  const corner = ctx.createRadialGradient(cardX + cardW - 30, cardY + 10, 0, cardX + cardW - 30, cardY + 10, 360);
+  corner.addColorStop(0, "rgba(86,140,255,0.55)");
+  corner.addColorStop(1, "rgba(47,109,229,0)");
+  ctx.fillStyle = corner;
+  ctx.fillRect(cardX, cardY, cardW, 320);
+  ctx.restore();
+
+  // dark-card header: title + brand orb
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `700 34px ${FONT}`;
+  ctx.fillText("Earnings", cardX + 46, cardY + 90);
+  const orbR = 30;
+  const orbCx = cardX + cardW - 46 - orbR;
+  const orbCy = cardY + 48 + orbR;
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(orbCx, orbCy, orbR, 0, Math.PI * 2);
+  ctx.fill();
+  drawWave(ctx, orbCx, orbCy - 6, 30, 4.2, BLUE);
+  drawWave(ctx, orbCx, orbCy + 7, 30, 4.2, BLUE);
+
+  // ---- white inner card --------------------------------------------------
+  const innerX = cardX + 38;
+  const innerW = cardW - 76;
+  const innerY = cardY + 150;
+  const innerH = cardH - 150 - 40;
+  ctx.save();
+  ctx.shadowColor = "rgba(18,26,48,0.12)";
+  ctx.shadowBlur = 34;
+  ctx.shadowOffsetY = 18;
+  panel(innerX, innerY, innerW, innerH, 44, "#ffffff");
+  ctx.restore();
+
+  const pad = 40;
+  const cx = innerX + pad;
+  const cr = innerX + innerW - pad;
+
+  // total earned
+  drawLabel("TOTAL EARNED", cx, innerY + 72);
+  ctx.font = `800 64px ${FONT}`;
+  drawTwoTone(ctx, amount, cx, innerY + 138, INK, FRAC);
+  drawEye(ctx, cr - 14, innerY + 116, "#aab1bd");
+
+  // gain pill + context
+  const delta = computeTrendDelta(trendValues);
+  ctx.font = `700 16px ${FONT}`;
+  const pillTextW = ctx.measureText(delta.label).width;
+  const pillH = 34;
+  const pillW = pillTextW + 26;
+  const pillTop = innerY + 170;
+  panel(cx, pillTop, pillW, pillH, 10, delta.up ? GREEN_BG : "#eef2f8");
+  ctx.fillStyle = delta.up ? GREEN : MUTE;
+  ctx.font = `700 16px ${FONT}`;
+  ctx.fillText(delta.label, cx + 13, pillTop + pillH / 2 + 5);
+  ctx.fillStyle = MUTE;
+  ctx.font = `500 16px ${FONT}`;
+  ctx.fillText(`${words} words · 14 days`, cx + pillW + 14, pillTop + pillH / 2 + 5);
+
+  // divider
+  const div1 = innerY + 248;
+  ctx.strokeStyle = LINE;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(cx, div1);
+  ctx.lineTo(cr, div1);
+  ctx.stroke();
+
+  // two stat columns
+  const col2 = cx + (innerW - pad * 2) / 2 + 8;
+  const statLabelY = div1 + 46;
+  const statValueY = statLabelY + 46;
+  drawLabel("AGENT READS", cx, statLabelY);
+  drawLabel("AVG / READ", col2, statLabelY);
+  ctx.font = `800 34px ${FONT}`;
+  drawTwoTone(ctx, reads, cx, statValueY, INK, FRAC);
+  drawTwoTone(ctx, avgRead, col2, statValueY, INK, FRAC);
+
+  // divider
+  const div2 = statValueY + 46;
+  ctx.strokeStyle = LINE;
+  ctx.beginPath();
+  ctx.moveTo(cx, div2);
+  ctx.lineTo(cr, div2);
+  ctx.stroke();
+
+  // cta row
+  const ctaY = div2 + 58;
+  ctx.fillStyle = BLUE;
+  ctx.font = `700 22px ${FONT}`;
+  ctx.fillText("Earn on Rubicon", cx, ctaY);
+  const plusCx = cr - 22;
+  const plusCy = ctaY - 8;
+  ctx.strokeStyle = BLUE;
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  ctx.arc(plusCx, plusCy, 22, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(plusCx - 9, plusCy);
+  ctx.lineTo(plusCx + 9, plusCy);
+  ctx.moveTo(plusCx, plusCy - 9);
+  ctx.lineTo(plusCx, plusCy + 9);
+  ctx.stroke();
+
+  // ---- footer ------------------------------------------------------------
+  const footY = H - 70;
+  ctx.fillStyle = MUTE;
+  ctx.font = `600 15px ${FONT}`;
+  ctx.fillText(wallet, 64, footY);
+  ctx.textAlign = "right";
+  ctx.fillText(truncateForCanvas(ctx, topArticle, 200), W - 64, footY);
+  // center: "Built on Rubicon", brand emphasised
+  ctx.textAlign = "left";
+  const lead = "Built on ";
+  ctx.font = `500 18px ${FONT}`;
+  const leadW = ctx.measureText(lead).width;
+  ctx.font = `700 18px ${FONT}`;
+  const brandW = ctx.measureText("Rubicon").width;
+  const startX = W / 2 - (leadW + brandW) / 2;
+  ctx.fillStyle = MUTE;
+  ctx.font = `500 18px ${FONT}`;
+  ctx.fillText(lead, startX, footY);
+  ctx.fillStyle = INK;
+  ctx.font = `700 18px ${FONT}`;
+  ctx.fillText("Rubicon", startX + leadW, footY);
 
   return canvas.toDataURL("image/png");
 }
 
-function drawStatTile(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, label: string, value: string, accent: string) {
-  const tileGradient = ctx.createLinearGradient(x, y, x, y + height);
-  tileGradient.addColorStop(0, "#ffffff");
-  tileGradient.addColorStop(1, "#f8fafc");
-  drawExportGradientPanel(ctx, x, y, width, height, 16, tileGradient, "rgba(18,24,38,0.09)");
-  ctx.fillStyle = accent;
-  roundRect(ctx, x + 22, y + 22, 34, 7, 4);
-  ctx.fill();
-  ctx.fillStyle = "#8d95a1";
-  ctx.font = "700 14px Arial, sans-serif";
-  ctx.fillText(label.toUpperCase(), x + 22, y + 58);
-  ctx.fillStyle = "#0e1014";
-  ctx.font = "760 38px Arial, sans-serif";
-  ctx.fillText(truncateForCanvas(ctx, value, width - 44), x + 22, y + 122);
-}
-
-function drawBarChart(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, values: number[]) {
-  const data = values.length > 0 ? values : [12, 20, 16, 28, 24, 32, 26, 36, 30, 22, 18, 28, 24, 14];
-  const max = Math.max(...data, 0);
-  const baseline = y + height;
-  ctx.strokeStyle = "#eef1f5";
-  ctx.lineWidth = 1;
-  for (let i = 0; i <= 2; i += 1) {
-    const gy = y + (height / 2) * i;
-    ctx.beginPath();
-    ctx.moveTo(x, gy);
-    ctx.lineTo(x + width, gy);
-    ctx.stroke();
+/** Draws a number with a solid integer part and a lighter fractional part. */
+function drawTwoTone(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, intColor: string, fracColor: string) {
+  const dot = text.lastIndexOf(".");
+  if (dot < 0) {
+    ctx.fillStyle = intColor;
+    ctx.fillText(text, x, y);
+    return;
   }
-
-  const gap = 9;
-  const barW = (width - gap * (data.length - 1)) / data.length;
-  data.forEach((value, i) => {
-    const barH = max > 0 && value > 0 ? Math.max((value / max) * height, 7) : 0;
-    const bx = x + i * (barW + gap);
-    const barGradient = ctx.createLinearGradient(bx, baseline - barH, bx, baseline);
-    if (i % 3 === 1) {
-      barGradient.addColorStop(0, "#ff9a3c");
-      barGradient.addColorStop(1, "#ff5b1a");
-    } else if (i % 3 === 2) {
-      barGradient.addColorStop(0, "#20c997");
-      barGradient.addColorStop(1, "#0aa36f");
-    } else {
-      barGradient.addColorStop(0, "#6b8cff");
-      barGradient.addColorStop(1, "#2f6de5");
-    }
-    ctx.fillStyle = barGradient;
-    roundRect(ctx, bx, baseline - barH, barW, barH, 7);
-    ctx.fill();
-  });
+  const head = text.slice(0, dot);
+  const tail = text.slice(dot);
+  ctx.fillStyle = intColor;
+  ctx.fillText(head, x, y);
+  ctx.fillStyle = fracColor;
+  ctx.fillText(tail, x + ctx.measureText(head).width, y);
 }
 
-function drawExportHatch(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, stroke: string) {
-  ctx.save();
-  roundRect(ctx, x, y, width, height, 18);
-  ctx.clip();
-  ctx.strokeStyle = stroke;
-  ctx.lineWidth = 5;
-  for (let offset = -height; offset < width + height; offset += 18) {
-    ctx.beginPath();
-    ctx.moveTo(x + offset, y + height);
-    ctx.lineTo(x + offset + height, y);
-    ctx.stroke();
+/** Rubicon "river" mark: a single horizontal sine stroke. */
+function drawWave(ctx: CanvasRenderingContext2D, cx: number, cy: number, width: number, amp: number, color: string) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 4;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  const steps = 24;
+  const x0 = cx - width / 2;
+  for (let i = 0; i <= steps; i += 1) {
+    const t = i / steps;
+    const px = x0 + t * width;
+    const py = cy + Math.sin(t * Math.PI * 2) * amp;
+    if (i === 0) ctx.moveTo(px, py);
+    else ctx.lineTo(px, py);
   }
-  ctx.restore();
-}
-
-function drawExportPill(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, label: string) {
-  drawExportPanel(ctx, x, y, width, height, height / 2, "#ffffff", "rgba(18,24,38,0.14)");
-  ctx.fillStyle = "#16181d";
-  ctx.font = "600 18px Arial, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText(label, x + width / 2, y + height / 2 + 6);
-  ctx.textAlign = "left";
-}
-
-function drawExportPanel(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number,
-  fill: string,
-  stroke = "rgba(30,40,62,0.12)",
-) {
-  ctx.fillStyle = fill;
-  roundRect(ctx, x, y, width, height, radius);
-  ctx.fill();
-  ctx.strokeStyle = stroke;
-  ctx.lineWidth = 1.5;
   ctx.stroke();
 }
 
-function drawExportGradientPanel(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number,
-  fill: CanvasGradient,
-  stroke = "rgba(30,40,62,0.12)",
-) {
-  ctx.fillStyle = fill;
-  roundRect(ctx, x, y, width, height, radius);
-  ctx.fill();
-  ctx.strokeStyle = stroke;
-  ctx.lineWidth = 1.5;
+/** Small outline "eye" glyph echoing the inspiration's privacy toggle. */
+function drawEye(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.2;
+  ctx.lineJoin = "round";
+  ctx.beginPath();
+  ctx.moveTo(cx - 13, cy);
+  ctx.quadraticCurveTo(cx, cy - 9, cx + 13, cy);
+  ctx.quadraticCurveTo(cx, cy + 9, cx - 13, cy);
   ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx, cy, 3.2, 0, Math.PI * 2);
+  ctx.stroke();
+}
+
+/**
+ * Derives a green "gain" figure from the 14-day trend by comparing the recent
+ * half against the earlier half. Falls back to "New" when there's no baseline.
+ */
+function computeTrendDelta(values: number[]): { label: string; up: boolean } {
+  if (values.length === 0) return { label: "New", up: true };
+  const half = Math.floor(values.length / 2) || 1;
+  const prev = values.slice(0, half).reduce((a, b) => a + b, 0);
+  const cur = values.slice(half).reduce((a, b) => a + b, 0);
+  if (prev <= 0) return { label: cur > 0 ? "New" : "—", up: cur > 0 };
+  const pct = Math.round(((cur - prev) / prev) * 1000) / 10;
+  return pct >= 0 ? { label: `+${pct.toFixed(1)}%`, up: true } : { label: `${pct.toFixed(1)}%`, up: false };
 }
 
 function truncateForCanvas(ctx: CanvasRenderingContext2D, text: string, maxWidth: number) {
@@ -901,15 +996,6 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: n
   ctx.arcTo(x, y + height, x, y, radius);
   ctx.arcTo(x, y, x + width, y, radius);
   ctx.closePath();
-}
-
-function loadImage(src: string): Promise<HTMLImageElement | null> {
-  return new Promise((resolve) => {
-    const img = new window.Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => resolve(null);
-    img.src = src;
-  });
 }
 
 function DeltaHint({ pct, onDark = false }: { pct: number | null; onDark?: boolean }) {

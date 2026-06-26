@@ -60,7 +60,7 @@ const pressingAt = (t: number, start: number) => t >= start && t < start + 460;
 export function CreatorPublishFlow() {
   return (
     <div className="creator-publish-flow" aria-hidden="true" tabIndex={-1}>
-      <DashboardFrame identity="@creator" activePath="/dashboard/articles">
+      <DashboardFrame identity="@writer" activePath="/dashboard/articles">
         <PublishWizard />
       </DashboardFrame>
     </div>
@@ -206,7 +206,7 @@ function StepAddArticle({ t }: { t: number }) {
         </Field>
         <Field
           label="Editor"
-          hint="Paste a whole article from Substack or X, or write it here. Each heading starts a new section — shown boxed below — and becomes a section agents can navigate."
+          hint="Paste a whole article from Substack or X, or write it here. Headers and subheaders become sections agents can navigate."
         >
           <div className={`min-h-[120px] rounded-lg bg-[var(--surface-muted)] p-3 text-sm leading-6 ${focus === "body" ? "cpf-input-focus" : ""}`}>
             <strong className="font-semibold">Consent Decree Language</strong>

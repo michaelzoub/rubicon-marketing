@@ -200,7 +200,7 @@ export default function ArticleDetailPage() {
                     <tr className="text-left text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
                       <th className="px-5 py-3 font-medium">Date</th>
                       <th className="px-5 py-3 font-medium">Words read</th>
-                      <th className="px-5 py-3 font-medium">Creator amount</th>
+                      <th className="px-5 py-3 font-medium">Writer amount</th>
                       <th className="px-5 py-3 font-medium">Status</th>
                       <th className="px-5 py-3 font-medium">Settlement</th>
                     </tr>

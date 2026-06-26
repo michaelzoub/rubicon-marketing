@@ -34,7 +34,7 @@ export const SectionDecorations = Extension.create({
 
             state.doc.forEach((node, offset, index) => {
               const next = index + 1 < state.doc.childCount ? state.doc.child(index + 1) : null;
-              const isHeading = node.type.name === "heading";
+              const isHeading = node.type.name === "heading" && (node.attrs.level === 1 || node.attrs.level === 2);
               const isStart = index === 0 || isHeading;
               const isEnd = index === state.doc.childCount - 1 || next?.type.name === "heading";
               const classes = ["md-block"];

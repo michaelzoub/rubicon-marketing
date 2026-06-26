@@ -37,7 +37,7 @@ export function CreatorsBenefits() {
             </h2>
           </div>
           <p className="landing-section-lead creators-benefits-lead">
-            Rubicon is built for creators who want agent revenue without giving up control of their work.
+            Rubicon is built for writers who want agent revenue without giving up control of their work.
           </p>
         </div>
 
