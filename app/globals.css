@@ -1428,12 +1428,14 @@ a {
 
 .creators-how-layout {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: clamp(1.75rem, 3.5vw, 2.5rem);
   margin-top: clamp(2rem, 4vw, 2.75rem);
 }
 
 .creators-how-video {
   width: 100%;
+  min-width: 0;
 }
 
 .creators-how-demo-frame {
@@ -1451,9 +1453,17 @@ a {
  * the wizard instead of clipping it. */
 .creator-publish-flow {
   width: 100%;
+  max-width: 100%;
   overflow: hidden;
   pointer-events: none;
   user-select: none;
+}
+
+.creator-publish-flow .dashboard-theme,
+.creator-publish-flow main,
+.creator-publish-flow .dashboard-card {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .creator-publish-flow .dashboard-canvas {
@@ -1469,6 +1479,46 @@ a {
  * wizard advances. */
 .creator-publish-flow .cpf-step {
   min-height: clamp(440px, 52vw, 560px);
+}
+
+@media (max-width: 640px) {
+  .creators-how-demo-frame {
+    border-radius: 12px;
+  }
+
+  .creator-publish-flow .dashboard-canvas {
+    width: 100%;
+  }
+
+  .creator-publish-flow .dashboard-canvas > main > div:last-child {
+    padding-inline: 0.75rem;
+  }
+
+  .creator-publish-flow .sticky.top-0 {
+    position: relative;
+  }
+
+  .creator-publish-flow .sticky.top-0 > div:first-child {
+    padding-inline: 0.75rem;
+  }
+
+  .creator-publish-flow .sticky.top-0 nav {
+    padding-inline: 0.5rem;
+  }
+
+  .creator-publish-flow .dashboard-card {
+    border-radius: 12px;
+  }
+
+  .creator-publish-flow .cpf-step {
+    min-height: clamp(520px, 145vw, 620px);
+  }
+
+  .creator-publish-flow .button {
+    min-height: 2.5rem;
+    padding-inline: 0.85rem;
+    white-space: normal;
+  }
 }
 
 /* Typing caret used across the simulated inputs. */
@@ -1732,6 +1782,7 @@ a {
   display: block;
   margin-top: 1.25rem;
   overflow-x: auto;
+  max-width: 100%;
   border-radius: var(--radius-ui);
   background: rgba(0, 0, 0, 0.28);
   padding: 1rem 1.1rem;
@@ -1803,6 +1854,7 @@ a {
   padding: 0.85rem 1rem;
   color: var(--river-deep);
   font-size: 0.875rem;
+  overflow-wrap: anywhere;
 }
 
 .developers-sdk-links {
@@ -1836,6 +1888,7 @@ a {
 
 .landing-agents-row {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: clamp(1.25rem, 2.5vw, 2rem);
   align-items: stretch;
 }
@@ -1854,6 +1907,7 @@ a {
   position: relative;
   isolation: isolate;
   width: 100%;
+  min-width: 0;
   overflow: hidden;
 }
 
@@ -2115,11 +2169,23 @@ a {
 
 @media (max-width: 520px) {
   .site-header-inner {
-    gap: 0.75rem;
+    gap: 0.65rem;
   }
 
   .site-header-actions {
-    gap: 0.5rem;
+    gap: 0;
+  }
+
+  .site-header-logo {
+    min-width: 0;
+  }
+
+  .site-header-logo > span {
+    max-width: clamp(7.5rem, 38vw, 10.5rem);
+  }
+
+  .site-nav-cta--sales {
+    display: none;
   }
 
   .site-nav-cta {
@@ -3815,6 +3881,10 @@ a {
 
 @media (max-width: 620px) {
   .explore-hero-title { font-size: clamp(2.55rem, 15vw, 4.1rem); }
+  .explore-search { min-height: 3.25rem; padding-inline: 0.85rem; }
+  .explore-search kbd { display: none; }
+  .explore-sort { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .explore-sort button { min-width: 0; padding-inline: 0.5rem; }
   .explore-room-grid { grid-template-columns: 1fr; }
   .explore-article-card { grid-template-columns: 1fr; }
   .explore-row-action { width: fit-content; }
@@ -3898,6 +3968,7 @@ a {
 .docs-code { overflow: hidden; margin-top: 24px; border: 1px solid #2e333c; border-radius: 11px; background: #181b20; color: #dce2e9; }
 .docs-code-label { border-bottom: 1px solid #2e333c; padding: 10px 16px; color: #89929d; font-family: var(--font-mono), monospace; font-size: 0.68rem; text-transform: uppercase; }
 .docs-code pre { overflow-x: auto; padding: 19px 20px; font-family: var(--font-mono), monospace; font-size: 0.8rem; line-height: 1.8; }
+.docs-code code { overflow-wrap: normal; }
 
 .docs-callout { display: flex; gap: 13px; margin-top: 20px; border: 1px solid #bfd0dd; border-radius: 10px; background: #edf4f8; padding: 16px; color: var(--docs-accent); }
 .docs-callout div { display: grid; gap: 4px; }
@@ -3959,9 +4030,17 @@ a {
   .docs-header-inner { width: calc(100% - 28px); }
   .docs-header-divider { margin-inline: 10px; }
   .docs-header-cta { display: none; }
-  .docs-hero h1 { font-size: 2.65rem; }
+  .docs-hero h1 { font-size: clamp(2.25rem, 11vw, 2.65rem); }
+  .docs-lead { font-size: 1rem; line-height: 1.65; }
+  .docs-code pre { padding: 16px; font-size: 0.74rem; line-height: 1.7; }
+  .docs-table-wrap,
+  .docs-code,
+  .docs-endpoints {
+    margin-inline: -0.25rem;
+  }
   .docs-event-grid, .docs-checklist { grid-template-columns: 1fr; }
   .docs-endpoints > div { grid-template-columns: 40px 1fr; }
+  .docs-endpoints code { overflow-wrap: anywhere; }
   .docs-endpoints p { grid-column: 2; }
 }
 

@@ -28,6 +28,10 @@ export const metadata: Metadata = {
     icon: "/rubicon-new.png",
     apple: "/rubicon-new.png",
   },
+  other: {
+    "talentapp:project_verification":
+      "ddf155a996a3d9a7ad4e932f705ec157a9cfd9bccfe1fe27682a973365a76570b58c5adc376dbe7cd35abebe8d71f03f23fa97c43752c7d1c7d4ab350a7f779f",
+  },
 };
 
 export default function RootLayout({

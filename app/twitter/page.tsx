@@ -54,8 +54,8 @@ export default function TwitterRecordingPage() {
       <div className="grid-texture" aria-hidden="true" />
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_44%,rgba(var(--river-rgb),0.18),transparent_30rem)]" />
 
-      <section className="relative mx-auto grid min-h-screen w-full max-w-[1500px] gap-8 px-6 py-6 md:grid-cols-[0.88fr_1.12fr] md:items-center md:px-10 lg:px-14">
-        <div className="flex min-h-[560px] flex-col justify-center">
+      <section className="relative mx-auto grid min-h-screen w-full max-w-[1500px] gap-6 px-5 py-5 sm:px-6 sm:py-6 md:grid-cols-[0.88fr_1.12fr] md:items-center md:gap-8 md:px-10 lg:px-14">
+        <div className="flex min-h-[360px] flex-col justify-center md:min-h-[560px]">
           <div className="relative flex-1">
             <AnimatePresence mode="wait">
               <motion.div
@@ -70,10 +70,10 @@ export default function TwitterRecordingPage() {
                   <span className="h-1.5 w-1.5 rounded-full bg-[var(--river-deep)]" aria-hidden="true" />
                   {beat.kicker}
                 </span>
-                <h1 className="mt-5 text-[clamp(2.8rem,7vw,6.9rem)] font-[850] leading-[0.9] tracking-[-0.05em]">
+                <h1 className="mt-5 text-[clamp(2.45rem,13vw,4rem)] font-[850] leading-[0.92] tracking-[-0.04em] md:text-[clamp(2.8rem,7vw,6.9rem)] md:leading-[0.9] md:tracking-[-0.05em]">
                   {beat.headline}
                 </h1>
-                <p className="mt-6 max-w-[570px] text-[clamp(1.05rem,2vw,1.45rem)] leading-8 text-[var(--muted)]">
+                <p className="mt-5 max-w-[570px] text-[clamp(0.98rem,4.5vw,1.12rem)] leading-7 text-[var(--muted)] md:mt-6 md:text-[clamp(1.05rem,2vw,1.45rem)] md:leading-8">
                   {beat.sub}
                 </p>
               </motion.div>
