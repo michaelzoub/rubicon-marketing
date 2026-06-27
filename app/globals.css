@@ -4163,13 +4163,16 @@ a {
   outline: none;
   font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   resize: none;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .substack-title-input {
   color: #333333;
-  font-size: clamp(2.8rem, 6vw, 4.3rem);
+  font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 700;
-  line-height: 1.04;
+  line-height: 1.1;
 }
 
 .substack-title-input::placeholder,

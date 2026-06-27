@@ -350,6 +350,14 @@ function StepAddArticle({
   onNext: () => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const el = titleRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [title]);
 
   async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -398,10 +406,12 @@ function StepAddArticle({
 
         <div className="substack-compose-meta">
           <textarea
+            ref={titleRef}
             value={title}
             onChange={(e) => onTitle(e.target.value)}
             placeholder="Title"
             rows={1}
+            maxLength={120}
             className="substack-title-input"
           />
           <input
@@ -410,14 +420,6 @@ function StepAddArticle({
             placeholder="Add author..."
             className="substack-subtitle-input"
           />
-          <div className="substack-compose-chips">
-            {author.trim() && (
-              <span className="substack-topic-chip">
-                {author.trim()}
-                <span aria-hidden="true">×</span>
-              </span>
-            )}
-          </div>
         </div>
 
         <section className="substack-import-panel" aria-label="Import article">
