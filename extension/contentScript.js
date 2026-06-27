@@ -6,7 +6,12 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
       const { extractX } = await import(chrome.runtime.getURL("platformExtractors/xExtractor.js"));
       return extractX(document, location.href);
     }
-    if (host === "substack.com" || host.endsWith(".substack.com")) {
+    const looksLikeSubstack =
+      host === "substack.com" ||
+      host.endsWith(".substack.com") ||
+      location.pathname.startsWith("/p/") ||
+      Boolean(document.querySelector('.available-content, .body.markup, meta[name="substack:publication"]'));
+    if (looksLikeSubstack) {
       const { extractSubstack } = await import(chrome.runtime.getURL("platformExtractors/substackExtractor.js"));
       return extractSubstack(document, location.href);
     }

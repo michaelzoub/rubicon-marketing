@@ -33,9 +33,11 @@ function normalizedOrigin(value) {
 
 function supportedPlatform(url) {
   try {
-    const host = new URL(url).hostname;
+    const parsed = new URL(url);
+    const host = parsed.hostname;
     if (host === "substack.com" || host.endsWith(".substack.com")) return "Substack";
     if (host === "x.com" || host === "twitter.com") return "X";
+    if (parsed.pathname.startsWith("/p/")) return "Substack";
   } catch {}
   return null;
 }
@@ -54,7 +56,13 @@ function showConnection(show) {
 }
 
 async function requestExtraction() {
-  const result = await chrome.tabs.sendMessage(activeTab.id, { type: "RUBICON_EXTRACT" });
+  let result;
+  try {
+    result = await chrome.tabs.sendMessage(activeTab.id, { type: "RUBICON_EXTRACT" });
+  } catch {
+    await chrome.scripting.executeScript({ target: { tabId: activeTab.id }, files: ["contentScript.js"] });
+    result = await chrome.tabs.sendMessage(activeTab.id, { type: "RUBICON_EXTRACT" });
+  }
   if (result?.error) throw new Error(result.error);
   return result;
 }
@@ -70,7 +78,7 @@ async function init() {
   if (!platform) {
     platformEl.textContent = "Unsupported page";
     titleEl.textContent = "Open a Substack or X post";
-    setStatus("This extension imports published Substack and X posts.");
+    setStatus("This extension imports published Substack and X posts, including Substack custom domains.");
     return;
   }
 

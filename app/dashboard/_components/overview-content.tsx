@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import {
   ArrowRight,
+  CheckCircle2,
   Copy,
   Download,
   ExternalLink,
@@ -79,10 +80,6 @@ export interface DashboardOverviewExport {
   trendBars: TrendBar[];
 }
 
-export interface DashboardOverviewContentProtection {
-  stats: Array<{ label: string; value: string }>;
-}
-
 export interface DashboardActivityDay {
   date: string;
   count: number;
@@ -90,7 +87,6 @@ export interface DashboardActivityDay {
 
 export interface DashboardOverviewProps {
   greeting: string;
-  contentProtection: DashboardOverviewContentProtection;
   exportData?: DashboardOverviewExport;
   activityCalendar: DashboardActivityDay[];
   stats: DashboardOverviewStat[];
@@ -114,7 +110,6 @@ export interface DashboardOverviewProps {
 
 export function DashboardOverviewContent({
   greeting,
-  contentProtection,
   exportData,
   activityCalendar,
   stats,
@@ -132,13 +127,13 @@ export function DashboardOverviewContent({
         description={`Welcome back, ${greeting}.`}
         action={
           <div className="flex items-center gap-3">
-            <ContentProtectionPolicy stats={contentProtection.stats} />
+            <ContentProtectionPolicy />
             {exportData && <ExportButton {...exportData} />}
           </div>
         }
       />
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,360px)]">
         <div className="grid min-w-0 gap-5">
           <Reveal className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {stats.map((stat) => (
@@ -151,7 +146,7 @@ export function DashboardOverviewContent({
             ))}
           </Reveal>
 
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.95fr)]">
+          <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,0.95fr)]">
             <Reveal delay={0.08} className="h-full">
               <AgentActivityCalendar days={activityCalendar} />
             </Reveal>
@@ -291,13 +286,36 @@ function activityCellClass(count: number, max: number) {
   return "bg-[#a8c8ff]";
 }
 
-function ContentProtectionPolicy({ stats }: { stats: Array<{ label: string; value: string }> }) {
+const CONTENT_PROTECTION_RULES = [
+  {
+    title: "Drafts stay private",
+    detail: "Draft text is available only inside your creator workspace. It is not listed or previewed to agents.",
+  },
+  {
+    title: "Discovery never includes the article body",
+    detail: "Before payment, agents can see listing metadata and section headings, but not paragraphs or the full article text.",
+  },
+  {
+    title: "Payment is required before delivery",
+    detail: "Protected words are returned only after the payment requirement for that request has been satisfied.",
+  },
+  {
+    title: "Only purchased words are released",
+    detail: "Rubicon returns the paid section or word range. Everything outside that purchase remains unavailable.",
+  },
+  {
+    title: "Your workspace and source remain closed",
+    detail: "Agents receive a paid response, never access to your editor, drafts, or complete stored article.",
+  },
+];
+
+export function ContentProtectionPolicy() {
   return (
     <div className="group relative">
       <button type="button" className="button button-secondary text-sm">
         <ShieldCheck size={15} aria-hidden="true" /> Content Protection Policy
       </button>
-      <div className="pointer-events-none absolute right-0 top-[calc(100%+0.5rem)] z-40 w-[min(22rem,calc(100vw-2rem))] translate-y-1 rounded-[10px] border border-[var(--line)] bg-white p-5 text-left opacity-0 transition group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+      <div className="pointer-events-none absolute right-0 top-[calc(100%+0.5rem)] z-40 w-[min(27rem,calc(100vw-2rem))] translate-y-1 rounded-[10px] border border-[var(--line)] bg-white p-5 text-left opacity-0 transition group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
         <div className="flex items-center gap-2.5">
           <span className="grid h-9 w-9 place-items-center rounded-lg border border-[var(--river-line)] bg-[var(--river-pale)] text-[var(--river)]">
             <ShieldCheck size={17} aria-hidden="true" />
@@ -305,13 +323,16 @@ function ContentProtectionPolicy({ stats }: { stats: Array<{ label: string; valu
           <h2 className="text-base font-semibold">Content Protection Policy</h2>
         </div>
         <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
-          Your full articles are never exposed upfront. Agents only see metadata and paid words.
+          Rubicon separates discovery from delivery. Publishing makes your listing discoverable while the article text stays protected.
         </p>
-        <div className="mt-4 grid gap-2">
-          {stats.map((stat) => (
-            <div key={stat.label} className="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-3">
-              <div className="text-sm font-medium">{stat.label}</div>
-              <div className="mt-1 text-xs text-[var(--muted)]">{stat.value}</div>
+        <div className="mt-4 divide-y divide-[var(--line)] border-y border-[var(--line)]">
+          {CONTENT_PROTECTION_RULES.map((rule) => (
+            <div key={rule.title} className="grid grid-cols-[18px_1fr] gap-3 py-3">
+              <CheckCircle2 size={16} className="mt-0.5 text-[var(--river)]" aria-hidden="true" />
+              <div>
+                <div className="text-sm font-semibold">{rule.title}</div>
+                <p className="mt-1 text-xs leading-5 text-[var(--muted)]">{rule.detail}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -397,7 +418,7 @@ function ArticleRows({ rows }: { rows: DashboardOverviewArticleRow[] }) {
                   <div className="truncate font-medium">{row.title}</div>
                   <div className="text-xs text-[var(--muted)]">{row.meta}</div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex shrink-0 items-center gap-3">
                   <span className="text-sm font-semibold">{row.earnings}</span>
                   <ArticleStatePill state={row.state} />
                 </div>
@@ -406,11 +427,11 @@ function ArticleRows({ rows }: { rows: DashboardOverviewArticleRow[] }) {
             return (
               <li key={row.id}>
                 {row.href ? (
-                  <Link href={row.href} className="flex items-center justify-between gap-4 rounded-lg px-3 py-4 hover:bg-[var(--surface-muted)]">
+                  <Link href={row.href} className="flex min-w-0 flex-col gap-3 rounded-lg px-3 py-4 hover:bg-[var(--surface-muted)] sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                     {content}
                   </Link>
                 ) : (
-                  <div className="flex items-center justify-between gap-4 rounded-lg px-3 py-4 hover:bg-[var(--surface-muted)]">{content}</div>
+                  <div className="flex min-w-0 flex-col gap-3 rounded-lg px-3 py-4 hover:bg-[var(--surface-muted)] sm:flex-row sm:items-center sm:justify-between sm:gap-4">{content}</div>
                 )}
               </li>
             );
@@ -629,10 +650,8 @@ function ExportButton({
 }
 
 /**
- * Renders the share card as a portrait "device" poster: a dark squircle card
- * with a blue top field on a faint blueprint grid, holding a white
- * earnings panel. Numbers are drawn two-tone (solid integer, greyed decimals).
- * Palette is strictly white / black / Rubicon blue, plus a green gain accent.
+ * Renders the share card as a portrait poster with subtle laurel art, a close
+ * earnings card, and a white metrics panel.
  */
 async function renderExportPng({
   username,
@@ -671,11 +690,11 @@ async function renderExportPng({
   const LABEL = "#9aa2af";
   const MUTE = "#6b7280";
   const FRAC = "#c4cad4"; // greyed decimal part of two-tone numbers
-  const LINE = "rgba(15,22,38,0.08)";
   const GREEN_BG = "#e7f6ec";
   const GREEN = "#1f8f4e";
   const FONT = '"Helvetica Neue", Arial, sans-serif';
-  const logo = await loadImage("/rubicon-logo.png");
+  const logo = await loadImage("/rubicon-new.png");
+  const laurel = await loadImage("/laurelfooter.png");
 
   // letterSpacing lands on the 2d context in modern browsers but isn't yet in
   // the TS DOM lib; cast so the source type-checks.
@@ -704,60 +723,45 @@ async function renderExportPng({
     ctx.textAlign = "left";
   };
 
-  // ---- backdrop: faint blueprint grid ------------------------------------
-  ctx.fillStyle = "#f4f6f9";
+  // ---- backdrop ----------------------------------------------------------
+  ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, W, H);
-  ctx.strokeStyle = "rgba(20,40,80,0.05)";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  for (let x = 40; x < W; x += 40) {
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, H);
+  if (laurel) {
+    const artW = 980;
+    const artH = artW * (laurel.height / laurel.width);
+    drawTintedImage(ctx, laurel, W - artW + 120, 34, artW, artH, "#dce7f8", 0.8);
   }
-  for (let y = 40; y < H; y += 40) {
-    ctx.moveTo(0, y);
-    ctx.lineTo(W, y);
-  }
-  ctx.stroke();
-  ctx.fillStyle = "rgba(255,255,255,0.34)";
-  ctx.fillRect(0, 0, W, H);
 
   // ---- top bar -----------------------------------------------------------
-  const chipPadX = 16;
-  const chipH = 40;
-  const chipX = 64;
-  const chipY = 72;
-  const logoW = 116;
-  const logoH = logo ? logoW * (logo.height / logo.width) : 28;
-  const chipW = chipPadX * 2 + logoW;
-  panel(chipX, chipY, chipW, chipH, chipH / 2, "#ffffff", "rgba(15,22,38,0.10)");
+  const logoX = 64;
+  const logoY = 64;
   if (logo) {
-    ctx.drawImage(logo, chipX + chipPadX, chipY + (chipH - logoH) / 2, logoW, logoH);
+    drawTintedImage(ctx, logo, logoX, logoY, 230, 58, "#111827", 1, { x: 90, y: 790, width: 1780, height: 450 });
   } else {
     ctx.fillStyle = INK;
     ctx.font = `700 15px ${FONT}`;
-    ctx.fillText("RUBICON", chipX + chipPadX, chipY + chipH / 2 + 5);
+    ctx.fillText("Rubicon", logoX, logoY + 32);
   }
   ctx.fillStyle = MUTE;
   ctx.font = `600 18px ${FONT}`;
   ctx.textAlign = "right";
-  ctx.fillText(truncateForCanvas(ctx, username, 320), W - 64, chipY + chipH / 2 + 6);
+  ctx.fillText(truncateForCanvas(ctx, username, 320), W - 64, logoY + 32);
   ctx.textAlign = "left";
 
   // ---- earn card ---------------------------------------------------------
-  const cardW = 676;
+  const cardW = 744;
   const cardX = (W - cardW) / 2;
-  const cardY = 258;
-  const cardH = 780;
-  const cardR = 64;
+  const cardY = 210;
+  const cardH = 878;
+  const cardR = 58;
 
   // back "stacked layer" lip peeking above the dark card
-  const backX = cardX + 26;
-  const backW = cardW - 52;
+  const backX = cardX + 30;
+  const backW = cardW - 60;
   const backLip = ctx.createLinearGradient(0, cardY - 26, 0, cardY + 60);
   backLip.addColorStop(0, "#cfe0ff");
   backLip.addColorStop(1, "#eef4ff");
-  roundRect(ctx, backX, cardY - 26, backW, 120, 58);
+  roundRect(ctx, backX, cardY - 24, backW, 118, 54);
   ctx.fillStyle = backLip;
   ctx.fill();
 
@@ -776,26 +780,17 @@ async function renderExportPng({
   ctx.fillRect(cardX, cardY, cardW, 210);
   ctx.restore();
 
-  // dark-card header: title + brand orb
+  // dark-card header
   ctx.fillStyle = "#ffffff";
-  ctx.font = `700 34px ${FONT}`;
-  ctx.fillText("Earnings", cardX + 50, cardY + 92);
-  const orbR = 30;
-  const orbCx = cardX + cardW - 50 - orbR;
-  const orbCy = cardY + 48 + orbR;
-  ctx.fillStyle = "#ffffff";
-  ctx.beginPath();
-  ctx.arc(orbCx, orbCy, orbR, 0, Math.PI * 2);
-  ctx.fill();
-  drawWave(ctx, orbCx, orbCy - 6, 30, 4.2, BLUE);
-  drawWave(ctx, orbCx, orbCy + 7, 30, 4.2, BLUE);
+  ctx.font = `700 38px ${FONT}`;
+  ctx.fillText("Earnings", cardX + 54, cardY + 96);
 
   // ---- white inner card --------------------------------------------------
-  const innerX = cardX + 38;
-  const innerW = cardW - 76;
-  const innerY = cardY + 154;
-  const innerH = cardH - 154 - 44;
-  panel(innerX, innerY, innerW, innerH, 44, "#ffffff");
+  const innerX = cardX + 42;
+  const innerW = cardW - 84;
+  const innerY = cardY + 148;
+  const innerH = 594;
+  panel(innerX, innerY, innerW, innerH, 38, "#ffffff");
 
   const pad = 40;
   const cx = innerX + pad;
@@ -805,7 +800,6 @@ async function renderExportPng({
   drawLabel("TOTAL EARNED", cx, innerY + 72);
   ctx.font = `800 64px ${FONT}`;
   drawTwoTone(ctx, amount, cx, innerY + 138, INK, FRAC);
-  drawEye(ctx, cr - 14, innerY + 116, "#aab1bd");
 
   // gain pill + context
   const delta = computeTrendDelta(trendValues);
@@ -824,7 +818,7 @@ async function renderExportPng({
 
   // divider
   const div1 = innerY + 248;
-  ctx.strokeStyle = LINE;
+  ctx.strokeStyle = "rgba(15,22,38,0.08)";
   ctx.lineWidth = 1;
   ctx.beginPath();
   ctx.moveTo(cx, div1);
@@ -838,23 +832,31 @@ async function renderExportPng({
   ctx.fillStyle = MUTE;
   ctx.font = `600 13px ${FONT}`;
   ctx.fillText(`${reads} reads · ${avgRead} avg / read`, cx, chartY + 28);
-  drawMiniActivityChart(ctx, cx, chartY + 54, cr - cx, chartH - 54, trendValues, BLUE, "rgba(47,109,229,0.14)", LINE);
+  drawMiniActivityChart(ctx, cx, chartY + 58, cr - cx, chartH - 58, trendValues, BLUE);
+
+  // top article callout under the white panel
+  const articleY = innerY + innerH + 54;
+  ctx.fillStyle = "rgba(255,255,255,0.54)";
+  ctx.font = `700 13px ${FONT}`;
+  setSpacing("1.4px");
+  ctx.fillText("TOP ARTICLE", cardX + 54, articleY);
+  setSpacing("0px");
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `700 21px ${FONT}`;
+  ctx.fillText(truncateForCanvas(ctx, topArticle, cardW - 108), cardX + 54, articleY + 34);
 
   // ---- footer ------------------------------------------------------------
   const footY = H - 70;
   ctx.fillStyle = MUTE;
   ctx.font = `600 15px ${FONT}`;
   ctx.fillText(wallet, 64, footY);
-  ctx.textAlign = "right";
-  ctx.fillText(truncateForCanvas(ctx, topArticle, 200), W - 64, footY);
-  // center: "Built on Rubicon", brand emphasised
-  ctx.textAlign = "left";
+  // bottom-right: "Built on Rubicon", brand emphasised
   const lead = "Built on ";
   ctx.font = `500 18px ${FONT}`;
   const leadW = ctx.measureText(lead).width;
   ctx.font = `700 18px ${FONT}`;
   const brandW = ctx.measureText("Rubicon").width;
-  const startX = W / 2 - (leadW + brandW) / 2;
+  const startX = W - 64 - leadW - brandW;
   ctx.fillStyle = MUTE;
   ctx.font = `500 18px ${FONT}`;
   ctx.fillText(lead, startX, footY);
@@ -881,40 +883,6 @@ function drawTwoTone(ctx: CanvasRenderingContext2D, text: string, x: number, y: 
   ctx.fillText(tail, x + ctx.measureText(head).width, y);
 }
 
-/** Rubicon "river" mark: a single horizontal sine stroke. */
-function drawWave(ctx: CanvasRenderingContext2D, cx: number, cy: number, width: number, amp: number, color: string) {
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 4;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  ctx.beginPath();
-  const steps = 24;
-  const x0 = cx - width / 2;
-  for (let i = 0; i <= steps; i += 1) {
-    const t = i / steps;
-    const px = x0 + t * width;
-    const py = cy + Math.sin(t * Math.PI * 2) * amp;
-    if (i === 0) ctx.moveTo(px, py);
-    else ctx.lineTo(px, py);
-  }
-  ctx.stroke();
-}
-
-/** Small outline "eye" glyph echoing the inspiration's privacy toggle. */
-function drawEye(ctx: CanvasRenderingContext2D, cx: number, cy: number, color: string) {
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 2.2;
-  ctx.lineJoin = "round";
-  ctx.beginPath();
-  ctx.moveTo(cx - 13, cy);
-  ctx.quadraticCurveTo(cx, cy - 9, cx + 13, cy);
-  ctx.quadraticCurveTo(cx, cy + 9, cx - 13, cy);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(cx, cy, 3.2, 0, Math.PI * 2);
-  ctx.stroke();
-}
-
 function drawMiniActivityChart(
   ctx: CanvasRenderingContext2D,
   x: number,
@@ -923,39 +891,83 @@ function drawMiniActivityChart(
   height: number,
   values: number[],
   blue: string,
-  blueWash: string,
-  line: string,
 ) {
-  const data = values.length > 0 ? values : [0, 2, 1, 4, 3, 5, 7, 4, 6, 8, 5, 9, 7, 10];
+  const data = normalizeFourteenDays(values);
   const max = Math.max(...data, 0);
-  const baseline = y + height;
 
-  ctx.strokeStyle = line;
-  ctx.lineWidth = 1;
-  for (let i = 0; i <= 2; i += 1) {
-    const gy = y + (height / 2) * i;
-    ctx.beginPath();
-    ctx.moveTo(x, gy);
-    ctx.lineTo(x + width, gy);
-    ctx.stroke();
-  }
-
+  // Horizontal bar chart: one bar per day spread across the full width so the
+  // 14-day window reads as a wide sparkline instead of a thin stacked grid.
+  const labelGap = 28;
+  const barsH = height - labelGap;
+  const count = data.length;
   const gap = 8;
-  const barW = Math.max(8, (width - gap * (data.length - 1)) / data.length);
+  const barW = (width - gap * (count - 1)) / count;
+  const radius = Math.min(6, barW / 2);
+  const minBar = Math.min(8, barsH); // visible stub so empty days still show
+
   data.forEach((value, i) => {
-    const barH = max > 0 && value > 0 ? Math.max((value / max) * height, 8) : 4;
+    const intensity = max > 0 ? value / max : 0;
+    const barH = value > 0 ? Math.max(minBar, intensity * barsH) : minBar;
     const bx = x + i * (barW + gap);
-    ctx.fillStyle = i >= data.length - 4 ? blue : blueWash;
-    roundRect(ctx, bx, baseline - barH, barW, barH, Math.min(9, barW / 2));
+    const by = y + barsH - barH;
+    ctx.fillStyle = value > 0 ? mixActivityColor(blue, intensity) : "#eef2f8";
+    roundRect(ctx, bx, by, barW, barH, radius);
     ctx.fill();
   });
 
   ctx.fillStyle = "#6b7280";
   ctx.font = "600 11px \"Helvetica Neue\", Arial, sans-serif";
-  ctx.fillText("14D", x, baseline + 24);
-  ctx.textAlign = "right";
-  ctx.fillText("NOW", x + width, baseline + 24);
   ctx.textAlign = "left";
+  ctx.fillText("14D", x, y + height);
+  ctx.textAlign = "right";
+  ctx.fillText("NOW", x + width, y + height);
+  ctx.textAlign = "left";
+}
+
+function drawTintedImage(
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  color: string,
+  alpha: number,
+  source?: { x: number; y: number; width: number; height: number },
+) {
+  const buffer = document.createElement("canvas");
+  buffer.width = Math.max(1, Math.round(width * 2));
+  buffer.height = Math.max(1, Math.round(height * 2));
+  const bufferCtx = buffer.getContext("2d");
+  if (!bufferCtx) return;
+  bufferCtx.scale(2, 2);
+  if (source) {
+    bufferCtx.drawImage(image, source.x, source.y, source.width, source.height, 0, 0, width, height);
+  } else {
+    bufferCtx.drawImage(image, 0, 0, width, height);
+  }
+  bufferCtx.globalCompositeOperation = "source-in";
+  bufferCtx.fillStyle = color;
+  bufferCtx.fillRect(0, 0, width, height);
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.drawImage(buffer, x, y, width, height);
+  ctx.restore();
+}
+
+function normalizeFourteenDays(values: number[]) {
+  const fallback = [0, 1, 0, 2, 1, 0, 3, 5, 2, 0, 4, 7, 3, 8];
+  const source = values.length > 0 ? values : fallback;
+  if (source.length === 14) return source;
+  if (source.length > 14) return source.slice(source.length - 14);
+  return [...Array.from({ length: 14 - source.length }, () => 0), ...source];
+}
+
+function mixActivityColor(blue: string, intensity: number) {
+  if (intensity >= 0.78) return blue;
+  if (intensity >= 0.5) return "#8db2f4";
+  if (intensity >= 0.25) return "#c7d8fb";
+  return "#e0e9ff";
 }
 
 /**
@@ -1012,7 +1024,7 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
 
 function DeltaHint({ pct, onDark = false }: { pct: number | null; onDark?: boolean }) {
   const muted = onDark ? "text-white/55" : "text-[var(--muted)]";
-  if (pct === null) return <span className={muted}>New this week</span>;
+  if (pct === null) return null;
   if (Math.abs(pct) < 1) return <span className={muted}>Flat vs last week</span>;
   const up = pct > 0;
   const color = up

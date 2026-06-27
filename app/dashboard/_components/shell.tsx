@@ -15,7 +15,7 @@ import {
   Settings,
   Wallet2,
 } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { usePrivyConfigured } from "../../providers";
 import { RubiconBrand } from "../../_components/rubicon-brand";
 
@@ -31,7 +31,7 @@ const navSections = [
   {
     label: "Support",
     items: [
-      { href: "/#developers", label: "Developer docs", icon: BookOpen, exact: true },
+      { href: "/docs", label: "Developer docs", icon: BookOpen, exact: false },
       { href: "/dashboard/settings", label: "Settings", icon: Settings, exact: true },
     ],
   },
@@ -77,7 +77,7 @@ function WriterAuthScreen({ onLogin }: { onLogin: () => void }) {
           </div>
           <div className="writer-auth-benefits mono">Private by default · 0% platform fee · Paid per word</div>
         </section>
-        <section className="writer-auth-panel" aria-label="Sign up">
+        <section className="writer-auth-panel" aria-label="Sign in">
           <figure className="writer-auth-quote">
             <blockquote>
               The <strong>creator economy</strong> is being <strong>left out</strong>, loudly and notably.
@@ -97,7 +97,7 @@ function WriterAuthScreen({ onLogin }: { onLogin: () => void }) {
               }}
               className="writer-auth-button"
             >
-              Sign up
+              Sign in
             </button>
             <p className="writer-auth-privy">Powered by Privy</p>
           </div>
@@ -123,7 +123,7 @@ function Layout({ children }: { children: ReactNode }) {
 
 export function DashboardFrame({
   children,
-  identity,
+  identity: _identity,
   onLogout,
   activePath,
 }: {
@@ -134,13 +134,30 @@ export function DashboardFrame({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
+  // The landing page pins `overflow-x: clip` on <html>/<body>, which crops the
+  // dashboard if its content ever exceeds the viewport (e.g. zoomed in) instead
+  // of letting it scroll. Allow horizontal scrolling while the dashboard is
+  // mounted, then restore the global clip on unmount.
+  useEffect(() => {
+    const html = document.documentElement;
+    const { body } = document;
+    const prevHtml = html.style.overflowX;
+    const prevBody = body.style.overflowX;
+    html.style.overflowX = "auto";
+    body.style.overflowX = "auto";
+    return () => {
+      html.style.overflowX = prevHtml;
+      body.style.overflowX = prevBody;
+    };
+  }, []);
+
   return (
     <div
       className={`dashboard-theme dashboard-canvas min-h-screen bg-[var(--surface-muted)] lg:grid ${
         sidebarOpen ? "lg:grid-cols-[224px_1fr]" : "lg:grid-cols-[64px_1fr]"
       }`}
     >
-      <Sidebar identity={identity} onLogout={onLogout} activePath={activePath} open={sidebarOpen} onToggle={() => setSidebarOpen((open) => !open)} />
+      <Sidebar onLogout={onLogout} activePath={activePath} open={sidebarOpen} onToggle={() => setSidebarOpen((open) => !open)} />
       <main className="min-w-0">
         <MobileBar onLogout={onLogout} activePath={activePath} />
         <div className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-8 lg:py-8">{children}</div>
@@ -150,13 +167,11 @@ export function DashboardFrame({
 }
 
 function Sidebar({
-  identity,
   onLogout,
   activePath,
   open,
   onToggle,
 }: {
-  identity: string;
   onLogout?: () => void;
   activePath?: string;
   open: boolean;
@@ -239,16 +254,14 @@ function Sidebar({
             </div>
           </nav>
 
-          <div className="border-t border-[var(--line)] p-3">
-            <div className="flex items-center justify-between gap-2 rounded-[10px] bg-[var(--surface-muted)] px-3 py-2">
-              <span className="mono truncate text-xs text-[var(--muted)]">{identity}</span>
-              {onLogout && (
-                <button type="button" onClick={onLogout} className="dashboard-icon-button" aria-label="Sign out">
-                  <LogOut size={16} aria-hidden="true" />
-                </button>
-              )}
+          {onLogout && (
+            <div className="border-t border-[var(--line)] p-3">
+              <button type="button" onClick={onLogout} className="dashboard-nav-link flex w-full items-center gap-3 rounded-[8px] px-3 py-2 text-sm font-medium text-[var(--muted)]">
+                <LogOut size={16} aria-hidden="true" />
+                <span>Sign out</span>
+              </button>
             </div>
-          </div>
+          )}
         </>
       )}
     </aside>

@@ -84,15 +84,18 @@ export default function ArticlesPage() {
       )}
 
       {articles.status === "success" && (articles.data?.length ?? 0) > 0 && (
-        <ul className="grid gap-2 p-2">
+        <ul className="grid min-w-0 gap-2 p-2">
           {articles.data!.map((article) => (
             <li
               key={article.id}
               className="flex flex-col gap-4 py-5 first:pt-0 lg:flex-row lg:items-center lg:justify-between"
             >
-              <div className="min-w-0">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Link href={`/dashboard/articles/${article.id}`} className="truncate text-lg font-semibold hover:underline">
+              <div className="min-w-0 flex-1">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <Link
+                    href={`/dashboard/articles/${article.id}`}
+                    className="min-w-0 break-words text-lg font-semibold [overflow-wrap:anywhere] hover:underline"
+                  >
                     {article.title}
                   </Link>
                   <ArticleStatePill state={article.state} />
@@ -106,11 +109,11 @@ export default function ArticlesPage() {
                 </div>
               </div>
 
-              <div className="flex shrink-0 items-center gap-2">
-                <button type="button" onClick={() => setPreviewArticle(article)} className="button button-secondary text-sm">
+              <div className="grid w-full grid-cols-1 gap-2 min-[520px]:flex min-[520px]:w-auto min-[520px]:flex-wrap min-[520px]:items-center lg:justify-end">
+                <button type="button" onClick={() => setPreviewArticle(article)} className="button button-secondary justify-center whitespace-nowrap text-sm">
                   <Eye size={15} aria-hidden="true" /> Preview as agent
                 </button>
-                <Link href={`/dashboard/articles/${article.id}`} className="button button-secondary text-sm">
+                <Link href={`/dashboard/articles/${article.id}`} className="button button-secondary justify-center whitespace-nowrap text-sm">
                   <Pencil size={15} aria-hidden="true" /> Edit
                 </Link>
                 {article.state !== "archived" && article.state !== "deleted" && (
@@ -118,7 +121,7 @@ export default function ArticlesPage() {
                     type="button"
                     onClick={() => toggle(article)}
                     disabled={busyId === article.id}
-                    className="button button-secondary text-sm disabled:opacity-50"
+                    className="button button-secondary justify-center whitespace-nowrap text-sm disabled:opacity-50"
                   >
                     {article.state === "live" ? (
                       <>

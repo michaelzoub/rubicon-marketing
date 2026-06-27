@@ -24,6 +24,7 @@ import {
   StatTile,
 } from "../../_components/ui";
 import { AgentPreviewDialog } from "../_components/agent-preview-dialog";
+import { MarkdownEditor } from "../../_components/markdown-editor";
 
 export default function ArticleDetailPage() {
   const params = useParams<{ articleId: string }>();
@@ -235,16 +236,18 @@ function EditPanel({
   article: ArticleDetail;
   pending: boolean;
   error: string | null;
-  onSave: (input: { title: string; author: string; pricePerWordAtomic: string; maxArticlePriceAtomic: string | null }) => void;
+  onSave: (input: { title: string; author: string; body: string; pricePerWordAtomic: string; maxArticlePriceAtomic: string | null }) => void;
 }) {
   const [title, setTitle] = useState(article.title);
   const [author, setAuthor] = useState(article.author);
+  const [body, setBody] = useState(article.body);
   const [pricePerWord, setPricePerWord] = useState(atomicToUsd(article.pricePerWordAtomic).toString());
   const [maxPrice, setMaxPrice] = useState(article.maxArticlePriceAtomic ? atomicToUsd(article.maxArticlePriceAtomic).toString() : "");
 
   useEffect(() => {
     setTitle(article.title);
     setAuthor(article.author);
+    setBody(article.body);
     setPricePerWord(atomicToUsd(article.pricePerWordAtomic).toString());
     setMaxPrice(article.maxArticlePriceAtomic ? atomicToUsd(article.maxArticlePriceAtomic).toString() : "");
   }, [article]);
@@ -257,6 +260,10 @@ function EditPanel({
           <span className="text-sm font-medium">Article title</span>
           <input value={title} onChange={(e) => setTitle(e.target.value)} className="h-11 rounded-lg bg-[var(--surface-muted)] px-3 outline-none transition focus:bg-white focus:ring-2 focus:ring-[var(--river-line)]" />
         </label>
+        <div className="grid gap-2">
+          <span className="text-sm font-medium">Article body</span>
+          <MarkdownEditor value={body} onChange={setBody} placeholder="Edit your article…" contained />
+        </div>
         <label className="grid gap-2">
           <span className="text-sm font-medium">Author</span>
           <input value={author} onChange={(e) => setAuthor(e.target.value)} className="h-11 rounded-lg bg-[var(--surface-muted)] px-3 outline-none transition focus:bg-white focus:ring-2 focus:ring-[var(--river-line)]" />
@@ -277,11 +284,12 @@ function EditPanel({
       <div className="mt-5 flex justify-end">
         <button
           type="button"
-          disabled={pending || !title.trim() || !author.trim() || !(Number(usdToAtomic(Number(pricePerWord))) > 0)}
+          disabled={pending || !title.trim() || !author.trim() || !body.trim() || !(Number(usdToAtomic(Number(pricePerWord))) > 0)}
           onClick={() =>
             onSave({
               title: title.trim(),
               author: author.trim(),
+              body: body.trim(),
               pricePerWordAtomic: usdToAtomic(Number(pricePerWord)),
               maxArticlePriceAtomic: maxPrice ? usdToAtomic(Number(maxPrice)) : null,
             })

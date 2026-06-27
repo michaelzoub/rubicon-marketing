@@ -127,15 +127,9 @@ a {
 .writer-auth-screen {
   position: relative;
   display: grid;
-  min-height: 100vh;
-  place-items: center;
+  min-height: 100dvh;
   overflow: hidden;
-  padding: clamp(1rem, 5vw, 3.5rem);
-  background:
-    linear-gradient(rgba(23, 26, 34, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(23, 26, 34, 0.055) 1px, transparent 1px),
-    #f3f3f2;
-  background-size: 7.2rem 7.2rem;
+  background: #ffffff;
 }
 
 .writer-auth-card {
@@ -143,11 +137,11 @@ a {
   z-index: 1;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.54fr);
-  width: min(100%, 80rem);
-  min-height: min(76vh, 42rem);
+  width: 100%;
+  min-height: 100dvh;
   overflow: hidden;
-  border: 1px solid rgba(23, 26, 34, 0.22);
-  border-radius: 20px;
+  border: 0;
+  border-radius: 0;
   background: #ffffff;
 }
 
@@ -305,14 +299,13 @@ a {
 
 @media (max-width: 640px) {
   .writer-auth-screen {
-    padding: 0.9rem;
-    background-size: 4.7rem 4.7rem;
+    overflow: visible;
   }
 
   .writer-auth-card {
     grid-template-columns: 1fr;
-    min-height: auto;
-    width: min(100%, 34rem);
+    min-height: 100dvh;
+    width: 100%;
   }
 
   .writer-auth-story {
@@ -1275,6 +1268,15 @@ a {
 }
 
 @media (max-width: 767px) {
+  .landing-hero {
+    border-bottom: 0;
+  }
+
+  .landing-dashboard-showcase-bg-image {
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 18%, #000 48%, transparent 78%);
+    mask-image: linear-gradient(180deg, transparent 0%, #000 18%, #000 48%, transparent 78%);
+  }
+
   .landing-hero-content {
     align-items: flex-end;
     padding-top: calc(3.5rem + 1.5rem);
@@ -1411,6 +1413,12 @@ a {
 .creators-hero-inner {
   display: grid;
   gap: clamp(1.5rem, 3vw, 2rem);
+}
+
+.creators-hero-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
 }
 
 .creators-hero-cta .button {
@@ -4046,6 +4054,7 @@ a {
 
 /* ---- Article editor: Substack-style Tiptap compose surface ---- */
 .article-compose-page {
+  container-type: inline-size;
   min-height: calc(100vh - 4rem);
   margin: -1.25rem -1rem -1.25rem;
   background: #ffffff;
@@ -4126,12 +4135,12 @@ a {
 }
 
 .substack-compose-continue {
-  background: #ff6719;
+  background: var(--river);
   color: #ffffff;
 }
 
 .substack-compose-continue:hover {
-  background: #f05f16;
+  background: var(--river-deep);
 }
 
 .substack-compose-continue:disabled,
@@ -4297,8 +4306,8 @@ a {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem;
-  margin-inline: calc((100vw - min(100vw, 51rem)) / -2);
-  padding: 0.65rem max(1rem, calc((100vw - 51rem) / 2));
+  margin-inline: calc((100cqw - min(100cqw, 51rem)) / -2);
+  padding: 0.65rem max(1rem, calc((100cqw - 51rem) / 2));
   border-bottom: 1px solid #eeeeef;
   background: rgba(255, 255, 255, 0.96);
 }
@@ -4341,6 +4350,19 @@ a {
   font-size: 0.78rem;
 }
 
+.substack-editor.is-contained .substack-toolbar {
+  position: static;
+  margin-inline: 0;
+  overflow-x: auto;
+  border: 1px solid #eeeeef;
+  border-radius: 8px;
+  padding: 0.55rem;
+}
+
+.substack-editor.is-contained .substack-toolbar-note {
+  white-space: nowrap;
+}
+
 .substack-editor-body {
   padding-top: 1.25rem;
 }
@@ -4352,7 +4374,7 @@ a {
   font-size: 1.24rem;
   line-height: 1.78;
   color: #353535;
-  caret-color: #ff6719;
+  caret-color: var(--river);
 }
 
 .md-canvas p.is-editor-empty:first-child::before {
@@ -4412,7 +4434,7 @@ a {
 }
 
 .md-canvas img.ProseMirror-selectednode {
-  outline: 2px solid #ff6719;
+  outline: 2px solid var(--river);
   outline-offset: 2px;
 }
 

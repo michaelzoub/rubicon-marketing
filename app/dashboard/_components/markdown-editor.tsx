@@ -36,10 +36,12 @@ export function MarkdownEditor({
   value,
   onChange,
   placeholder,
+  contained = false,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
+  contained?: boolean;
 }) {
   // The markdown we last emitted, so parent re-renders don't reset the editor.
   const lastEmitted = useRef<string>(value);
@@ -79,7 +81,7 @@ export function MarkdownEditor({
   const sectionCount = value.split(/\r?\n/).filter((line) => HEADING_RE.test(line)).length;
 
   return (
-    <div className="substack-editor">
+    <div className={`substack-editor${contained ? " is-contained" : ""}`}>
       <Toolbar editor={editor} />
 
       <div className="substack-editor-body">

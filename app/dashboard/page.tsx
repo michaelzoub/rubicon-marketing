@@ -13,7 +13,6 @@ import {
   Link2,
   MousePointerClick,
   RefreshCw,
-  ShieldCheck,
   Wallet2,
   X,
 } from "lucide-react";
@@ -26,7 +25,7 @@ import { explorerAddressUrl, formatBalance, useNativeBalance } from "@/lib/oncha
 import { WithdrawDialog } from "./_components/withdraw-dialog";
 import { AgentPreviewDialog, AGENT_PREVIEW_EVENT, hasSeenAgentPreview } from "./articles/_components/agent-preview-dialog";
 import { CountUp, Donut, DONUT_COLORS, InsightTile, Reveal, type DonutSlice, type TrendBar } from "./_components/charts";
-import { DashboardOverviewContent, type DashboardOverviewProps } from "./_components/overview-content";
+import { ContentProtectionPolicy, DashboardOverviewContent, type DashboardOverviewProps } from "./_components/overview-content";
 import {
   ArticleStatePill,
   Card,
@@ -101,9 +100,6 @@ export default function OverviewPage() {
       state: article.state,
       href: `/dashboard/articles/${article.id}`,
     }));
-    const pricedCount = articleList.filter((article) => Number(article.pricePerWordAtomic) > 0).length;
-    const draftCount = articleList.filter((article) => article.state === "draft").length;
-    const sectionCount = articleList.reduce((sum, article) => sum + article.sections.length, 0);
     const balanceLabel =
       nativeBalance.status === "loading" ? (
         <span className="text-base font-normal text-[var(--muted)]">Loading...</span>
@@ -118,14 +114,6 @@ export default function OverviewPage() {
 
     return {
       greeting,
-      contentProtection: {
-        stats: [
-          { label: "Full article hidden", value: articleList.length > 0 ? `${articleList.length.toLocaleString()} article${articleList.length === 1 ? "" : "s"}` : "Ready" },
-          { label: "Paid words only", value: pricedCount > 0 ? `${pricedCount.toLocaleString()} priced` : "Set in pricing" },
-          { label: "Drafts private until published", value: draftCount > 0 ? `${draftCount.toLocaleString()} draft${draftCount === 1 ? "" : "s"}` : "Draft first" },
-          { label: "Agent preview available", value: sectionCount > 0 ? `${sectionCount.toLocaleString()} headings` : "Metadata only" },
-        ],
-      },
       exportData: {
         username: greeting,
         totalEarned,
@@ -213,7 +201,7 @@ export default function OverviewPage() {
         <PageHeader
           title="Overview"
           description={`Welcome back, ${greeting}.`}
-          action={<ContentProtectionPolicy articles={articles.data ?? []} />}
+          action={<ContentProtectionPolicy />}
         />
       )}
 
@@ -268,45 +256,6 @@ export default function OverviewPage() {
           <AgentPreviewDialog article={previewArticle} open={Boolean(previewArticle)} onClose={() => setPreviewArticle(null)} />
         </>
       )}
-    </div>
-  );
-}
-
-function ContentProtectionPolicy({ articles }: { articles: Article[] }) {
-  const draftCount = articles.filter((article) => article.state === "draft").length;
-  const pricedCount = articles.filter((article) => Number(article.pricePerWordAtomic) > 0).length;
-  const sectionCount = articles.reduce((sum, article) => sum + article.sections.length, 0);
-  const stats = [
-    { label: "Full article hidden", value: articles.length > 0 ? `${articles.length.toLocaleString()} article${articles.length === 1 ? "" : "s"}` : "Ready" },
-    { label: "Paid words only", value: pricedCount > 0 ? `${pricedCount.toLocaleString()} priced` : "Set in pricing" },
-    { label: "Drafts private until published", value: draftCount > 0 ? `${draftCount.toLocaleString()} draft${draftCount === 1 ? "" : "s"}` : "Draft first" },
-    { label: "Agent preview available", value: sectionCount > 0 ? `${sectionCount.toLocaleString()} headings` : "Metadata only" },
-  ];
-
-  return (
-    <div className="group relative">
-      <button type="button" className="button button-secondary text-sm">
-        <ShieldCheck size={15} aria-hidden="true" /> Content Protection Policy
-      </button>
-      <div className="pointer-events-none absolute right-0 top-[calc(100%+0.5rem)] z-40 w-[min(22rem,calc(100vw-2rem))] translate-y-1 rounded-[10px] border border-[var(--line)] bg-white p-5 text-left opacity-0 transition group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
-        <div className="flex items-center gap-2.5">
-          <span className="grid h-9 w-9 place-items-center rounded-lg border border-[var(--river-line)] bg-[var(--river-pale)] text-[var(--river)]">
-            <ShieldCheck size={17} aria-hidden="true" />
-          </span>
-          <h2 className="text-base font-semibold">Content Protection Policy</h2>
-        </div>
-        <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
-            Your full articles are never exposed upfront. Agents only see metadata and paid words.
-        </p>
-        <div className="mt-4 grid gap-2">
-          {stats.map((stat) => (
-            <div key={stat.label} className="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-3">
-              <div className="text-sm font-medium">{stat.label}</div>
-              <div className="mt-1 text-xs text-[var(--muted)]">{stat.value}</div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
@@ -1049,7 +998,7 @@ function buildActivityCalendar(activity: PaymentActivity[], weeks = 12): Array<{
 
 function DeltaHint({ pct, onDark = false }: { pct: number | null; onDark?: boolean }) {
   const muted = onDark ? "text-white/55" : "text-[var(--muted)]";
-  if (pct === null) return <span className={muted}>New this week</span>;
+  if (pct === null) return null;
   if (Math.abs(pct) < 1) return <span className={muted}>Flat vs last week</span>;
   const up = pct > 0;
   const color = up

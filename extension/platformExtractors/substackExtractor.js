@@ -79,8 +79,8 @@ function dataAttrsSrc(el) {
 
 function imageUrl(img, pageUrl) {
   const candidates = [
-    img.currentSrc,
     img.getAttribute("src"),
+    img.currentSrc,
     img.getAttribute("data-src"),
     img.getAttribute("data-original-src"),
     dataAttrsSrc(img),
@@ -157,7 +157,7 @@ function blockMarkdown(node, pageUrl) {
   const tag = node.tagName;
 
   if (/^H[1-6]$/.test(tag)) {
-    const level = Math.min(Number(tag[1]), 3);
+    const level = Math.min(Number(tag[1]), 2);
     return `${"#".repeat(level)} ${inlineMarkdown(node, pageUrl).trim()}`;
   }
   if (tag === "P") return inlineMarkdown(node, pageUrl).trim();
@@ -180,6 +180,28 @@ function blockMarkdown(node, pageUrl) {
   if (tag === "FIGCAPTION") return "";
 
   return [...node.childNodes].map((child) => blockMarkdown(child, pageUrl)).filter(Boolean).join("\n\n");
+}
+
+function articleContentRoot(root) {
+  const clone = root.cloneNode(true);
+  const cutoff = clone.querySelector('[data-component-name="DigestPostEmbed"]');
+  if (!cutoff) return clone;
+
+  let current = cutoff;
+  let removeCurrent = true;
+  while (current && current !== clone) {
+    const parent = current.parentNode;
+    let sibling = current.nextSibling;
+    while (sibling) {
+      const next = sibling.nextSibling;
+      sibling.remove();
+      sibling = next;
+    }
+    if (removeCurrent) current.remove();
+    removeCurrent = false;
+    current = parent;
+  }
+  return clone;
 }
 
 function markdownFrom(root, pageUrl) {
@@ -234,11 +256,12 @@ export function extractSubstack(doc, pageUrl) {
   const authorName = meta(doc, ['meta[name="author"]']) || text(doc, ['[rel="author"]', '.byline a', '.author-name']);
   const canonical = doc.querySelector('link[rel="canonical"]')?.getAttribute("href") || pageUrl;
   const publishedAt = doc.querySelector("time[datetime]")?.getAttribute("datetime") || meta(doc, ['meta[property="article:published_time"]']);
-  const body = article ? markdownFrom(article, canonical) : null;
+  const contentRoot = article ? articleContentRoot(article) : null;
+  const body = contentRoot ? markdownFrom(contentRoot, canonical) : null;
   const gated = Boolean(doc.querySelector('.paywall, [data-testid*="paywall"], .subscription-widget-wrap'));
-  const media = article ? [...article.querySelectorAll("img")].map((img) => ({ type: "image", url: imageUrl(img, canonical), alt: img.getAttribute("alt") })).filter((item) => item.url).filter((item, index, all) => all.findIndex((other) => other.url === item.url) === index) : [];
+  const media = contentRoot ? [...contentRoot.querySelectorAll("img")].map((img) => ({ type: "image", url: imageUrl(img, canonical), alt: img.getAttribute("alt") })).filter((item) => item.url).filter((item, index, all) => all.findIndex((other) => other.url === item.url) === index) : [];
   const warnings = [];
   if (gated) warnings.push("Only the visible preview was imported. Review and add any gated content before publishing.");
   if (editor) warnings.push("Imported from the open Substack editor. Review formatting before publishing.");
-  return { sourcePlatform: "substack", sourceUrl: canonical, title, subtitle, authorName, authorHandle: null, publishedAt, body, sections: body ? sectionsFrom(body) : [], media, rawExtractedText: article?.textContent?.trim() || null, warnings, isPartial: gated };
+  return { sourcePlatform: "substack", sourceUrl: canonical, title, subtitle, authorName, authorHandle: null, publishedAt, body, sections: body ? sectionsFrom(body) : [], media, rawExtractedText: contentRoot?.textContent?.trim() || null, warnings, isPartial: gated };
 }

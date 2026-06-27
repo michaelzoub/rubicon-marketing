@@ -1,13 +1,12 @@
 /**
- * Dependency-free HTML metadata extraction and HTML→Markdown conversion.
+ * HTML metadata extraction and HTML→Markdown conversion.
  *
- * We deliberately avoid a DOM library: a focused, well-tested set of regexes
- * keeps the import path light and, crucially, *sanitizing by construction* —
- * everything is reduced to plain Markdown text, so no untrusted HTML is ever
- * stored or rendered. This is an MVP-grade extractor: good enough for the
- * `og:`/JSON-LD metadata and readable article bodies publishers expose.
+ * Metadata reads stay lightweight, while Turndown handles the article DOM so
+ * links, inline marks, lists, quotes, code, captions, and images survive. The
+ * result is Markdown only; untrusted source HTML is never stored or rendered.
  */
 import { ImportSection } from "./types";
+import TurndownService from "turndown";
 
 /** Decode the handful of HTML entities that survive tag stripping. */
 export function decodeEntities(text: string): string {
@@ -91,33 +90,27 @@ function stripNonContent(html: string): string {
  * Markdown structure — safe to store and render.
  */
 export function htmlToMarkdown(html: string): string {
-  let s = stripNonContent(html);
-
-  // Headings → Markdown first (#, ##, ###; h4-6 collapse to ###), before the
-  // generic block-close rule below can swallow their closing tags. Only #/##
-  // split into sellable sections later.
-  s = s.replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, (_, t) => `\n\n# ${inline(t)}\n\n`);
-  s = s.replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, (_, t) => `\n\n## ${inline(t)}\n\n`);
-  s = s.replace(/<h([3-6])[^>]*>([\s\S]*?)<\/h\1>/gi, (_, _l, t) => `\n\n### ${inline(t)}\n\n`);
-
-  // List items.
-  s = s.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, (_, t) => `- ${inline(t)}\n`);
-
-  // Remaining block-level breaks.
-  s = s.replace(/<\/(p|div|section|article|figure|blockquote|ul|ol|table|tr)>/gi, "\n\n");
-  s = s.replace(/<br\s*\/?>/gi, "\n");
-  s = s.replace(/<hr\s*\/?>/gi, "\n\n---\n\n");
-
-  // Strip every remaining tag, then decode entities and tidy whitespace.
-  s = s.replace(/<[^>]+>/g, "");
-  s = decodeEntities(s);
-  s = s.replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").replace(/[ \t]{2,}/g, " ");
-  return s.trim();
-}
-
-/** Collapse inline markup inside a heading/list item to its text. */
-function inline(fragment: string): string {
-  return decodeEntities(fragment.replace(/<[^>]+>/g, "")).replace(/\s+/g, " ").trim();
+  const turndown = new TurndownService({
+    bulletListMarker: "-",
+    codeBlockStyle: "fenced",
+    emDelimiter: "*",
+    fence: "```",
+    headingStyle: "atx",
+    linkStyle: "inlined",
+    strongDelimiter: "**",
+  });
+  turndown.remove(["script", "style", "noscript", "template", "button", "form"]);
+  turndown.addRule("figure-caption", {
+    filter: "figcaption",
+    replacement: (content) => content.trim() ? `\n\n*${content.trim()}*\n\n` : "",
+  });
+  const markdown = turndown.turndown(stripNonContent(html));
+  return markdown
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/^(\s*\d+\.)\s{2,}/gm, "$1 ")
+    .replace(/^#{3,6}\s+/gm, "## ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 /**

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { fade } from "./motion";
 
@@ -33,6 +33,14 @@ export function CreatorsHero() {
               <Link href="/dashboard" className="button button-primary">
                 List one article <ArrowRight size={16} aria-hidden="true" />
               </Link>
+              <a
+                href="https://chromewebstore.google.com/detail/rubicon/allmdpfkdgdcjfgeijembjfpnkfpocab"
+                target="_blank"
+                rel="noreferrer"
+                className="button button-secondary"
+              >
+                Add to Chrome <ExternalLink size={15} aria-hidden="true" />
+              </a>
             </div>
           </motion.div>
         </div>

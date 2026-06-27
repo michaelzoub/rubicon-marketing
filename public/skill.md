@@ -82,8 +82,18 @@ run the required command yourself.
 ## Buyer Strategy
 
 Give `--goal` the user's exact information need rather than a generic request
-to read or summarize. Rubicon's buyer must consult the real seller agent before
-buying and ask:
+to read or summarize. Treat the seller-agent conversation as multi-turn. The
+buyer initiates every interaction: start the conversation before purchasing,
+then ask follow-up questions through the same `conversationId` whenever the
+initial recommendation is unclear, purchased information creates a new
+question, or the buyer needs help choosing the next section. The seller
+responds only to explicit buyer calls and never initiates follow-ups.
+
+Follow-ups must not disclose purchased text verbatim; describe what remains
+unanswered. Re-consultation is free navigation and does not authorize payment.
+Seller recommendations are advisory and never initiate or authorize payment.
+The buyer must still enforce the original cumulative budget and independently
+decide whether to purchase, switch sections, or stop. Ask:
 
 - Which sections best answer the exact goal.
 - The expected value of each recommended section.
