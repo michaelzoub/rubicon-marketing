@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { RubiconBrand } from "./rubicon-brand";
 
 interface NavItem {
   href: string;
@@ -51,7 +50,7 @@ export function SiteHeader({
     >
       <nav className="container site-header-inner" aria-label="Main navigation">
         <Link href="/" className="site-header-logo" aria-label="Rubicon home">
-          <RubiconBrand className="h-7" />
+          <span className="site-wordmark">rubicon</span>
         </Link>
 
         <div className="site-header-links">

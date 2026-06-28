@@ -6,6 +6,7 @@ import { Eye, FileText, Link2, Pause, Pencil, Play } from "lucide-react";
 import type { Article } from "@/lib/rubicon/types";
 import { useRubiconMutation, useRubiconQuery } from "@/lib/rubicon/hooks";
 import { formatUsd } from "@/lib/rubicon/pricing";
+import { isStolenXContent } from "@/lib/articles/ownership";
 import {
   ArticleStatePill,
   EmptyState,
@@ -14,17 +15,28 @@ import {
   LoadingState,
   PageHeader,
   PrimaryLink,
+  SafetyBadge,
 } from "../_components/ui";
 import { AgentPreviewDialog } from "./_components/agent-preview-dialog";
 
 export default function ArticlesPage() {
   const articles = useRubiconQuery((c) => c.listArticles(), []);
+  const creator = useRubiconQuery((c) => c.getCreator(), []);
   const publish = useRubiconMutation((c, id: string) => c.publishArticle(id));
   const pause = useRubiconMutation((c, id: string) => c.pauseArticle(id));
   const [busyId, setBusyId] = useState<string | null>(null);
   const [previewArticle, setPreviewArticle] = useState<Article | null>(null);
 
+  function isStolen(article: Article): boolean {
+    const source = article.importMeta?.sourcePlatform
+      ? { platform: article.importMeta.sourcePlatform, authorHandle: article.importMeta.sourceAuthorHandle }
+      : null;
+    return isStolenXContent(source, creator.data?.username);
+  }
+
   async function toggle(article: Article) {
+    // Don't publish an imported X post that belongs to another account.
+    if (article.state !== "live" && isStolen(article)) return;
     setBusyId(article.id);
     try {
       if (article.state === "live") await pause.run(article.id);
@@ -85,7 +97,9 @@ export default function ArticlesPage() {
 
       {articles.status === "success" && (articles.data?.length ?? 0) > 0 && (
         <ul className="grid min-w-0 gap-2 p-2">
-          {articles.data!.map((article) => (
+          {articles.data!.map((article) => {
+            const stolen = isStolen(article);
+            return (
             <li
               key={article.id}
               className="flex flex-col gap-4 py-5 first:pt-0 lg:flex-row lg:items-center lg:justify-between"
@@ -99,6 +113,7 @@ export default function ArticlesPage() {
                     {article.title}
                   </Link>
                   <ArticleStatePill state={article.state} />
+                  {stolen && <SafetyBadge />}
                 </div>
                 <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-[var(--muted)]">
                   <span>{formatUsd(article.pricePerWordAtomic)} / word</span>
@@ -120,7 +135,8 @@ export default function ArticlesPage() {
                   <button
                     type="button"
                     onClick={() => toggle(article)}
-                    disabled={busyId === article.id}
+                    disabled={busyId === article.id || (article.state !== "live" && stolen)}
+                    title={article.state !== "live" && stolen ? "This imported X post belongs to another account" : undefined}
                     className="button button-secondary justify-center whitespace-nowrap text-sm disabled:opacity-50"
                   >
                     {article.state === "live" ? (
@@ -136,7 +152,8 @@ export default function ArticlesPage() {
                 )}
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
       <AgentPreviewDialog article={previewArticle} open={Boolean(previewArticle)} onClose={() => setPreviewArticle(null)} />

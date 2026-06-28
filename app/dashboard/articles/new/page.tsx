@@ -21,8 +21,9 @@ import {
 } from "@/lib/rubicon/pricing";
 import { parseSections } from "@/lib/rubicon/sections";
 import type { ArticleSourceInput, ArticleSectionInput } from "@/lib/rubicon/types";
+import { isStolenXContent, normalizeHandle } from "@/lib/articles/ownership";
 import { MarkdownEditor } from "../../_components/markdown-editor";
-import { Card, formatDate, PageHeader, shortWallet, WalletStatePill } from "../../_components/ui";
+import { Card, formatDate, PageHeader, SafetyWarning, shortWallet, WalletStatePill } from "../../_components/ui";
 import { takeImport } from "../_import-handoff";
 
 const PARTIAL_IMPORT_NOTICE =
@@ -120,6 +121,18 @@ export default function NewArticlePage() {
     setStep(1);
   }
 
+  // Content-ownership guard: an imported X post may only be published by the
+  // account that wrote it. A confirmed handle/username mismatch blocks every
+  // path that would put this content live.
+  const ownershipMismatch = isStolenXContent(source, creator.data?.username);
+  const safetyNotice = ownershipMismatch ? (
+    <SafetyWarning>
+      This post was written by <strong>@{normalizeHandle(source?.authorHandle)}</strong>, which doesn’t
+      match your account <strong>@{normalizeHandle(creator.data?.username)}</strong>. You can’t publish or
+      save someone else’s X post as your own — that would be stealing their content.
+    </SafetyWarning>
+  ) : null;
+
   const includedWords = sections.reduce((sum, s) => sum + s.wordCount, 0);
   const atomicPerWord = pricePerWord ? usdToAtomic(Number(pricePerWord)) : "0";
   const estFullPrice = atomicForWords(atomicPerWord, includedWords);
@@ -155,6 +168,12 @@ export default function NewArticlePage() {
   async function submit(publish: boolean) {
     setSubmitError(null);
     setSavedDraftId(null);
+    if (ownershipMismatch) {
+      setSubmitError(
+        "This imported X post belongs to another account, so it can’t be saved or published here.",
+      );
+      return;
+    }
     try {
       const article = await createArticle.run(buildInput());
       if (publish) {
@@ -193,6 +212,8 @@ export default function NewArticlePage() {
           author={author}
           content={content}
           source={source}
+          ownershipMismatch={ownershipMismatch}
+          safetyNotice={safetyNotice}
           onTitle={setTitle}
           onAuthor={setAuthor}
           onContent={setContent}
@@ -233,6 +254,8 @@ export default function NewArticlePage() {
           submitting={submitting}
           error={submitError}
           savedDraftId={savedDraftId}
+          ownershipMismatch={ownershipMismatch}
+          safetyNotice={safetyNotice}
           onBack={() => setStep(2)}
           onSaveDraft={() => submit(false)}
           onPublish={() => submit(true)}
@@ -335,6 +358,8 @@ function StepAddArticle({
   author,
   content,
   source,
+  ownershipMismatch,
+  safetyNotice,
   onTitle,
   onAuthor,
   onContent,
@@ -344,6 +369,8 @@ function StepAddArticle({
   author: string;
   content: string;
   source: ImportedSource | null;
+  ownershipMismatch: boolean;
+  safetyNotice: React.ReactNode;
   onTitle: (v: string) => void;
   onAuthor: (v: string) => void;
   onContent: (v: string) => void;
@@ -367,7 +394,7 @@ function StepAddArticle({
     if (!title) onTitle(file.name.replace(/\.(md|markdown|txt)$/i, ""));
   }
 
-  const ready = title.trim() && author.trim() && content.trim();
+  const ready = title.trim() && author.trim() && content.trim() && !ownershipMismatch;
   const stillPartial = source ? isStillPartial(source, content) : false;
 
   return (
@@ -391,6 +418,7 @@ function StepAddArticle({
       </header>
 
       <main className="substack-compose-main">
+        {safetyNotice && <div className="mb-7">{safetyNotice}</div>}
         {source && (
           <div className="mb-7 grid gap-3">
             <ImportedSourceBanner source={source} partial={stillPartial} />
@@ -617,6 +645,8 @@ function StepPublish({
   submitting,
   error,
   savedDraftId,
+  ownershipMismatch,
+  safetyNotice,
   onBack,
   onSaveDraft,
   onPublish,
@@ -631,6 +661,8 @@ function StepPublish({
   submitting: boolean;
   error: string | null;
   savedDraftId: string | null;
+  ownershipMismatch: boolean;
+  safetyNotice: React.ReactNode;
   onBack: () => void;
   onSaveDraft: () => void;
   onPublish: () => void;
@@ -640,6 +672,8 @@ function StepPublish({
     <Card className="p-6">
       <h2 className="text-lg font-semibold">Review and publish</h2>
       <p className="mt-1 text-sm text-[var(--muted)]">Confirm the details below. You can save a draft or publish it live to agents.</p>
+
+      {safetyNotice && <div className="mt-5">{safetyNotice}</div>}
 
       <dl className="mt-5 grid gap-3 rounded-xl bg-[var(--surface-muted)] p-5 text-sm">
         <Row term="Article title" value={title || "Untitled"} />
@@ -682,10 +716,10 @@ function StepPublish({
           <ArrowLeft size={16} aria-hidden="true" /> Back
         </button>
         <div className="flex flex-wrap gap-3">
-          <button type="button" onClick={onSaveDraft} disabled={submitting} className="button button-secondary disabled:opacity-50">
+          <button type="button" onClick={onSaveDraft} disabled={submitting || ownershipMismatch} className="button button-secondary disabled:opacity-50">
             Save draft
           </button>
-          <button type="button" onClick={onPublish} disabled={submitting || noWallet} className="button button-primary disabled:opacity-50">
+          <button type="button" onClick={onPublish} disabled={submitting || noWallet || ownershipMismatch} className="button button-primary disabled:opacity-50">
             {submitting ? "Publishing…" : "Publish article"}
           </button>
         </div>

@@ -10,14 +10,12 @@ export function CreatorsHero() {
     <section className="creators-hero" aria-label="Quote from Jack Conte, Patreon CEO">
       <div className="landing-hero-bg" aria-hidden="true">
         <img
-          src="/roman-senate-blue-transparent.png"
+          src="/writers-cosmos.webp"
           alt=""
-          className="landing-hero-image"
+          className="creators-hero-image"
           decoding="async"
           fetchPriority="high"
         />
-        <div className="landing-hero-overlay" />
-        <div className="landing-hero-scrim" />
       </div>
       <div className="creators-hero-content">
         <div className="container">

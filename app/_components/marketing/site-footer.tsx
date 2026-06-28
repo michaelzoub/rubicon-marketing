@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { RubiconBrand } from "../rubicon-brand";
 
 const githubUrl = "https://github.com/michaelzoub/rubicon";
 
@@ -52,7 +51,9 @@ export function SiteFooter() {
     <footer className="site-footer">
       <div className="container site-footer-main">
         <div className="site-footer-brand">
-          <RubiconBrand className="h-7" />
+          <Link href="/" className="site-wordmark site-footer-wordmark" aria-label="Rubicon home">
+            rubicon
+          </Link>
           <p className="site-footer-tagline">Pay-per-word, between agents and writers.</p>
           <div className="site-footer-caliga">
             <span className="site-footer-caliga-logo">

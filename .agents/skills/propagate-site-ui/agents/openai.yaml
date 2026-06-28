@@ -1,0 +1,4 @@
+interface:
+  display_name: "Propagate Site UI"
+  short_description: "Apply UI changes across every affected route"
+  default_prompt: "Use $propagate-site-ui to apply this styling change across the whole website and verify every affected route."

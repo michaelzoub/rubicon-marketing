@@ -12,7 +12,7 @@ import { StreamTheater } from "./_components/stream-theater";
 function Hero() {
   return (
     <div className="landing-hero-content">
-      <div className="container">
+      <div className="container landing-hero-layout">
         <motion.div {...fade} className="landing-copy-stack landing-hero-copy">
           <h1 className="landing-hero-title">Earn when AI agents read your writing.</h1>
           <p className="landing-hero-lead">
@@ -33,6 +33,16 @@ function Hero() {
             </div>
           </div>
         </motion.div>
+
+        <motion.div {...fade} transition={{ delay: 0.08 }} className="landing-hero-art-wrap" aria-hidden="true">
+          <img
+            src="/cosmos-2.webp"
+            alt=""
+            className="landing-hero-art"
+            decoding="async"
+            fetchPriority="high"
+          />
+        </motion.div>
       </div>
     </div>
   );
@@ -44,16 +54,6 @@ function DashboardShowcase() {
       className="landing-section-block landing-dashboard-showcase"
       aria-labelledby="dashboard-showcase-heading"
     >
-      <div className="landing-dashboard-showcase-bg" aria-hidden="true">
-        <img
-          src="/roman-senate-blue-transparent.png"
-          alt=""
-          className="landing-dashboard-showcase-bg-image"
-          decoding="async"
-        />
-        <div className="landing-dashboard-showcase-overlay" />
-        <div className="landing-dashboard-showcase-scrim" />
-      </div>
       <motion.div {...fade} className="container landing-dashboard-showcase-inner">
         <div className="landing-copy-stack landing-dashboard-showcase-header">
           <div className="landing-section-kicker">
@@ -78,7 +78,7 @@ function DashboardShowcase() {
             <div className="landing-dashboard-showcase-visual hero-visual">
               <div className="landing-dashboard-frame">
                 <img
-                  src="/creator-dashboard.png"
+                  src="/dashboard-white.jpg"
                   alt="Rubicon writer dashboard showing total earnings, words read, agent reads, recent activity, and wallet payouts"
                   className="landing-dashboard-image"
                   decoding="async"
@@ -140,17 +140,6 @@ export default function Home() {
       <div className="landing-page">
         <SiteHeader variant="home" overlay />
         <section className="landing-hero">
-          <div className="landing-hero-bg" aria-hidden="true">
-            <img
-              src="/rubicon-crossing-transparent.png"
-              alt=""
-              className="landing-hero-image"
-              decoding="async"
-              fetchPriority="high"
-            />
-            <div className="landing-hero-overlay" />
-            <div className="landing-hero-scrim" />
-          </div>
           <Hero />
         </section>
         <DashboardShowcase />

@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, ExternalLink, FileText, Search, Sparkles, Terminal, UserRound } from "lucide-react";
+import { Check, Copy, ExternalLink, Search, Sparkles, Terminal, UserRound } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { PublicCreator } from "@/lib/rubicon/public";
 import { atomicPerWordToPer1000Usd, formatUsdNumber } from "@/lib/rubicon/pricing";
@@ -20,6 +20,10 @@ const sortOptions: Array<{ id: SortMode; label: string }> = [
 
 function initials(name: string): string {
   return name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase() ?? "").join("") || "?";
+}
+
+function compact(value: number): string {
+  return new Intl.NumberFormat("en", { notation: "compact", maximumFractionDigits: 1 }).format(value);
 }
 
 function xAvatarUrl(username: string): string {
@@ -140,54 +144,72 @@ function CreatorRoom({ creator, sort }: { creator: PublicCreator; sort: SortMode
   const featuredArticle = articles[0];
   const remainingArticles = Math.max(0, articles.length - 1);
   const readCount = totalReads(articles);
+  const wordCount = totalWords(creator);
   const xArticleCount = xSourcedArticles(articles);
-  const readLabel = `${readCount.toLocaleString()} reads`;
   const avatarSrc = creatorAvatarSrc(creator);
   const profileUrl = xProfileUrl(creator.username);
   return (
     <section id={`creator-${creator.id}`} className="explore-room">
-      <span className="explore-read-badge">{readLabel}</span>
-      <div className="explore-room-head">
+      <div className="explore-room-cover">
+        {avatarSrc && (
+          // Personal banner derived from the creator's X profile image.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={avatarSrc} alt="" aria-hidden="true" className="explore-room-cover-img" />
+        )}
+        {profileUrl && (
+          <a href={profileUrl} target="_blank" rel="noopener noreferrer" className="explore-room-profile">
+            X profile <ExternalLink size={13} aria-hidden="true" />
+          </a>
+        )}
+      </div>
+
+      <span className="explore-room-avatar">
         {avatarSrc ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={avatarSrc} alt="" />
         ) : (
           <span className="explore-avatar">{initials(creator.displayName)}</span>
         )}
-        <div className="min-w-0">
+      </span>
+
+      <div className="explore-room-body">
+        <div className="explore-room-id">
           <div className="flex flex-wrap items-center gap-2">
             <h2>{creator.displayName}</h2>
             <span className="explore-author-tag"><UserRound size={11} /> Author</span>
           </div>
-          <p>@{creator.username}{creator.bio ? ` · ${creator.bio}` : ""}</p>
+          <p className="explore-room-handle">@{creator.username}</p>
+          {creator.bio && <p className="explore-room-bio">{creator.bio}</p>}
         </div>
-      </div>
 
-      <div className="explore-social-proof" aria-label="Social proof">
-        {profileUrl && (
-          <a href={profileUrl} target="_blank" rel="noopener noreferrer">
-            X profile <ExternalLink size={11} aria-hidden="true" />
-          </a>
-        )}
-        <span>{readCount.toLocaleString()} paid read{readCount === 1 ? "" : "s"}</span>
+        <dl className="explore-room-stats">
+          <div>
+            <dt>{compact(readCount)}</dt>
+            <dd>Paid read{readCount === 1 ? "" : "s"}</dd>
+          </div>
+          <div>
+            <dt>{compact(articles.length)}</dt>
+            <dd>Live article{articles.length === 1 ? "" : "s"}</dd>
+          </div>
+          <div>
+            <dt>{compact(wordCount)}</dt>
+            <dd>Words</dd>
+          </div>
+        </dl>
+
         {xArticleCount > 0 && (
-          <span>{xArticleCount} from X</span>
+          <p className="explore-room-source">{xArticleCount} article{xArticleCount === 1 ? "" : "s"} sourced from X</p>
+        )}
+
+        {featuredArticle && (
+          <div className="explore-room-feature">
+            <ArticleCard article={featuredArticle} />
+            {remainingArticles > 0 && (
+              <div className="explore-more-articles">+{remainingArticles} more article{remainingArticles === 1 ? "" : "s"} from this author</div>
+            )}
+          </div>
         )}
       </div>
-
-      <div className="explore-room-meta">
-        <span><FileText size={13} /> {articles.length} live article{articles.length === 1 ? "" : "s"}</span>
-        <span>{totalWords(creator).toLocaleString()} available words</span>
-      </div>
-
-      {featuredArticle && (
-        <div className="mt-4 grid gap-2">
-          <ArticleCard article={featuredArticle} />
-          {remainingArticles > 0 && (
-            <div className="explore-more-articles">+{remainingArticles} more article{remainingArticles === 1 ? "" : "s"} from this author</div>
-          )}
-        </div>
-      )}
     </section>
   );
 }

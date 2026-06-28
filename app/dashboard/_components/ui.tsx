@@ -140,6 +140,53 @@ export function ErrorState({ error, onRetry }: { error: RubiconError; onRetry?: 
   );
 }
 
+/* ---------- safety ---------- */
+
+/**
+ * Loud red "bubble" warning for content-ownership problems — e.g. trying to
+ * publish an imported X post that belongs to someone else. Used to block and
+ * explain why posting is disabled.
+ */
+export function SafetyWarning({
+  title = "This isn’t your content",
+  children,
+}: {
+  title?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div
+      role="alert"
+      className="flex items-start gap-3 rounded-xl border border-[#efcbc8] bg-[#fde4e2] px-4 py-3.5 text-sm text-[#8d2f2d]"
+    >
+      <span className="relative mt-1 flex h-2.5 w-2.5 shrink-0" aria-hidden="true">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#d4302b] opacity-75" />
+        <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-[#c5221c]" />
+      </span>
+      <div className="grid gap-1">
+        <div className="flex items-center gap-1.5 font-semibold">
+          <AlertTriangle size={15} aria-hidden="true" />
+          {title}
+        </div>
+        <div className="leading-5 text-[#9a3b37]">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Compact red badge for list/card contexts where a full warning bubble would be
+ * too heavy, but a creator still needs a clear "stop" signal.
+ */
+export function SafetyBadge({ label = "Not your content" }: { label?: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-md bg-[#fde4e2] px-2.5 py-1 text-xs font-semibold text-[#963b37]">
+      <span className="h-1.5 w-1.5 rounded-full bg-[#c5221c]" aria-hidden="true" />
+      {label}
+    </span>
+  );
+}
+
 /* ---------- pills ---------- */
 
 const stateStyles: Record<ArticleState, string> = {

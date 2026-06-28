@@ -121,10 +121,9 @@ export function DashboardOverviewContent({
   wallet,
 }: DashboardOverviewProps) {
   return (
-    <div className="grid gap-5">
+    <div className="grid gap-7">
       <PageHeader
         title="Overview"
-        description={`Welcome back, ${greeting}.`}
         action={
           <div className="flex items-center gap-3">
             <ContentProtectionPolicy />
@@ -133,9 +132,9 @@ export function DashboardOverviewContent({
         }
       />
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,360px)]">
-        <div className="grid min-w-0 gap-5">
-          <Reveal className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,360px)]">
+        <div className="grid min-w-0 gap-6">
+          <Reveal className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
             {stats.map((stat) => (
               <StatTile
                 key={stat.label}
@@ -146,7 +145,7 @@ export function DashboardOverviewContent({
             ))}
           </Reveal>
 
-          <div className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,0.95fr)]">
+          <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,0.95fr)]">
             <Reveal delay={0.08} className="h-full">
               <AgentActivityCalendar days={activityCalendar} />
             </Reveal>
@@ -158,7 +157,7 @@ export function DashboardOverviewContent({
                     <h2 className="text-base font-semibold">Top article</h2>
                     <div className="flex flex-1 items-center py-6 text-2xl font-semibold leading-tight">{topArticle.title}</div>
                   </div>
-                  <div className="flex items-end justify-between gap-4 border-t border-[var(--line)] pt-4">
+                  <div className="flex items-end justify-between gap-4 pt-4">
                     <div>
                       <div className="text-2xl font-semibold">{topArticle.earnings}</div>
                       <div className="text-xs text-[var(--muted)]">earned</div>
@@ -183,14 +182,13 @@ export function DashboardOverviewContent({
               <Card className="p-5">
                 <div>
                   <h2 className="text-base font-semibold">Earnings breakdown</h2>
-                  <p className="text-xs text-[var(--muted)]">Where your revenue comes from</p>
                 </div>
                 <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.25fr)]">
                   <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-1">
                     <InsightTile value={<CountUp value={breakdown.avgPerRead} format={formatUsdDisplay} />} caption="Average earned per agent read" />
                     <InsightTile value={<CountUp value={breakdown.wordsAvailable} format={formatInt} />} caption="Words live and available to agents" />
                   </div>
-                  <div className="min-w-0 rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-5">
+                  <div className="min-w-0 rounded-lg bg-[var(--surface-muted)] p-5">
                     <Donut slices={breakdown.slices} centerValue={breakdown.totalEarned} centerLabel="Total earned" />
                   </div>
                 </div>
@@ -198,13 +196,13 @@ export function DashboardOverviewContent({
             </Reveal>
           )}
 
-          <div className="grid gap-5 lg:grid-cols-2">
+          <div className="grid gap-6 lg:grid-cols-2">
             <PaymentActivityRows rows={paymentRows} />
             <ArticleRows rows={articleRows} />
           </div>
         </div>
 
-        <aside className="grid h-fit gap-5 xl:sticky xl:top-8">
+        <aside className="grid h-fit gap-6 xl:sticky xl:top-8">
           <WalletCard wallet={wallet} />
         </aside>
       </div>
@@ -279,7 +277,7 @@ function AgentActivityCalendar({ days }: { days: DashboardActivityDay[] }) {
 }
 
 function activityCellClass(count: number, max: number) {
-  if (count <= 0 || max <= 0) return "bg-[#f0f1f3]";
+  if (count <= 0 || max <= 0) return "bg-[#eeeeef]";
   const ratio = count / max;
   if (ratio > 0.75) return "bg-[#2f6de5]";
   if (ratio > 0.45) return "bg-[#5f94f1]";

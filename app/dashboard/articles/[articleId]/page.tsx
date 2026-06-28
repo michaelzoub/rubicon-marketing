@@ -11,6 +11,7 @@ import {
   formatUsd,
   usdToAtomic,
 } from "@/lib/rubicon/pricing";
+import { isStolenXContent, normalizeHandle } from "@/lib/articles/ownership";
 import {
   ArticleStatePill,
   Card,
@@ -21,6 +22,7 @@ import {
   formatRelative,
   LoadingState,
   PaymentStatusPill,
+  SafetyWarning,
   StatTile,
 } from "../../_components/ui";
 import { AgentPreviewDialog } from "../_components/agent-preview-dialog";
@@ -31,6 +33,7 @@ export default function ArticleDetailPage() {
   const articleId = params.articleId;
   const router = useRouter();
   const article = useRubiconQuery<ArticleDetail>((c) => c.getArticle(articleId), [articleId]);
+  const creator = useRubiconQuery((c) => c.getCreator(), []);
 
   const publish = useRubiconMutation((c, id: string) => c.publishArticle(id));
   const pause = useRubiconMutation((c, id: string) => c.pauseArticle(id));
@@ -38,6 +41,15 @@ export default function ArticleDetailPage() {
   const update = useRubiconMutation((c, ...args: Parameters<typeof c.updateArticle>) => c.updateArticle(...args));
 
   const data = article.data;
+
+  // Content-ownership guard for imported X posts: block publishing when the
+  // original author handle doesn't match the logged-in creator's username.
+  const ownershipSource =
+    data?.importMeta?.sourcePlatform
+      ? { platform: data.importMeta.sourcePlatform, authorHandle: data.importMeta.sourceAuthorHandle }
+      : null;
+  const ownershipMismatch = isStolenXContent(ownershipSource, creator.data?.username);
+
   const [editing, setEditing] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const agentPreviewArticle = data
@@ -81,11 +93,13 @@ export default function ArticleDetailPage() {
                 <button
                   type="button"
                   onClick={async () => {
+                    // Never let an imported X post that isn't theirs go live.
+                    if (data.state !== "live" && ownershipMismatch) return;
                     if (data.state === "live") await pause.run(data.id);
                     else await publish.run(data.id);
                     article.refetch();
                   }}
-                  disabled={publish.pending || pause.pending}
+                  disabled={publish.pending || pause.pending || (data.state !== "live" && ownershipMismatch)}
                   className="button button-secondary text-sm disabled:opacity-50"
                 >
                   {data.state === "live" ? <><Pause size={15} aria-hidden="true" /> Pause</> : <><Play size={15} aria-hidden="true" /> Publish</>}
@@ -110,6 +124,14 @@ export default function ArticleDetailPage() {
             <p className="-mt-4 text-sm text-[var(--muted)]">
               Agents can preview metadata, but paid content remains hidden until purchased.
             </p>
+          )}
+          {ownershipMismatch && (
+            <SafetyWarning>
+              This article was imported from{" "}
+              <strong>@{normalizeHandle(data.importMeta?.sourceAuthorHandle)}</strong> on X, which doesn’t
+              match your account <strong>@{normalizeHandle(creator.data?.username)}</strong>. It can’t be
+              published — monetizing someone else’s content isn’t allowed.
+            </SafetyWarning>
           )}
           <AgentPreviewDialog article={agentPreviewArticle} open={previewOpen} onClose={() => setPreviewOpen(false)} />
 

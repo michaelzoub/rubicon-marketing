@@ -2,7 +2,7 @@
 
 import { usePrivy } from "@privy-io/react-auth";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import posthog from "posthog-js";
 import {
   BookOpen,
@@ -67,7 +67,7 @@ function WriterAuthScreen({ onLogin }: { onLogin: () => void }) {
     <div className="writer-auth-screen">
       <div className="writer-auth-card">
         <section className="writer-auth-story">
-          <RubiconBrand className="h-9" />
+          <RubiconBrand className="h-9" onLight />
           <div>
             <h1>Start earning when agents read your work</h1>
             <p className="writer-auth-copy">
@@ -178,7 +178,23 @@ function Sidebar({
   onToggle: () => void;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
   const currentPath = activePath ?? pathname;
+
+  // Make the ⌘N hint real: jump straight to the new-article composer.
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "n") {
+        const el = document.activeElement;
+        const typing = el instanceof HTMLElement && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
+        if (typing) return;
+        event.preventDefault();
+        router.push("/dashboard/articles/new");
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [router]);
 
   return (
     <aside className="dashboard-sidebar sticky top-0 hidden h-screen border-r border-[var(--line)] bg-white lg:flex lg:flex-col">
@@ -208,57 +224,55 @@ function Sidebar({
         </div>
       ) : (
         <>
-          <div className="border-b border-[var(--line)] px-4 py-4">
-            <div className="flex min-h-8 items-center justify-between gap-3">
-              <Link href="/" className="min-w-0" aria-label="Rubicon home">
-                <RubiconBrand className="h-7" onLight />
-              </Link>
+          <div className="dashboard-sidebar-chrome">
+            <div className="dashboard-chrome-controls">
               <button type="button" onClick={onToggle} className="dashboard-icon-button" aria-label="Close sidebar" aria-expanded={true}>
-                <PanelLeft size={16} aria-hidden="true" />
+                <PanelLeft size={15} aria-hidden="true" />
               </button>
             </div>
           </div>
 
-          <div className="border-b border-[var(--line)] px-4 py-4">
-            <Link href="/dashboard/articles/new" className="button button-primary dashboard-new-article-button w-full justify-center text-sm">
-              <Plus size={16} aria-hidden="true" /> New article
+          <div className="dashboard-sidebar-brand">
+            <Link href="/" className="min-w-0" aria-label="Rubicon home">
+              <RubiconBrand className="h-7" onLight />
             </Link>
           </div>
 
-          <nav className="flex-1 overflow-y-auto px-3 py-4" aria-label="Dashboard">
-            <div className="grid gap-5">
-              {navSections.map((section) => (
-                <section key={section.label}>
-                  <div className="dashboard-nav-section-title px-3 pb-2">{section.label}</div>
-                  <ul className="grid gap-1">
-                    {section.items.map((item) => {
-                      const active = item.exact ? currentPath === item.href : currentPath.startsWith(item.href);
-                      const Icon = item.icon;
-                      return (
-                        <li key={item.href}>
-                          <Link
-                            href={item.href}
-                            className={`dashboard-nav-link flex min-h-9 items-center gap-3 rounded-[8px] px-3 py-2 text-sm font-medium ${
-                              active ? "is-active" : ""
-                            }`}
-                          >
-                            <Icon size={16} aria-hidden="true" />
-                            <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                          </Link>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </section>
-              ))}
-            </div>
+          <nav className="dashboard-nav flex-1 overflow-y-auto" aria-label="Dashboard">
+            {/* Top-level action, styled like a plain Cursor row. */}
+            <Link href="/dashboard/articles/new" className="dashboard-nav-link">
+              <Plus size={17} aria-hidden="true" />
+              <span className="dashboard-nav-link-label">New article</span>
+              <kbd className="dashboard-kbd">⌘N</kbd>
+            </Link>
+
+            {navSections.map((section) => (
+              <section key={section.label} className="dashboard-nav-group">
+                <div className="dashboard-nav-section-title">{section.label}</div>
+                {section.items.map((item) => {
+                  const active = item.exact ? currentPath === item.href : currentPath.startsWith(item.href);
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`dashboard-nav-link${active ? " is-active" : ""}`}
+                      aria-current={active ? "page" : undefined}
+                    >
+                      <Icon size={17} aria-hidden="true" />
+                      <span className="dashboard-nav-link-label">{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </section>
+            ))}
           </nav>
 
           {onLogout && (
-            <div className="border-t border-[var(--line)] p-3">
-              <button type="button" onClick={onLogout} className="dashboard-nav-link flex w-full items-center gap-3 rounded-[8px] px-3 py-2 text-sm font-medium text-[var(--muted)]">
-                <LogOut size={16} aria-hidden="true" />
-                <span>Sign out</span>
+            <div className="dashboard-sidebar-foot">
+              <button type="button" onClick={onLogout} className="dashboard-nav-link w-full">
+                <LogOut size={17} aria-hidden="true" />
+                <span className="dashboard-nav-link-label">Sign out</span>
               </button>
             </div>
           )}
