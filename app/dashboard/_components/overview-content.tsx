@@ -678,7 +678,7 @@ async function renderExportPng({
   const canvas = document.createElement("canvas");
   canvas.width = W * scale;
   canvas.height = H * scale;
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas?.getContext("2d");
   if (!ctx) return "";
   ctx.scale(scale, scale);
   ctx.textBaseline = "alphabetic";

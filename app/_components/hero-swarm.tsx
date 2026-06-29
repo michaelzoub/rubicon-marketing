@@ -27,7 +27,7 @@ export function HeroSwarm({ className }: { className?: string }) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas?.getContext("2d");
     if (!ctx) return;
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -45,13 +45,13 @@ export function HeroSwarm({ className }: { className?: string }) {
     let spawnTimer = 1;
 
     function build() {
-      const rect = canvas.getBoundingClientRect();
-      width = rect.width;
-      height = rect.height;
+      const rect = canvas?.getBoundingClientRect();
+      width = rect?.width ?? 0;
+      height = rect?.height ?? 0;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(height * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       divider = width * 0.52;
       const nodeR = Math.max(5, Math.min(width, height) * 0.014);
