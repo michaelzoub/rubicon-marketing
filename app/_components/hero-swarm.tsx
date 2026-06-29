@@ -49,6 +49,7 @@ export function HeroSwarm({ className }: { className?: string }) {
       width = rect?.width ?? 0;
       height = rect?.height ?? 0;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      if (!canvas) return;
       canvas.width = Math.round(width * dpr);
       canvas.height = Math.round(height * dpr);
       ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
