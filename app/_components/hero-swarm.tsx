@@ -45,7 +45,7 @@ export function HeroSwarm({ className }: { className?: string }) {
     let spawnTimer = 1;
 
     function build() {
-      const rect = canvas?.getBoundingClientRect();xF
+      const rect = canvas?.getBoundingClientRect();
       width = rect?.width ?? 0;
       height = rect?.height ?? 0;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
