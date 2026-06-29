@@ -45,7 +45,7 @@ export function HeroSwarm({ className }: { className?: string }) {
     let spawnTimer = 1;
 
     function build() {
-      const rect = canvas?.getBoundingClientRect();
+      const rect = canvas?.getBoundingClientRect();xF
       width = rect?.width ?? 0;
       height = rect?.height ?? 0;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -103,6 +103,7 @@ export function HeroSwarm({ className }: { className?: string }) {
     // A white chip with a thin ink ring + soft shadow, so nodes stay legible
     // over both the bright sky and the dark foliage of the painting.
     function chip(x: number, y: number, r: number, ring: string) {
+      if (!ctx) return;
       ctx.save();
       ctx.shadowColor = "rgba(15, 18, 30, 0.3)";
       ctx.shadowBlur = 5;
@@ -120,6 +121,7 @@ export function HeroSwarm({ className }: { className?: string }) {
     }
 
     function haloText(text: string, x: number, y: number, fill: string, halo: string) {
+      if (!ctx) return;
       ctx.save();
       ctx.shadowColor = halo;
       ctx.shadowBlur = 5;
@@ -129,6 +131,8 @@ export function HeroSwarm({ className }: { className?: string }) {
     }
 
     function draw(dt: number, t: number) {
+      if (!ctx) return;
+
       ctx.clearRect(0, 0, width, height);
 
       // --- Divider between the two zones -----------------------------------
