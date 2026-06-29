@@ -8,6 +8,7 @@ import { SiteFooter } from "./_components/marketing/site-footer";
 import { SiteHeader } from "./_components/site-header";
 import { LandingAgentsSection } from "./_components/marketing/landing-agents-section";
 import { StreamTheater } from "./_components/stream-theater";
+import { HeroSwarm } from "./_components/hero-swarm";
 
 function Hero() {
   return (
@@ -36,12 +37,13 @@ function Hero() {
 
         <motion.div {...fade} transition={{ delay: 0.08 }} className="landing-hero-art-wrap" aria-hidden="true">
           <img
-            src="/cosmos-2.webp"
+            src="/landing-oil.jpg"
             alt=""
             className="landing-hero-art"
             decoding="async"
             fetchPriority="high"
           />
+          <HeroSwarm className="landing-hero-swarm" />
         </motion.div>
       </div>
     </div>
@@ -78,7 +80,7 @@ function DashboardShowcase() {
             <div className="landing-dashboard-showcase-visual hero-visual">
               <div className="landing-dashboard-frame">
                 <img
-                  src="/dashboard-white.jpg"
+                  src="/dashboard-showcase.png"
                   alt="Rubicon writer dashboard showing total earnings, words read, agent reads, recent activity, and wallet payouts"
                   className="landing-dashboard-image"
                   decoding="async"

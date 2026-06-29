@@ -41,7 +41,7 @@ export function Card({
   style?: CSSProperties;
 }) {
   return (
-    <div id={id} style={style} className={`dashboard-card bg-white ${className}`}>
+    <div id={id} style={style} className={`dashboard-card bg-[var(--card)] ${className}`}>
       {children}
     </div>
   );
@@ -49,7 +49,7 @@ export function Card({
 
 export function CardHeader({ title, action }: { title: ReactNode; action?: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3 px-5 pb-3 pt-5">
+    <div className="flex items-center justify-between gap-3 border-b border-[var(--line)] px-5 pb-4 pt-5">
       <h2 className="text-base font-semibold">{title}</h2>
       {action}
     </div>
@@ -89,7 +89,7 @@ export function StatTile({
 
 export function LoadingState({ label = "Loading…" }: { label?: string }) {
   return (
-    <div className="dashboard-card flex items-center justify-center gap-3 bg-white px-6 py-16 text-sm text-[var(--muted)]">
+    <div className="dashboard-card flex items-center justify-center gap-3 bg-[var(--card)] px-6 py-16 text-sm text-[var(--muted)]">
       <Loader2 size={18} className="animate-spin text-[var(--river)]" aria-hidden="true" />
       {label}
     </div>
@@ -108,7 +108,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="dashboard-card flex flex-col items-center bg-white px-6 py-16 text-center">
+    <div className="dashboard-card flex flex-col items-center bg-[var(--card)] px-6 py-16 text-center">
       <span className="grid h-12 w-12 place-items-center rounded-[10px] border border-[var(--river-line)] bg-[var(--river-pale)] text-[var(--river)]">
         {icon ?? <Inbox size={22} aria-hidden="true" />}
       </span>

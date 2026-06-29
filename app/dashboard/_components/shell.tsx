@@ -67,7 +67,7 @@ function WriterAuthScreen({ onLogin }: { onLogin: () => void }) {
     <div className="writer-auth-screen">
       <div className="writer-auth-card">
         <section className="writer-auth-story">
-          <RubiconBrand className="h-9" onLight />
+          <span className="site-wordmark text-[1.6rem]">rubicon</span>
           <div>
             <h1>Start earning when agents read your work</h1>
             <p className="writer-auth-copy">
@@ -158,9 +158,9 @@ export function DashboardFrame({
       }`}
     >
       <Sidebar onLogout={onLogout} activePath={activePath} open={sidebarOpen} onToggle={() => setSidebarOpen((open) => !open)} />
-      <main className="min-w-0">
+      <main className="min-w-0 lg:col-start-2">
         <MobileBar onLogout={onLogout} activePath={activePath} />
-        <div className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-8 lg:py-8">{children}</div>
+        <div className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-8 lg:py-8 lg:pr-12 xl:pr-16">{children}</div>
       </main>
     </div>
   );
@@ -197,7 +197,11 @@ function Sidebar({
   }, [router]);
 
   return (
-    <aside className="dashboard-sidebar sticky top-0 hidden h-screen border-r border-[var(--line)] bg-white lg:flex lg:flex-col">
+    <aside
+      className={`dashboard-sidebar hidden h-screen border-r border-[var(--line)] bg-white lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex lg:flex-col ${
+        open ? "lg:w-56" : "lg:w-16"
+      }`}
+    >
       {!open ? (
         <div className="flex h-full flex-col items-center gap-4 px-3 py-4">
           <button type="button" onClick={onToggle} className="dashboard-icon-button" aria-label="Open sidebar" aria-expanded={false}>
@@ -225,17 +229,12 @@ function Sidebar({
       ) : (
         <>
           <div className="dashboard-sidebar-chrome">
-            <div className="dashboard-chrome-controls">
-              <button type="button" onClick={onToggle} className="dashboard-icon-button" aria-label="Close sidebar" aria-expanded={true}>
-                <PanelLeft size={15} aria-hidden="true" />
-              </button>
-            </div>
-          </div>
-
-          <div className="dashboard-sidebar-brand">
             <Link href="/" className="min-w-0" aria-label="Rubicon home">
-              <RubiconBrand className="h-7" onLight />
+              <span className="site-wordmark text-[1.3rem]">rubicon</span>
             </Link>
+            <button type="button" onClick={onToggle} className="dashboard-icon-button" aria-label="Close sidebar" aria-expanded={true}>
+              <PanelLeft size={15} aria-hidden="true" />
+            </button>
           </div>
 
           <nav className="dashboard-nav flex-1 overflow-y-auto" aria-label="Dashboard">
@@ -289,7 +288,7 @@ function MobileBar({ onLogout, activePath }: { onLogout?: () => void; activePath
     <div className="sticky top-0 z-30 border-b border-[var(--line)] bg-white/90 backdrop-blur lg:hidden">
       <div className="flex items-center justify-between px-5 py-3">
         <Link href="/" className="flex items-center" aria-label="Rubicon home">
-          <RubiconBrand className="h-7" onLight />
+          <span className="site-wordmark text-[1.25rem]">rubicon</span>
         </Link>
         {onLogout && (
           <button type="button" onClick={onLogout} className="text-[var(--muted)]" aria-label="Sign out">

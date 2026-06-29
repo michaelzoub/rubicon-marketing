@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ThemeToggle } from "../theme-toggle";
 
 const githubUrl = "https://github.com/michaelzoub/rubicon";
 
@@ -99,6 +100,7 @@ export function SiteFooter() {
       <div className="site-footer-bar">
         <div className="container site-footer-bar-inner">
           <p className="site-footer-bar-copy">© 2026 Rubicon · Built by Caliga</p>
+          <ThemeToggle />
         </div>
       </div>
     </footer>

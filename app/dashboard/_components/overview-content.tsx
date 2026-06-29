@@ -366,12 +366,12 @@ function PaymentActivityRows({ rows }: { rows: DashboardOverviewPaymentRow[] }) 
       ) : (
         <ul className="grid gap-1 px-2 pb-2">
           {rows.slice(0, 5).map((row) => (
-            <li key={row.id} className="flex items-center justify-between gap-4 rounded-lg px-3 py-4 hover:bg-[var(--surface-muted)]">
+            <li key={row.id} className="flex min-w-0 items-center justify-between gap-4 rounded-lg px-3 py-4 hover:bg-[var(--surface-muted)]">
               <div className="min-w-0">
                 <div className="truncate font-medium">{row.title}</div>
-                <div className="text-xs text-[var(--muted)]">{row.meta}</div>
+                <div className="truncate text-xs text-[var(--muted)]">{row.meta}</div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex shrink-0 items-center gap-3">
                 <span className="font-semibold">{row.amount}</span>
                 <PaymentStatusPill status={row.status} />
               </div>
@@ -414,7 +414,7 @@ function ArticleRows({ rows }: { rows: DashboardOverviewArticleRow[] }) {
               <>
                 <div className="min-w-0">
                   <div className="truncate font-medium">{row.title}</div>
-                  <div className="text-xs text-[var(--muted)]">{row.meta}</div>
+                  <div className="truncate text-xs text-[var(--muted)]">{row.meta}</div>
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
                   <span className="text-sm font-semibold">{row.earnings}</span>
@@ -423,7 +423,7 @@ function ArticleRows({ rows }: { rows: DashboardOverviewArticleRow[] }) {
               </>
             );
             return (
-              <li key={row.id}>
+              <li key={row.id} className="min-w-0">
                 {row.href ? (
                   <Link href={row.href} className="flex min-w-0 flex-col gap-3 rounded-lg px-3 py-4 hover:bg-[var(--surface-muted)] sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                     {content}
@@ -476,7 +476,7 @@ function WalletCard({ wallet }: { wallet: DashboardOverviewWallet }) {
           />
         </div>
       ) : (
-        <div className="grid gap-3 px-3 pb-3">
+        <div className="grid gap-3 px-3 pb-3 pt-5">
           <p className="px-2 text-xs text-[var(--muted)]">Withdrawable earnings are sent through your confirmed payout connection.</p>
           <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
             <div className="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-5">

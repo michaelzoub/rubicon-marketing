@@ -42,6 +42,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable}`}>
       <body>
+        <script
+          // Apply the saved color theme before paint to avoid a flash. Defaults
+          // to "system" (follows prefers-color-scheme).
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var p=localStorage.getItem('theme')||'system';var d=p==='dark'||(p==='system'&&matchMedia('(prefers-color-scheme: dark)').matches);var e=document.documentElement;e.classList.toggle('dark',d);e.style.colorScheme=d?'dark':'light';}catch(_){}})();`,
+          }}
+        />
         <AppProviders>{children}</AppProviders>
       </body>
     </html>
