@@ -5265,8 +5265,8 @@ a {
   border-right: 1px solid rgba(20,22,28,.08);
   background-color: #f1efe9;
   background-image:
-    linear-gradient(105deg, rgba(249,248,246,.93) 0%, rgba(249,248,246,.74) 52%, rgba(249,248,246,.6) 100%),
-    url("/cosmos-2.webp");
+    /* linear-gradient(105deg, rgba(249,248,246,.93) 0%, rgba(249,248,246,.74) 52%, rgba(249,248,246,.6) 100%), */
+    url("/cosmos-hero");
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
