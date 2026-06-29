@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { CreatorsDemoVideo } from "./creators-demo-video";
 import { fade } from "./motion";
 
 const STEPS = [
@@ -19,9 +20,6 @@ const STEPS = [
     copy: "Every delivered word is attributed to your work and settled straight to your wallet. Exact usage, 0% platform fee.",
   },
 ] as const;
-
-const DEMO_VIDEO_SRC = "/creators-how-it-works.mp4";
-const DEMO_VIDEO_POSTER = "/Rubicon_Dashboard.png";
 
 export function CreatorsHowItWorks() {
   return (
@@ -41,18 +39,7 @@ export function CreatorsHowItWorks() {
         </div>
 
         <div className="creators-how-layout">
-          <div className="creators-how-video">
-            <video
-              className="creators-how-video-player"
-              controls
-              playsInline
-              preload="metadata"
-              poster={DEMO_VIDEO_POSTER}
-              aria-label="Rubicon creator flow demo video"
-            >
-              <source src={DEMO_VIDEO_SRC} type="video/mp4" />
-            </video>
-          </div>
+          <CreatorsDemoVideo />
 
           <ol className="creators-how-steps">
             {STEPS.map((step, index) => (

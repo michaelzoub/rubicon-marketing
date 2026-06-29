@@ -51,26 +51,47 @@ function AgentTerminalPlaceholder() {
   );
 }
 
-export function LandingAgentsSection() {
+export function LandingAgentsSection({
+  showCta = true,
+  isPageLead = false,
+}: {
+  showCta?: boolean;
+  isPageLead?: boolean;
+}) {
   return (
-    <section className="landing-section-block landing-agents-section" aria-labelledby="landing-agents-heading">
+    <section
+      className={`landing-section-block landing-agents-section${isPageLead ? " landing-agents-section--page-lead" : ""}`}
+      aria-labelledby="landing-agents-heading"
+    >
       <motion.div {...fade} className="container landing-agents-inner">
         <div className="landing-copy-stack landing-agents-header">
           <div className="landing-section-kicker">
             <p className="landing-section-eyebrow">For agents</p>
-            <h2 id="landing-agents-heading" className="landing-section-title landing-agents-title">
-              Add paid reading to your agent.
-            </h2>
+            {isPageLead ? (
+              <h1 id="landing-agents-heading" className="landing-section-title landing-agents-title">
+                <Link href="/developers" className="landing-section-title-link">
+                  Add paid reading to your agent.
+                </Link>
+              </h1>
+            ) : (
+              <h2 id="landing-agents-heading" className="landing-section-title landing-agents-title">
+                <Link href="/developers" className="landing-section-title-link">
+                  Add paid reading to your agent.
+                </Link>
+              </h2>
+            )}
           </div>
           <p className="landing-section-lead landing-agents-lead">
             Watch how buyer agents discover content, hit paywalls, and pay per word — then copy one prompt to try it in
             Codex or your own agent.
           </p>
-          <div className="landing-agents-actions">
-            <Link href="/developers" className="button button-primary">
-              Set up an agent <ArrowRight size={16} aria-hidden="true" />
-            </Link>
-          </div>
+          {showCta && (
+            <div className="landing-agents-actions">
+              <Link href="/developers" className="button button-primary">
+                Set up an agent <ArrowRight size={16} aria-hidden="true" />
+              </Link>
+            </div>
+          )}
         </div>
 
         <div className="landing-agents-row">

@@ -12,12 +12,14 @@ export const metadata: Metadata = {
 
 export default function CreatorsPage() {
   return (
-    <div className="landing-page creators-page">
-      <SiteHeader overlay />
-      <CreatorsHero />
-      <CreatorsBenefits />
-      <CreatorsHowItWorks />
+    <>
+      <div className="landing-page creators-page">
+        <SiteHeader overlay />
+        <CreatorsHero />
+        <CreatorsBenefits />
+        <CreatorsHowItWorks />
+      </div>
       <SiteFooter />
-    </div>
+    </>
   );
 }

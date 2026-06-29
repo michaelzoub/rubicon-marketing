@@ -14,29 +14,20 @@ function Hero() {
     <div className="landing-hero-content">
       <div className="container">
         <motion.div {...fade} className="landing-copy-stack landing-hero-copy">
-          <h1 className="landing-hero-title">Pay-per-word, between agents and creators.</h1>
-          <p className="landing-hero-lead">
-            Content priced by the word: creators earn for exactly what&apos;s read, agents pay for exactly what they use.
-          </p>
+          <h1 className="landing-hero-title">
+            <span className="landing-hero-title-muted">Rubicon enables creators to</span>
+            <br />
+            <span className="landing-hero-title-emphasis">sell their writings</span>
+            <span className="landing-hero-title-muted"> on a per word basis to AI agents.</span>
+          </h1>
           <div className="landing-hero-cta">
             <div className="landing-hero-actions">
               <Link href="/dashboard" className="button button-primary">
-                Start publishing <ArrowRight size={16} aria-hidden="true" />
+                Start publishing <ArrowRight size={14} aria-hidden="true" />
               </Link>
               <Link href="/developers" className="button button-secondary">
                 Set up an agent
               </Link>
-            </div>
-            <div className="landing-hero-benefits mono text-xs text-[var(--muted)]">
-              <span className="flex items-center gap-1.5">
-                <Check size={14} className="text-[var(--river)]" aria-hidden="true" /> Pay per word
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Check size={14} className="text-[var(--river)]" aria-hidden="true" /> Stop anytime
-              </span>
-              <span className="flex items-center gap-1.5">
-                <Check size={14} className="text-[var(--river)]" aria-hidden="true" /> 0% platform fee
-              </span>
             </div>
           </div>
         </motion.div>
@@ -51,22 +42,31 @@ function DashboardShowcase() {
       className="landing-section-block landing-dashboard-showcase"
       aria-labelledby="dashboard-showcase-heading"
     >
-      <div className="landing-dashboard-showcase-bg" aria-hidden="true">
-        <img
-          src="/roman-senate-blue-transparent.png"
-          alt=""
-          className="landing-dashboard-showcase-bg-image"
-          decoding="async"
-        />
-        <div className="landing-dashboard-showcase-overlay" />
-        <div className="landing-dashboard-showcase-scrim" />
-      </div>
       <motion.div {...fade} className="container landing-dashboard-showcase-inner">
+        <div className="landing-dashboard-showcase-column">
+          <div className="landing-dashboard-showcase-panel">
+            <div className="landing-dashboard-showcase-visual hero-visual">
+              <div className="landing-dashboard-texture-border">
+                <div className="landing-dashboard-frame">
+                  <img
+                    src="/Rubicon_Dashboard.png"
+                    alt="Rubicon creator dashboard showing earnings, agent reads, words read, and payout wallet"
+                    className="landing-dashboard-image"
+                    decoding="async"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div className="landing-copy-stack landing-dashboard-showcase-header">
           <div className="landing-section-kicker">
-            <p className="landing-section-eyebrow">Creator dashboard</p>
+            <p className="landing-section-eyebrow">For writers</p>
             <h2 id="dashboard-showcase-heading" className="landing-section-title">
-              The dashboard creators get.
+              <Link href="/creators" className="landing-section-title-link">
+                The dashboard creators get.
+              </Link>
             </h2>
           </div>
           <p className="landing-section-lead landing-dashboard-showcase-lead">
@@ -75,24 +75,8 @@ function DashboardShowcase() {
           </p>
           <div className="landing-dashboard-showcase-actions">
             <Link href="/dashboard" className="button button-primary landing-dashboard-cta">
-              List your work <ArrowRight size={16} aria-hidden="true" />
+              List an article <ArrowRight size={14} aria-hidden="true" />
             </Link>
-          </div>
-        </div>
-
-        <div className="landing-dashboard-showcase-column">
-          <div className="landing-dashboard-showcase-panel">
-            <div className="landing-dashboard-showcase-visual hero-visual">
-              <div className="landing-dashboard-glow" aria-hidden="true" />
-              <div className="landing-dashboard-frame">
-                <img
-                  src="/Rubicon_Dashboard.png"
-                  alt="Rubicon creator dashboard showing earnings, agent reads, words read, and payout wallet"
-                  className="landing-dashboard-image"
-                  decoding="async"
-                />
-              </div>
-            </div>
           </div>
         </div>
       </motion.div>
@@ -116,15 +100,15 @@ function ProductSection() {
           </p>
           <ul className="landing-product-points">
             <li>
-              <Check size={14} className="text-[var(--river)]" aria-hidden="true" />
+              <Check size={14} className="text-[var(--muted)]" aria-hidden="true" />
               Per-word pricing — no subscriptions, no paywalls
             </li>
             <li>
-              <Check size={14} className="text-[var(--river)]" aria-hidden="true" />
+              <Check size={14} className="text-[var(--muted)]" aria-hidden="true" />
               Creators earn for every word read
             </li>
             <li>
-              <Check size={14} className="text-[var(--river)]" aria-hidden="true" />
+              <Check size={14} className="text-[var(--muted)]" aria-hidden="true" />
               Agents pay only for what they use
             </li>
           </ul>
@@ -148,20 +132,11 @@ export default function Home() {
     <>
       <div className="landing-page">
         <SiteHeader variant="home" overlay />
-        <section className="landing-hero">
-          <div className="landing-hero-bg" aria-hidden="true">
-            <img
-              src="/rubicon-crossing-transparent.png"
-              alt=""
-              className="landing-hero-image"
-              decoding="async"
-              fetchPriority="high"
-            />
-            <div className="landing-hero-overlay" />
-            <div className="landing-hero-scrim" />
-          </div>
-          <Hero />
-        </section>
+        <div className="landing-hero-stage">
+          <section className="landing-hero">
+            <Hero />
+          </section>
+        </div>
         <DashboardShowcase />
         <LandingAgentsSection />
         <ProductSection />

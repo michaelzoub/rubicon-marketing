@@ -1004,7 +1004,7 @@ function EndScene() {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.7, ease: CINE }}
       >
-        <img src="/rubicon-new.png" alt="Rubicon" className="dv-end-logo" />
+        <img src="/TEMP_LOGO.svg" alt="Rubicon" className="dv-end-logo" />
       </motion.div>
       <h2 className="dv-end-title">
         {headline.map((w, i) => (
@@ -1579,7 +1579,7 @@ function DemoStyles({ embedded = false }: { embedded?: boolean }) {
       .dv-end { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 640px; gap: 16px; }
       .dv-end-burst { position: absolute; top: -40px; left: 50%; width: 280px; height: 280px; margin-left: -140px; border-radius: 50%; background: rgba(47,128,237,0.25); filter: blur(100px); pointer-events: none; }
       .dv-end-mark { position: relative; display: inline-flex; align-items: center; gap: 12px; font-size: 1.6rem; font-weight: 760; letter-spacing: -0.03em; }
-      .dv-end-logo { height: clamp(80px, 12vh, 132px); width: auto; object-fit: contain; }
+      .dv-end-logo { height: clamp(80px, 12vh, 132px); width: auto; object-fit: contain; filter: brightness(0) invert(1); }
       .dv-end-title { position: relative; font-size: clamp(2.1rem, 4.6vw, 3.6rem); font-weight: 790; letter-spacing: -0.04em; line-height: 1.04; max-width: 15ch; }
       .dv-end-sub { position: relative; font-size: clamp(0.95rem, 1.5vw, 1.15rem); line-height: 1.6; color: var(--muted); max-width: 44ch; }
       .dv-end-cta { position: relative; margin-top: 8px; display: inline-flex; align-items: center; padding: 12px 28px; border-radius: 999px; background: var(--river); color: #fff; font-weight: 700; letter-spacing: -0.01em; }

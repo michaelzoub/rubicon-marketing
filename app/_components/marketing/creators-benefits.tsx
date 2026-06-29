@@ -31,10 +31,10 @@ export function CreatorsBenefits() {
       <motion.div {...fade} className="container">
         <div className="landing-copy-stack creators-benefits-header">
           <div className="landing-section-kicker">
-            <p className="landing-section-eyebrow">Benefits</p>
-            <h2 id="creators-benefits-heading" className="landing-section-title">
+            <p className="landing-section-eyebrow">For writers</p>
+            <h1 id="creators-benefits-heading" className="landing-section-title">
               How it benefits you
-            </h2>
+            </h1>
           </div>
           <p className="landing-section-lead creators-benefits-lead">
             Rubicon is built for creators who want agent revenue without giving up control of their work.

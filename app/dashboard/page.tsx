@@ -596,7 +596,7 @@ async function renderExportPng({
   const ctx = canvas.getContext("2d");
   if (!ctx) return "";
 
-  const logo = await loadImage("/rubicon-new-dark.png").catch(() => null);
+  const logo = await loadImage("/TEMP_LOGO.svg").catch(() => null);
 
   ctx.fillStyle = "#f4f7fb";
   ctx.fillRect(0, 0, width, height);
