@@ -56,14 +56,22 @@
   box-shadow: none;
 }
 
+.landing-page .landing-dashboard-image {
+  height: auto;
+  max-height: clamp(560px, 78vh, 880px);
+  object-fit: contain;
+  object-position: center top;
+}
+
 .creators-page .creators-hero {
   position: relative;
   min-height: min(33rem, calc(100dvh - 4rem));
   overflow: hidden;
   isolation: isolate;
-  background: #fff;
+  border-bottom: 0;
 }
 
+/* ---- full-bleed painting ---- */
 .creators-page .creators-hero-bg {
   position: absolute;
   inset: 0;
@@ -77,34 +85,80 @@
   object-position: center 48%;
 }
 
+/* ---- dark overlay for text readability ---- */
+.creators-hero-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.58) 0%,
+    rgba(0, 0, 0, 0.40) 45%,
+    rgba(0, 0, 0, 0.20) 100%
+  );
+  pointer-events: none;
+}
+
+/* ---- content overlaid on painting ---- */
 .creators-page .creators-hero-content {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   min-height: inherit;
   align-items: center;
-  padding-block: clamp(3rem, 8vh, 6.5rem);
   background: transparent;
 }
 
 .creators-page .creators-hero-inner {
-  box-sizing: border-box;
-  width: min(56rem, 100%);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: min(72rem, calc(100% - 2 * var(--landing-gutter, 2rem)));
   margin-inline: auto;
-  padding: clamp(2rem, 4vw, 3rem);
-  border: 1px solid rgba(18, 18, 22, 0.1);
-  border-radius: var(--radius-lg);
-  background: #fff;
+  padding: clamp(2.5rem, 6vh, 5rem) clamp(2rem, 4vw, 3rem);
+  gap: clamp(2rem, 4vw, 4rem);
+  background: transparent;
 }
 
-.creators-page .creators-hero-quote-box {
-  text-align: center;
-}
-
-.creators-page .creators-hero-cta {
+/* ---- left: quote ---- */
+.creators-hero-left {
+  display: flex;
+  flex-direction: column;
   justify-content: center;
 }
 
+.creators-page .creators-hero-left .creators-hero-quote-text,
+.creators-page .creators-hero-left .creators-hero-quote-text strong {
+  color: #fff;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+}
+
+.creators-page .creators-hero-left .creators-hero-quote-attribution {
+  color: rgba(255, 255, 255, 0.82);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+/* ---- right: logo + cta ---- */
+.creators-hero-right {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1.5rem, 3vw, 2.5rem);
+  text-align: center;
+}
+
+.creators-hero-logo {
+  height: clamp(2.5rem, 7vh, 4.5rem);
+  width: auto;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+}
+
+.creators-hero-cta {
+  display: flex;
+  justify-content: center;
+}
+
+/* ---- responsive ---- */
 @media (max-width: 767px) {
   .landing-page .landing-hero {
     min-height: auto;
@@ -121,6 +175,11 @@
   }
 
   .creators-page .creators-hero-inner {
-    padding: 1.5rem;
+    grid-template-columns: 1fr;
+    gap: clamp(1.5rem, 4vh, 2.5rem);
+  }
+
+  .creators-hero-right {
+    gap: clamp(1rem, 3vh, 1.5rem);
   }
 }

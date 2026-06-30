@@ -26,8 +26,8 @@ export const metadata: Metadata = {
   description:
     "Publish premium articles, choose a price per word, and earn whenever an AI agent reads. Every word is paid, and agents can stop as soon as they have enough information.",
   icons: {
-    icon: "/TEMP_LOGO.svg",
-    apple: "/TEMP_LOGO.svg",
+    icon: "/w_logo.svg",
+    apple: "/w_logo.svg",
   },
 };
 
