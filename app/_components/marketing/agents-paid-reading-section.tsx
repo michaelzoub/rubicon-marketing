@@ -29,7 +29,6 @@ export function AgentsPaidReadingSection() {
       <motion.div {...fade} className="container">
         <div className="landing-copy-stack developers-agents-header">
           <div className="landing-section-kicker">
-            <p className="landing-section-eyebrow">For agents</p>
             <h1 id="developers-agents-heading" className="landing-section-title developers-agents-title">
               Add paid reading to your agent.
             </h1>

@@ -67,33 +67,42 @@ export function LandingAgentsSection({
       <motion.div {...fade} className="container landing-agents-inner">
         <div className="landing-copy-stack landing-agents-header">
           <div className="landing-section-kicker">
-            <p className="landing-section-eyebrow">For agents</p>
             {isPageLead ? (
               <h1 id="landing-agents-heading" className="landing-section-title landing-agents-title">
-                <Link
-                  href="/developers"
-                  className="landing-section-title-link"
-                  onClick={() => trackClick("nav_link_clicked", { label: "Add paid reading to your agent" })}
-                >
-                  Add paid reading to your agent.
-                </Link>
+                <span className="landing-section-title-emphasis">
+                  <Link
+                    href="/developers"
+                    className="landing-section-title-link"
+                    onClick={() => trackClick("nav_link_clicked", { label: "Add paid reading to your agent" })}
+                  >
+                    Add paid reading to your agent.
+                  </Link>
+                </span>
+                <br />
+                <span className="landing-section-title-muted">
+                  Watch how buyer agents discover content, hit paywalls, and pay per word — then copy one prompt to
+                  try it in Codex or your own agent.
+                </span>
               </h1>
             ) : (
               <h2 id="landing-agents-heading" className="landing-section-title landing-agents-title">
-                <Link
-                  href="/developers"
-                  className="landing-section-title-link"
-                  onClick={() => trackClick("nav_link_clicked", { label: "Add paid reading to your agent" })}
-                >
-                  Add paid reading to your agent.
-                </Link>
+                <span className="landing-section-title-emphasis">
+                  <Link
+                    href="/developers"
+                    className="landing-section-title-link"
+                    onClick={() => trackClick("nav_link_clicked", { label: "Add paid reading to your agent" })}
+                  >
+                    Add paid reading to your agent.
+                  </Link>
+                </span>
+                <br />
+                <span className="landing-section-title-muted">
+                  Watch how buyer agents discover content, hit paywalls, and pay per word — then copy one prompt to
+                  try it in Codex or your own agent.
+                </span>
               </h2>
             )}
           </div>
-          <p className="landing-section-lead landing-agents-lead">
-            Watch how buyer agents discover content, hit paywalls, and pay per word — then copy one prompt to try it in
-            Codex or your own agent.
-          </p>
           {showCta && (
             <div className="landing-agents-actions">
               <Link

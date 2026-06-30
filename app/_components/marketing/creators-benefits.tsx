@@ -31,14 +31,14 @@ export function CreatorsBenefits() {
       <motion.div {...fade} className="container">
         <div className="landing-copy-stack creators-benefits-header">
           <div className="landing-section-kicker">
-            <p className="landing-section-eyebrow">For writers</p>
-            <h1 id="creators-benefits-heading" className="landing-section-title">
-              How it benefits you
-            </h1>
+            <h2 id="creators-benefits-heading" className="landing-section-title">
+              <span className="landing-section-title-emphasis">How it benefits you</span>
+              <br />
+              <span className="landing-section-title-muted">
+                Rubicon is built for creators who want agent revenue without giving up control of their work.
+              </span>
+            </h2>
           </div>
-          <p className="landing-section-lead creators-benefits-lead">
-            Rubicon is built for creators who want agent revenue without giving up control of their work.
-          </p>
         </div>
 
         <motion.div {...cardGridProps} className="creators-benefits-grid">

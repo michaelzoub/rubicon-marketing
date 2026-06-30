@@ -105,7 +105,6 @@ export function DevelopersSdkSection() {
         <div className="developers-sdk-layout">
           <div className="developers-sdk-copy">
             <div className="landing-section-kicker">
-              <p className="landing-section-eyebrow">For developers</p>
               <h2 id="developers-sdk-heading" className="landing-section-title developers-sdk-title">
                 Use the SDK when you want direct control.
               </h2>

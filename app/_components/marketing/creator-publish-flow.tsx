@@ -294,7 +294,7 @@ function StepPricing({ t }: { t: number }) {
         </div>
 
         <div className="rounded-xl bg-[var(--surface-muted)] p-5">
-          <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Pricing preview</div>
+          <div className="mono text-[0.66rem] tracking-[0.02em] text-[var(--muted)]">Pricing preview</div>
           <dl className="mt-4 grid gap-3 text-sm">
             <Row term="Price per word" value={priced ? "$0.00005" : "$0.00"} />
             <Row term="Estimated full-article price" value={priced ? "$0.1209" : "$0.00"} hint="2,418 words" />

@@ -1320,14 +1320,14 @@ function DemoStyles({ embedded = false }: { embedded?: boolean }) {
       .dv-note { font-size: 0.9rem; color: var(--quiet); }
       .dv-highlight { color: var(--river-deep); font-weight: 600; }
       .dv-guide-strip { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; border-radius: 12px; background: rgba(47,128,237,0.1); padding: 12px 15px; }
-      .dv-guide-from { font-size: 0.56rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--river-deep); white-space: nowrap; }
+      .dv-guide-from { font-size: 0.56rem; letter-spacing: -0.01em; text-transform: none; color: var(--river-deep); white-space: nowrap; }
       .dv-guide-text { font-size: 0.86rem; color: var(--muted); }
       .dv-session-created { color: var(--green); font-weight: 700; }
       .dv-convo { display: grid; gap: 7px; min-height: 95px; }
       .dv-convo-row { display: flex; align-items: flex-start; gap: 9px; width: min(88%, 540px); padding: 9px 12px; border-radius: 12px; background: rgba(255,255,255,0.035); }
       .dv-convo-seller { justify-self: end; background: rgba(47,128,237,0.1); }
       .dv-convo-icon { display: grid; place-items: center; flex: none; width: 23px; height: 23px; border-radius: 7px; color: var(--river-deep); background: rgba(47,128,237,0.12); }
-      .dv-convo-name { display: block; margin-bottom: 2px; color: var(--quiet); font-size: 0.52rem; letter-spacing: 0.08em; text-transform: uppercase; }
+      .dv-convo-name { display: block; margin-bottom: 2px; color: var(--quiet); font-size: 0.52rem; letter-spacing: -0.01em; text-transform: none; }
       .dv-convo-row p { color: var(--muted); font-size: 0.76rem; line-height: 1.4; }
 
       /* ---- terminal (problem) ---- */
@@ -1388,7 +1388,7 @@ function DemoStyles({ embedded = false }: { embedded?: boolean }) {
       .dv-creatorblock-row { display: flex; align-items: center; gap: 13px; padding: 15px 17px; border-radius: 14px; background: rgba(255,255,255,0.035); }
       .dv-creatorblock-icon { display: grid; place-items: center; flex: none; width: 34px; height: 34px; border-radius: 10px; color: var(--river-deep); background: rgba(47,128,237,0.12); }
       .dv-creatorblock-row > div { display: flex; flex-direction: column; gap: 4px; }
-      .dv-creatorblock-label { color: var(--quiet); font-size: 0.55rem; letter-spacing: 0.09em; text-transform: uppercase; }
+      .dv-creatorblock-label { color: var(--quiet); font-size: 0.55rem; letter-spacing: 0.09em; text-transform: none; }
       .dv-creatorblock-row strong { color: var(--ink); font-size: 0.96rem; font-weight: 600; }
       .dv-creatorblock-vs { align-self: center; display: inline-flex; align-items: center; gap: 6px; padding: 4px 13px; border-radius: 999px; color: var(--red); background: rgba(240,120,120,0.12); font-size: 0.62rem; font-weight: 650; letter-spacing: 0.02em; }
       .dv-creatorblock-result { margin-top: 5px; text-align: center; font-size: 1rem; line-height: 1.5; color: var(--muted); }
@@ -1465,7 +1465,7 @@ function DemoStyles({ embedded = false }: { embedded?: boolean }) {
       .dv-dashboard-price-input.is-filled > div { color: #25272d; background: #fff; box-shadow: inset 0 0 0 2px #4b8cf5, 0 8px 24px rgba(75,140,245,0.1); }
       .dv-dashboard-price-input strong { font-size: 0.85rem; }
       .dv-dashboard-preview { padding: 11px; border-radius: 11px; background: #f1f4fc; }
-      .dv-dashboard-preview > span { display: block; margin-bottom: 7px; color: #858996; font-size: 0.48rem; letter-spacing: 0.12em; text-transform: uppercase; }
+      .dv-dashboard-preview > span { display: block; margin-bottom: 7px; color: #858996; font-size: 0.48rem; letter-spacing: 0.12em; text-transform: none; }
       .dv-dashboard-preview > div { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-top: 1px solid #dfe3ec; }
       .dv-dashboard-preview small { color: #7e828c; font-size: 0.47rem; }
       .dv-dashboard-preview strong { font-size: 0.52rem; }
@@ -1481,7 +1481,7 @@ function DemoStyles({ embedded = false }: { embedded?: boolean }) {
       /* ---- paid stream (flat tiles, no border) ---- */
       .dv-meters { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
       .dv-meter { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 12px; background: rgba(255,255,255,0.03); }
-      .dv-meter-label { font-size: 0.56rem; letter-spacing: 0.07em; text-transform: uppercase; color: var(--quiet); }
+      .dv-meter-label { font-size: 0.56rem; letter-spacing: 0.07em; text-transform: none; color: var(--quiet); }
       .dv-big-number { font-size: clamp(1.55rem, 2.6vw, 2.05rem); font-weight: 760; letter-spacing: -0.02em; color: var(--ink); font-variant-numeric: tabular-nums; line-height: 1; }
       .dv-big-muted { color: var(--quiet); }
       .dv-big-green { color: var(--green); }
@@ -1512,7 +1512,7 @@ function DemoStyles({ embedded = false }: { embedded?: boolean }) {
       .dv-settle-node.is-success { background: rgba(88,213,155,0.09); box-shadow: inset 0 0 0 1px rgba(88,213,155,0.2), 0 0 36px rgba(88,213,155,0.08); }
       .dv-settle-node-icon { display: grid; place-items: center; width: 34px; height: 34px; margin-bottom: 18px; border-radius: 10px; color: var(--river-deep); background: rgba(47,128,237,0.12); }
       .dv-settle-node.is-success .dv-settle-node-icon { color: var(--green); background: rgba(88,213,155,0.13); }
-      .dv-settle-node-label { color: var(--quiet); font-size: 0.53rem; letter-spacing: 0.07em; text-transform: uppercase; }
+      .dv-settle-node-label { color: var(--quiet); font-size: 0.53rem; letter-spacing: 0.07em; text-transform: none; }
       .dv-settle-node-value { margin-top: 6px; color: var(--ink); font-size: 0.95rem; font-variant-numeric: tabular-nums; }
       .dv-settle-node.is-success .dv-settle-node-value { color: var(--green); font-size: 1.2rem; }
       .dv-settle-node-meta { margin-top: auto; color: var(--quiet); font-size: 0.55rem; }

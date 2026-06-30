@@ -32,9 +32,12 @@ export function CreatorsHowItWorks() {
       <motion.div {...fade} className="container">
         <div className="landing-copy-stack creators-how-header">
           <div className="landing-section-kicker">
-            <p className="landing-section-eyebrow">How it works</p>
             <h2 id="creators-how-heading" className="landing-section-title">
-              From publish to paid, one word at a time.
+              <span className="landing-section-title-emphasis">From publish to paid, one word at a time.</span>
+              <br />
+              <span className="landing-section-title-muted">
+                List your work, set your per-word price, and start earning when agents read.
+              </span>
             </h2>
           </div>
         </div>

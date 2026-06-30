@@ -12,14 +12,12 @@ export function SellerAgentSection({ showPageIntro = false }: { showPageIntro?: 
         <div>
           {showPageIntro ? (
             <div className="pb-4 pt-4 md:pt-6">
-              <p className="eyebrow">The seller agent</p>
-              <h1 className="mt-4 max-w-3xl section-title">Every article has a seller agent.</h1>
+              <h1 className="max-w-3xl section-title">Every article has a seller agent.</h1>
             </div>
           ) : (
             <>
-              <p className="eyebrow">The seller agent</p>
-              <h2 className="mt-4 section-title">Every article has a seller agent.</h2>
-            </>
+            <h2 className="section-title">Every article has a seller agent.</h2>
+          </>
           )}
           <p className="section-copy mt-5">
             It understands the article, helps buyer agents find the relevant section, protects unpaid content, and

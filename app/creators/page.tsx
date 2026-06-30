@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CreatorsBenefits } from "../_components/marketing/creators-benefits";
 import { CreatorsHero } from "../_components/marketing/creators-hero";
+import { CreatorsScrollQuote } from "../_components/marketing/creators-scroll-quote";
 import { CreatorsHowItWorks } from "../_components/marketing/creators-how-it-works";
 import { SiteFooter } from "../_components/marketing/site-footer";
 import { SiteHeader } from "../_components/site-header";
@@ -15,6 +16,7 @@ export default function CreatorsPage() {
     <div className="landing-page creators-page">
       <SiteHeader />
       <CreatorsHero />
+      <CreatorsScrollQuote />
       <CreatorsBenefits />
       <CreatorsHowItWorks />
       <SiteFooter />
