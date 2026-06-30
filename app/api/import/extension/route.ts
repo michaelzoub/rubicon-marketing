@@ -12,6 +12,7 @@
  */
 import { NextResponse } from "next/server";
 import { validateImportPayload } from "@/lib/rubicon/import";
+import { importFromUrl } from "../../../../lib/import";
 import { bearerFromHeader } from "@/lib/rubicon/extension-tokens";
 import {
   authenticateExtensionToken,
@@ -37,6 +38,35 @@ export function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
 }
 
+async function enrichNativeXArticle(raw: unknown): Promise<unknown> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return raw;
+  const payload = raw as Record<string, unknown>;
+  if (payload.sourcePlatform !== "x" || typeof payload.sourceUrl !== "string") return raw;
+  const body = typeof payload.body === "string" ? payload.body : "";
+  if (body.replace(/https?:\/\/\S+/g, "").trim()) return raw;
+
+  try {
+    const imported = await importFromUrl(payload.sourceUrl);
+    if (imported.isPartial || !imported.body) return raw;
+    return {
+      ...payload,
+      title: imported.title ?? payload.title ?? null,
+      subtitle: imported.subtitle ?? payload.subtitle ?? null,
+      authorName: imported.authorName ?? payload.authorName ?? null,
+      authorHandle: imported.authorHandle ?? payload.authorHandle ?? null,
+      publishedAt: imported.publishedAt ?? payload.publishedAt ?? null,
+      body: imported.body,
+      sections: imported.sections,
+      media: imported.media,
+      rawExtractedText: imported.body,
+      warnings: imported.warnings,
+      isPartial: false,
+    };
+  } catch {
+    return raw;
+  }
+}
+
 function appUrl(request: Request): string {
   const configured = process.env.NEXT_PUBLIC_APP_URL;
   if (configured) return configured;
@@ -60,6 +90,7 @@ export async function POST(request: Request) {
     return errorResponse(400, "invalid_json", "Request body must be valid JSON.");
   }
 
+  raw = await enrichNativeXArticle(raw);
   const validation = validateImportPayload(raw);
   if (!validation.ok) {
     return errorResponse(400, validation.code, validation.message);

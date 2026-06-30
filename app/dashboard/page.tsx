@@ -5,37 +5,34 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
   ArrowRight,
-  BarChart3,
-  CheckCircle2,
-  Circle,
   Copy,
   Download,
   ExternalLink,
   FileText,
   Eye,
   Link2,
-  PieChart,
+  MousePointerClick,
   RefreshCw,
-  Share2,
-  ShieldCheck,
   Wallet2,
+  X,
 } from "lucide-react";
 import { usePrivy } from "@privy-io/react-auth";
 import { useRubiconQuery, type QueryResult } from "@/lib/rubicon/hooks";
-import { atomicToUsd, formatUsd, formatUsdNumber } from "@/lib/rubicon/pricing";
+import { atomicToUsd, formatUsdAtomicDisplay, formatUsdDisplay, formatUsdNumber } from "@/lib/rubicon/pricing";
 import type { Article, PaymentActivity } from "@/lib/rubicon/types";
 import { ACTIVE_CHAIN } from "@/lib/chain";
 import { explorerAddressUrl, formatBalance, useNativeBalance } from "@/lib/onchain";
 import { WithdrawDialog } from "./_components/withdraw-dialog";
 import { AgentPreviewDialog, AGENT_PREVIEW_EVENT, hasSeenAgentPreview } from "./articles/_components/agent-preview-dialog";
-import { CountUp, Donut, DONUT_COLORS, InsightTile, Reveal, TrendChart, type DonutSlice, type TrendBar } from "./_components/charts";
+import { CountUp, Donut, DONUT_COLORS, InsightTile, Reveal, type DonutSlice, type TrendBar } from "./_components/charts";
+import { ContentProtectionPolicy, DashboardOverviewContent, type DashboardOverviewProps } from "./_components/overview-content";
 import {
   ArticleStatePill,
   Card,
   CardHeader,
   EmptyState,
   ErrorState,
-  formatDate,
+  formatRelative,
   LoadingState,
   PageHeader,
   PaymentStatusPill,
@@ -54,7 +51,7 @@ export default function OverviewPage() {
   const loading = [articles, wallet, earnings].some((q) => q.status === "loading");
   const firstError = [articles, wallet, earnings].find((q) => q.status === "error");
 
-  const greeting = user?.twitter?.username ? `@${user.twitter.username}` : user?.email?.address ?? "creator";
+  const greeting = user?.twitter?.username ? `@${user.twitter.username}` : user?.email?.address ?? "writer";
 
   const walletConnected = Boolean(wallet.data?.address);
   const hasArticles = (articles.data?.length ?? 0) > 0;
@@ -64,14 +61,10 @@ export default function OverviewPage() {
   const [previewSeen, setPreviewSeen] = useState(false);
   const [previewArticle, setPreviewArticle] = useState<Article | null>(null);
 
-  const [trendMetric, setTrendMetric] = useState<"earnings" | "words">("earnings");
-
   const trendBars = useMemo(
-    () => buildTrend(activity.data ?? [], trendMetric),
-    [activity.data, trendMetric],
+    () => buildTrend(activity.data ?? [], "earnings"),
+    [activity.data],
   );
-  const hasTrend = useMemo(() => trendBars.some((b) => b.value > 0), [trendBars]);
-
   const earningsSlices = useMemo(() => buildEarningsSlices(articles.data ?? []), [articles.data]);
   const hasBreakdown = earningsSlices.length > 0;
 
@@ -84,6 +77,108 @@ export default function OverviewPage() {
     .reduce((sum, a) => sum + a.totalWords, 0);
   const totalEarned = atomicToUsd(earnings.data?.settledEarnings);
 
+  const weeklyDeltas = useMemo(() => buildWeeklyDeltas(activity.data ?? []), [activity.data]);
+  const [copiedWallet, setCopiedWallet] = useState(false);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
+  const nativeBalance = useNativeBalance(wallet.data?.address ?? null);
+
+  const overviewProps: DashboardOverviewProps | null = useMemo(() => {
+    if (!onboardingComplete || !earnings.data || !wallet.data) return null;
+    const articleList = articles.data ?? [];
+    const paymentRows = (activity.data ?? []).slice(0, 5).map((row) => ({
+      id: row.id,
+      title: row.articleTitle,
+      meta: `${formatRelative(row.date)} · ${row.wordsRead.toLocaleString()} words read`,
+      amount: formatUsdAtomicDisplay(row.creatorAmount),
+      status: row.status,
+    }));
+    const articleRows = articleList.slice(0, 4).map((article) => ({
+      id: article.id,
+      title: article.title,
+      meta: `${article.usage.wordsRead.toLocaleString()} words read`,
+      earnings: formatUsdAtomicDisplay(article.usage.earnings),
+      state: article.state,
+      href: `/dashboard/articles/${article.id}`,
+    }));
+    const balanceLabel =
+      nativeBalance.status === "loading" ? (
+        <span className="text-base font-normal text-[var(--muted)]">Loading...</span>
+      ) : nativeBalance.status === "error" ? (
+        <span className="text-base font-normal text-[#8d2f2d]">Unavailable</span>
+      ) : (
+        <>
+          {formatBalance(nativeBalance.value)}
+          <span className="ml-1.5 text-sm font-medium text-[var(--muted)]">{nativeBalance.symbol}</span>
+        </>
+      );
+
+    return {
+      greeting,
+      exportData: {
+        username: greeting,
+        totalEarned,
+        wordsRead: earnings.data.wordsPaidFor ?? 0,
+        agentReads: earnings.data.agentReads ?? 0,
+        topArticle: earnings.data.topArticle?.title ?? null,
+        walletAddress: wallet.data.address ?? null,
+        trendBars,
+      },
+      activityCalendar: buildActivityCalendar(activity.data ?? []),
+      stats: [
+        { label: "Total earnings", value: totalEarned, format: formatUsdDisplay, deltaPct: weeklyDeltas.earnings },
+        { label: "Words read", value: earnings.data.wordsPaidFor ?? 0, format: formatInt, deltaPct: weeklyDeltas.words },
+        { label: "Agent reads", value: earnings.data.agentReads ?? 0, format: formatInt, deltaPct: weeklyDeltas.reads },
+        { label: "Live articles", value: earnings.data.liveArticles ?? 0, format: formatInt },
+      ],
+      trendBars,
+      topArticle: earnings.data.topArticle
+        ? {
+            id: earnings.data.topArticle.id,
+            title: earnings.data.topArticle.title,
+            earnings: formatUsdAtomicDisplay(earnings.data.topArticle.earnings),
+            href: `/dashboard/articles/${earnings.data.topArticle.id}`,
+          }
+        : null,
+      breakdown: earningsSlices.length > 0
+        ? {
+            avgPerRead,
+            wordsAvailable,
+            totalEarned: formatUsdAtomicDisplay(earnings.data.settledEarnings),
+            slices: earningsSlices,
+          }
+        : null,
+      paymentRows,
+      articleRows,
+      wallet: {
+        address: wallet.data.address ?? null,
+        explorerHref: wallet.data.address ? explorerAddressUrl(wallet.data.address) : undefined,
+        explorerLabel: ACTIVE_CHAIN.blockExplorers?.default.name ?? "explorer",
+        networkName: ACTIVE_CHAIN.name,
+        chainId: ACTIVE_CHAIN.id,
+        balanceLabel,
+        balanceError: nativeBalance.status === "error" ? "Could not reach the RPC. Try Refresh." : undefined,
+      },
+    };
+  }, [
+    activity.data,
+    articles.data,
+    avgPerRead,
+    earnings.data,
+    earningsSlices,
+    greeting,
+    nativeBalance.status,
+    nativeBalance.symbol,
+    nativeBalance.value,
+    onboardingComplete,
+    totalEarned,
+    trendBars,
+    wallet.data,
+    weeklyDeltas.earnings,
+    weeklyDeltas.reads,
+    weeklyDeltas.words,
+    wordsAvailable,
+  ]);
+
   useEffect(() => {
     setPreviewSeen(hasSeenAgentPreview());
     function onPreviewSeen() {
@@ -93,13 +188,22 @@ export default function OverviewPage() {
     return () => window.removeEventListener(AGENT_PREVIEW_EVENT, onPreviewSeen);
   }, []);
 
+  const copyWallet = async () => {
+    if (!wallet.data?.address) return;
+    await navigator.clipboard.writeText(wallet.data.address);
+    setCopiedWallet(true);
+    window.setTimeout(() => setCopiedWallet(false), 1400);
+  };
+
   return (
     <div className="grid gap-5">
-      <PageHeader
-        title="Overview"
-        description={`Welcome back, ${greeting}.`}
-        action={<ContentProtectionPolicy articles={articles.data ?? []} />}
-      />
+      {!loading && !onboardingComplete && (
+        <PageHeader
+          title="Overview"
+          description={`Welcome back, ${greeting}.`}
+          action={<ContentProtectionPolicy />}
+        />
+      )}
 
       {loading && <LoadingState />}
 
@@ -118,202 +222,40 @@ export default function OverviewPage() {
       {!loading && !firstError && (
         <>
           {!onboardingComplete && (
-            <OnboardingChecklistCard
-              articles={articles.data ?? []}
-              walletConnected={walletConnected}
-              previewSeen={previewSeen}
-              onPreview={() => setPreviewArticle((articles.data ?? [])[0] ?? null)}
-            />
-          )}
-
-          {onboardingComplete && (
-            <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-              <div className="grid min-w-0 gap-5">
-                <Reveal className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                  <StatTile
-                    label="Total earnings"
-                    value={<CountUp value={totalEarned} format={formatUsdNumber} />}
-                  />
-                  <StatTile
-                    label="Words read"
-                    value={<CountUp value={earnings.data?.wordsPaidFor ?? 0} format={formatInt} />}
-                  />
-                  <StatTile
-                    label="Agent reads"
-                    value={<CountUp value={earnings.data?.agentReads ?? 0} format={formatInt} />}
-                  />
-                  <StatTile
-                    label="Live articles"
-                    value={<CountUp value={earnings.data?.liveArticles ?? 0} format={formatInt} />}
-                  />
-                </Reveal>
-
-                <div className="grid gap-5 lg:grid-cols-[minmax(0,1.45fr)_minmax(280px,0.95fr)]">
-                  {hasTrend && (
-                    <Reveal delay={0.08}>
-                      <Card className="h-full p-5">
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="flex items-center gap-2.5">
-                            <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-[var(--river-pale)] text-[var(--river)]">
-                              <BarChart3 size={17} aria-hidden="true" />
-                            </span>
-                            <div>
-                              <h2 className="text-base font-semibold">Activity over time</h2>
-                              <p className="text-xs text-[var(--muted)]">Last 14 days</p>
-                            </div>
-                          </div>
-                          <div className="inline-flex w-fit rounded-[10px] bg-[var(--surface-muted)] p-0.5 text-sm">
-                            <SegButton active={trendMetric === "earnings"} onClick={() => setTrendMetric("earnings")}>
-                              Earnings
-                            </SegButton>
-                            <SegButton active={trendMetric === "words"} onClick={() => setTrendMetric("words")}>
-                              Words read
-                            </SegButton>
-                          </div>
-                        </div>
-                        <div className="mt-6">
-                          <TrendChart
-                            bars={trendBars}
-                            formatValue={trendMetric === "earnings" ? formatUsdNumber : formatInt}
-                            height={220}
-                          />
-                        </div>
-                      </Card>
-                    </Reveal>
-                  )}
-
-                  {earnings.data?.topArticle && (
-                    <Reveal delay={0.1}>
-                      <Card className="flex h-full flex-col justify-between gap-6 overflow-hidden p-5">
-                        <div>
-                          <div className="flex items-center gap-2.5">
-                            <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-[var(--surface-muted)] text-[var(--river)]">
-                              <FileText size={17} aria-hidden="true" />
-                            </span>
-                            <div className="mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--muted)]">Top article</div>
-                          </div>
-                          <div className="mt-5 text-xl font-semibold leading-tight">{earnings.data.topArticle.title}</div>
-                        </div>
-                        <div className="flex items-end justify-between gap-4 border-t border-[var(--line)] pt-4">
-                          <div>
-                            <div className="text-2xl font-semibold">{formatUsd(earnings.data.topArticle.earnings)}</div>
-                            <div className="text-xs text-[var(--muted)]">earned</div>
-                          </div>
-                          <Link href={`/dashboard/articles/${earnings.data.topArticle.id}`} className="button button-secondary text-sm">
-                            View <ArrowRight size={15} aria-hidden="true" />
-                          </Link>
-                        </div>
-                      </Card>
-                    </Reveal>
-                  )}
-                </div>
-
-                {hasBreakdown && (
-                  <Reveal delay={0.12}>
-                    <Card className="p-5">
-                      <div className="flex items-center gap-2.5">
-                        <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-[var(--river-pale)] text-[var(--river)]">
-                          <PieChart size={17} aria-hidden="true" />
-                        </span>
-                        <div>
-                          <h2 className="text-base font-semibold">Earnings breakdown</h2>
-                          <p className="text-xs text-[var(--muted)]">Where your revenue comes from</p>
-                        </div>
-                      </div>
-                      <div className="mt-6 grid gap-5 lg:grid-cols-[0.85fr_1.25fr]">
-                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-                          <InsightTile
-                            value={<CountUp value={avgPerRead} format={formatUsdNumber} />}
-                            caption="Average earned per agent read"
-                          />
-                          <InsightTile
-                            value={<CountUp value={wordsAvailable} format={formatInt} />}
-                            caption="Words live and available to agents"
-                          />
-                        </div>
-                        <div className="rounded-[14px] bg-[var(--surface-muted)] p-5">
-                          <Donut
-                            slices={earningsSlices}
-                            centerValue={formatUsd(earnings.data?.settledEarnings)}
-                            centerLabel="Total earned"
-                          />
-                        </div>
-                      </div>
-                    </Card>
-                  </Reveal>
-                )}
-
-                <div className="grid gap-5 lg:grid-cols-2">
-                  <PaymentActivityCard activity={activity} />
-                  <ArticlesCard articles={articles.data ?? []} hasArticles={hasArticles} />
-                </div>
-              </div>
-
-              <aside className="grid h-fit gap-5 xl:sticky xl:top-8">
-                <ExportCard
-                  username={greeting}
-                  totalEarned={totalEarned}
-                  wordsRead={earnings.data?.wordsPaidFor ?? 0}
-                  agentReads={earnings.data?.agentReads ?? 0}
-                  liveArticles={earnings.data?.liveArticles ?? 0}
-                  topArticle={earnings.data?.topArticle?.title ?? null}
-                  walletAddress={wallet.data?.address ?? null}
-                  trendBars={trendBars}
-                />
-                <OnchainCard address={wallet.data?.address ?? null} />
-              </aside>
-            </div>
-          )}
-
-          {!onboardingComplete && (
             <>
+              <OnboardingChecklistCard
+                articles={articles.data ?? []}
+                walletConnected={walletConnected}
+                previewSeen={previewSeen}
+                onPreview={() => setPreviewArticle((articles.data ?? [])[0] ?? null)}
+              />
               <OnchainCard address={wallet.data?.address ?? null} />
               <PaymentActivityCard activity={activity} />
               <ArticlesCard articles={articles.data ?? []} hasArticles={hasArticles} />
             </>
           )}
+
+          {onboardingComplete && overviewProps && (
+            <>
+              {wallet.data?.address && (
+                <WithdrawDialog open={withdrawOpen} onClose={() => setWithdrawOpen(false)} walletAddress={wallet.data.address} />
+              )}
+              <DashboardOverviewContent
+                {...overviewProps}
+                wallet={{
+                  ...overviewProps.wallet,
+                  onCopy: copyWallet,
+                  copied: copiedWallet,
+                  onWithdraw: () => setWithdrawOpen(true),
+                  onRefresh: () => nativeBalance.refetch(),
+                }}
+              />
+            </>
+          )}
+
           <AgentPreviewDialog article={previewArticle} open={Boolean(previewArticle)} onClose={() => setPreviewArticle(null)} />
         </>
       )}
-    </div>
-  );
-}
-
-function ContentProtectionPolicy({ articles }: { articles: Article[] }) {
-  const draftCount = articles.filter((article) => article.state === "draft").length;
-  const pricedCount = articles.filter((article) => Number(article.pricePerWordAtomic) > 0).length;
-  const sectionCount = articles.reduce((sum, article) => sum + article.sections.length, 0);
-  const stats = [
-    { label: "Full article hidden", value: articles.length > 0 ? `${articles.length.toLocaleString()} article${articles.length === 1 ? "" : "s"}` : "Ready" },
-    { label: "Paid words only", value: pricedCount > 0 ? `${pricedCount.toLocaleString()} priced` : "Set in pricing" },
-    { label: "Drafts private until published", value: draftCount > 0 ? `${draftCount.toLocaleString()} draft${draftCount === 1 ? "" : "s"}` : "Draft first" },
-    { label: "Agent preview available", value: sectionCount > 0 ? `${sectionCount.toLocaleString()} headings` : "Metadata only" },
-  ];
-
-  return (
-    <div className="group relative">
-      <button type="button" className="button button-secondary text-sm">
-        <ShieldCheck size={15} aria-hidden="true" /> Content Protection Policy
-      </button>
-      <div className="pointer-events-none absolute right-0 top-[calc(100%+0.5rem)] z-40 w-[min(22rem,calc(100vw-2rem))] translate-y-1 rounded-[16px] border border-[var(--line)] bg-white p-5 text-left opacity-0 shadow-[0_18px_50px_rgba(20,35,60,0.16)] transition group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
-        <div className="flex items-center gap-2.5">
-          <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-[var(--river-pale)] text-[var(--river)]">
-            <ShieldCheck size={17} aria-hidden="true" />
-          </span>
-          <h2 className="text-base font-semibold">Content Protection Policy</h2>
-        </div>
-        <p className="mt-3 text-sm leading-6 text-[var(--muted)]">
-            Your full articles are never exposed upfront. Agents only see metadata and paid words.
-        </p>
-        <div className="mt-4 grid gap-2">
-          {stats.map((stat) => (
-            <div key={stat.label} className="rounded-[12px] bg-[var(--surface-muted)] p-3">
-              <div className="text-sm font-medium">{stat.label}</div>
-              <div className="mt-1 text-xs text-[var(--muted)]">{stat.value}</div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
@@ -336,19 +278,29 @@ function OnboardingChecklistCard({
   const firstUnpriced = articles.find((article) => Number(article.pricePerWordAtomic) <= 0);
   const firstDraft = articles.find((article) => article.state !== "live");
 
+  let guideTitle = "Create or import an article";
+  let guideDescription = "Start with one draft or a supported URL. Agents need a listed article before paid reads can begin.";
   let cta: React.ReactNode = <PrimaryLink href="/dashboard/articles/new">Create article</PrimaryLink>;
   if (hasArticles && !hasPricedArticle) {
+    guideTitle = "Set a price per word";
+    guideDescription = "Choose what agents pay for each delivered word before you publish.";
     cta = <PrimaryLink href={`/dashboard/articles/${firstUnpriced?.id ?? articles[0].id}`}>Set pricing</PrimaryLink>;
   } else if (hasArticles && !previewSeen) {
+    guideTitle = "Preview what agents see";
+    guideDescription = "Check the outline-only agent view before publishing the article.";
     cta = (
       <button type="button" onClick={onPreview} className="button button-primary text-sm">
         <Eye size={15} aria-hidden="true" /> Preview as agent
       </button>
     );
   } else if (hasDraftOnly) {
+    guideTitle = "Publish the article";
+    guideDescription = "Make one priced article available so agents can start paid reads.";
     cta = <PrimaryLink href={`/dashboard/articles/${firstDraft?.id ?? articles[0].id}`}>Publish article</PrimaryLink>;
   } else if (!walletConnected) {
-    cta = <PrimaryLink href="/dashboard/settings">Connect wallet</PrimaryLink>;
+    guideTitle = "Confirm your connection";
+    guideDescription = "Confirm the secure account connection Rubicon uses for payouts. No crypto setup language needed.";
+    cta = <PrimaryLink href="/dashboard/settings">Confirm connection</PrimaryLink>;
   }
 
   return (
@@ -356,26 +308,42 @@ function OnboardingChecklistCard({
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold">Start earning from agent reads</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">Complete the setup steps agents need before paid reads can begin.</p>
+          <p className="mt-1 text-sm text-[var(--muted)]">Follow the next guided action to make your first article readable by agents.</p>
         </div>
-        <div className="shrink-0">{cta}</div>
+        <div className="guided-action-target shrink-0">
+          <span className="guided-action-cue" aria-hidden="true">
+            <MousePointerClick size={16} />
+          </span>
+          {cta}
+        </div>
       </div>
-      <ol className="mt-5 grid gap-3">
-        <ChecklistItem done={hasArticles} title="Create or import an article" description="Start from a draft or a supported URL." />
-        <ChecklistItem done={hasPricedArticle} title="Set price per word" description="Add pricing to at least one article." />
-        <ChecklistItem done={previewSeen} title="Preview what agents see" description="Check the metadata-only view before publishing." />
-        <ChecklistItem done={hasLive} title="Publish article" description="Make one article available for paid reads." />
-        <ChecklistItem done={walletConnected} title="Connect wallet / confirm payout details" description="Use a connected wallet for creator payouts." />
-      </ol>
+      <div className="guided-action-panel mt-5">
+        <div className="guided-action-icon" aria-hidden="true">
+          <MousePointerClick size={18} />
+        </div>
+        <div>
+          <div className="text-sm font-semibold">{guideTitle}</div>
+          <p className="mt-1 text-sm leading-6 text-[var(--muted)]">{guideDescription}</p>
+        </div>
+      </div>
     </Card>
   );
 }
 
 function PaymentActivityCard({ activity }: { activity: QueryResult<PaymentActivity[]> }) {
+  const rows = activity.status === "success" ? activity.data ?? [] : [];
+  const isLive = rows.some(
+    (row) => row.status !== "failed" && Date.now() - new Date(row.date).getTime() < 48 * 3_600_000,
+  );
   return (
     <Card>
       <CardHeader
-        title="Recent payment activity"
+        title={
+          <span className="inline-flex items-center gap-2">
+            Recent payment activity
+            {isLive && <LiveDot />}
+          </span>
+        }
         action={
           <Link href="/dashboard/earnings" className="text-sm text-[var(--river-deep)] hover:underline">
             View all
@@ -396,15 +364,15 @@ function PaymentActivityCard({ activity }: { activity: QueryResult<PaymentActivi
       {activity.status === "success" && (activity.data?.length ?? 0) > 0 && (
         <ul className="grid gap-1 px-2 pb-2">
           {activity.data!.slice(0, 5).map((row) => (
-            <li key={row.id} className="flex items-center justify-between gap-4 rounded-[12px] px-3 py-4 hover:bg-[var(--surface-muted)]">
+            <li key={row.id} className="flex items-center justify-between gap-4 rounded-lg px-3 py-4 hover:bg-[var(--surface-muted)]">
               <div className="min-w-0">
                 <div className="truncate font-medium">{row.articleTitle}</div>
                 <div className="text-xs text-[var(--muted)]">
-                  {formatDate(row.date)} · {row.wordsRead.toLocaleString()} words read
+                  {formatRelative(row.date)} · {row.wordsRead.toLocaleString()} words read
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <span className="font-semibold">{formatUsd(row.creatorAmount)}</span>
+                <span className="font-semibold">{formatUsdAtomicDisplay(row.creatorAmount)}</span>
                 <PaymentStatusPill status={row.status} />
               </div>
             </li>
@@ -439,13 +407,13 @@ function ArticlesCard({ articles, hasArticles }: { articles: Article[]; hasArtic
         <ul className="grid gap-1 px-2 pb-2">
           {articles.slice(0, 4).map((a) => (
             <li key={a.id}>
-              <Link href={`/dashboard/articles/${a.id}`} className="flex items-center justify-between gap-4 rounded-[12px] px-3 py-4 hover:bg-[var(--surface-muted)]">
+              <Link href={`/dashboard/articles/${a.id}`} className="flex items-center justify-between gap-4 rounded-lg px-3 py-4 hover:bg-[var(--surface-muted)]">
                 <div className="min-w-0">
                   <div className="truncate font-medium">{a.title}</div>
                   <div className="text-xs text-[var(--muted)]">{a.usage.wordsRead.toLocaleString()} words read</div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-semibold">{formatUsd(a.usage.earnings)}</span>
+                  <span className="text-sm font-semibold">{formatUsdAtomicDisplay(a.usage.earnings)}</span>
                   <ArticleStatePill state={a.state} />
                 </div>
               </Link>
@@ -457,12 +425,11 @@ function ArticlesCard({ articles, hasArticles }: { articles: Article[]; hasArtic
   );
 }
 
-function ExportCard({
+function ExportButton({
   username,
   totalEarned,
   wordsRead,
   agentReads,
-  liveArticles,
   topArticle,
   walletAddress,
   trendBars,
@@ -471,27 +438,26 @@ function ExportCard({
   totalEarned: number;
   wordsRead: number;
   agentReads: number;
-  liveArticles: number;
   topArticle: string | null;
   walletAddress: string | null;
   trendBars: TrendBar[];
 }) {
+  const [open, setOpen] = useState(false);
   const [pngUrl, setPngUrl] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "downloaded">("idle");
-  const publicSummary = `Rubicon creator ${username} has earned ${formatUsdNumber(totalEarned)} from ${formatInt(agentReads)} agent reads across ${formatInt(wordsRead)} paid words.`;
+  const publicSummary = `Rubicon writer ${username} has earned ${formatUsdNumber(totalEarned)} from ${formatInt(agentReads)} agent reads across ${formatInt(wordsRead)} paid words.`;
 
   useEffect(() => {
     let cancelled = false;
     setPngUrl(null);
     renderExportPng({
         username,
-        amount: formatUsdNumber(totalEarned),
+        amount: formatUsdDisplay(totalEarned),
         reads: formatInt(agentReads),
         words: formatInt(wordsRead),
-        liveArticles: formatInt(liveArticles),
         topArticle: topArticle ?? "Not available yet",
         wallet: shortWallet(walletAddress),
-        avgRead: formatUsdNumber(agentReads > 0 ? totalEarned / agentReads : 0),
+        avgRead: formatUsdDisplay(agentReads > 0 ? totalEarned / agentReads : 0),
         trendValues: trendBars.map((bar) => bar.value),
       }).then((url) => {
         if (!cancelled) setPngUrl(url);
@@ -499,13 +465,13 @@ function ExportCard({
     return () => {
       cancelled = true;
     };
-  }, [agentReads, liveArticles, topArticle, totalEarned, trendBars, username, walletAddress, wordsRead]);
+  }, [agentReads, topArticle, totalEarned, trendBars, username, walletAddress, wordsRead]);
 
   const download = () => {
     if (!pngUrl) return;
     const link = document.createElement("a");
     link.href = pngUrl;
-    link.download = `rubicon-${username.replace(/[^a-z0-9_-]+/gi, "-").replace(/^-|-$/g, "") || "creator"}-earnings.png`;
+    link.download = `rubicon-${username.replace(/[^a-z0-9_-]+/gi, "-").replace(/^-|-$/g, "") || "writer"}-earnings.png`;
     link.click();
   };
 
@@ -528,42 +494,68 @@ function ExportCard({
   };
 
   return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between gap-3 pb-3">
-        <div>
-          <h2 className="text-base font-semibold">Export card</h2>
-          <p className="text-xs text-[var(--muted)]">PNG image</p>
+    <>
+      <button type="button" onClick={() => setOpen(true)} className="button button-secondary text-sm">
+        <Download size={15} aria-hidden="true" /> Export card
+      </button>
+
+      {open && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setOpen(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Export card"
+        >
+          <div
+            className="w-full max-w-2xl overflow-hidden rounded-[var(--radius-lg)] border border-[var(--line)] bg-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-[var(--faint)] px-5 py-4">
+              <div>
+                <h2 className="text-base font-semibold">Export card</h2>
+                <p className="text-xs text-[var(--muted)]">Twitter-ready PNG · 1200 × 720</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="text-[var(--muted)] transition-colors hover:text-[var(--ink)]"
+                aria-label="Close"
+              >
+                <X size={18} aria-hidden="true" />
+              </button>
+            </div>
+
+            <div className="p-5">
+              <div className="overflow-hidden rounded-lg border border-[var(--line)] bg-[#eceef4]">
+                {pngUrl ? (
+                  <img
+                    src={pngUrl}
+                    alt={`${username} Rubicon earnings export card`}
+                    className="block aspect-[5/3] h-auto w-full object-cover"
+                    draggable={false}
+                  />
+                ) : (
+                  <div className="aspect-[5/3] animate-pulse bg-[var(--surface-muted)]" />
+                )}
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <button type="button" onClick={download} className="button button-primary justify-center text-sm" disabled={!pngUrl}>
+                  <Download size={15} aria-hidden="true" /> Download
+                </button>
+                <button type="button" onClick={copyImage} className="button button-secondary justify-center text-sm" disabled={!pngUrl}>
+                  <Copy size={15} aria-hidden="true" /> {copyStatus === "copied" ? "Copied" : copyStatus === "downloaded" ? "Downloaded" : "Copy PNG"}
+                </button>
+              </div>
+              {copyStatus === "downloaded" && (
+                <p className="mt-2 text-xs text-[var(--muted)]">Image copy was blocked, so the PNG was downloaded instead.</p>
+              )}
+            </div>
+          </div>
         </div>
-        <span className="grid h-9 w-9 place-items-center rounded-[10px] bg-[var(--surface-muted)] text-[var(--river)]">
-          <Share2 size={17} aria-hidden="true" />
-        </span>
-      </div>
-
-      <div className="overflow-hidden rounded-[14px] bg-[var(--surface-muted)]">
-        {pngUrl ? (
-          <img
-            src={pngUrl}
-            alt={`${username} Rubicon earnings export card`}
-            className="block aspect-video h-auto w-full object-contain"
-            draggable={false}
-          />
-        ) : (
-          <div className="aspect-video animate-pulse bg-[var(--surface-muted)]" />
-        )}
-      </div>
-
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <button type="button" onClick={download} className="button button-primary justify-center text-sm" disabled={!pngUrl}>
-          <Download size={15} aria-hidden="true" /> Download
-        </button>
-        <button type="button" onClick={copyImage} className="button button-secondary justify-center text-sm" disabled={!pngUrl}>
-          <Copy size={15} aria-hidden="true" /> {copyStatus === "copied" ? "Copied" : copyStatus === "downloaded" ? "Downloaded" : "Copy PNG"}
-        </button>
-      </div>
-      {copyStatus === "downloaded" && (
-        <p className="mt-2 text-xs text-[var(--muted)]">Image copy was blocked, so the PNG was downloaded instead.</p>
       )}
-    </Card>
+    </>
   );
 }
 
@@ -572,7 +564,6 @@ async function renderExportPng({
   amount,
   reads,
   words,
-  liveArticles,
   topArticle,
   wallet,
   avgRead,
@@ -582,158 +573,229 @@ async function renderExportPng({
   amount: string;
   reads: string;
   words: string;
-  liveArticles: string;
   topArticle: string;
   wallet: string;
   avgRead: string;
   trendValues: number[];
 }) {
-  const width = 1600;
-  const height = 900;
+  const width = 1200;
+  const height = 720;
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;
   const ctx = canvas.getContext("2d");
   if (!ctx) return "";
 
-  const logo = await loadImage("/TEMP_LOGO.svg").catch(() => null);
-
-  ctx.fillStyle = "#f4f7fb";
+  // Backdrop + premium export card surface.
+  ctx.fillStyle = "#e9edf5";
   ctx.fillRect(0, 0, width, height);
+  const cardX = 32;
+  const cardY = 32;
+  const cardW = width - 64;
+  const cardH = height - 64;
+  const cardGradient = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
+  cardGradient.addColorStop(0, "#ffffff");
+  cardGradient.addColorStop(1, "#f7f9fc");
+  drawExportGradientPanel(ctx, cardX, cardY, cardW, cardH, 30, cardGradient, "rgba(18,24,38,0.12)");
 
-  // Main card
-  ctx.fillStyle = "#ffffff";
-  roundRect(ctx, 48, 48, 1504, 804, 44);
-  ctx.fill();
-  ctx.strokeStyle = "rgba(30,40,62,0.10)";
-  ctx.lineWidth = 3;
-  ctx.stroke();
+  const logo = await loadImage("/rubicon-new-dark.png");
+  const padX = 84;
 
-  if (logo) {
-    drawRubiconLogo(ctx, logo, 96, 100, 330);
-  } else {
-    ctx.fillStyle = "#121722";
-    ctx.font = "800 58px Arial, sans-serif";
-    ctx.fillText("Rubicon", 96, 150);
+  // Header
+  if (logo && logo.width > 0) {
+    const logoW = 188;
+    const logoH = logoW * (logo.height / logo.width);
+    ctx.save();
+    ctx.globalAlpha = 0.96;
+    ctx.drawImage(logo, padX, 78, logoW, logoH);
+    ctx.restore();
   }
 
-  ctx.fillStyle = "#687082";
-  ctx.font = "700 28px Arial, sans-serif";
-  ctx.fillText(username, 100, 192);
+  ctx.fillStyle = "#0e1014";
+  ctx.font = "750 46px Arial, sans-serif";
+  ctx.fillText("Earnings snapshot", padX, 160);
+  ctx.fillStyle = "#69707c";
+  ctx.font = "600 22px Arial, sans-serif";
+  ctx.fillText(`${username} on Rubicon`, padX, 193);
 
-  ctx.fillStyle = "#eef4ff";
-  roundRect(ctx, 1215, 96, 245, 58, 29);
+  drawExportPill(ctx, width - padX - 132, 86, 132, 48, "14 days");
+
+  // Featured earnings tile.
+  const heroX = padX;
+  const heroY = 232;
+  const heroW = 410;
+  const heroH = 156;
+  const heroGradient = ctx.createLinearGradient(heroX, heroY, heroX + heroW, heroY + heroH);
+  heroGradient.addColorStop(0, "#111827");
+  heroGradient.addColorStop(1, "#2b3343");
+  drawExportGradientPanel(ctx, heroX, heroY, heroW, heroH, 20, heroGradient, "rgba(18,24,38,0.10)");
+  ctx.fillStyle = "rgba(255,255,255,0.58)";
+  ctx.font = "700 14px Arial, sans-serif";
+  ctx.fillText("TOTAL EARNED", heroX + 28, heroY + 42);
+  ctx.fillStyle = "#ffffff";
+  ctx.font = "800 56px Arial, sans-serif";
+  ctx.fillText(truncateForCanvas(ctx, amount, heroW - 56), heroX + 28, heroY + 104);
+  ctx.fillStyle = "#7dd3fc";
+  ctx.font = "600 18px Arial, sans-serif";
+  ctx.fillText("Revenue from agent reads", heroX + 28, heroY + 134);
+
+  const metricX = heroX + heroW + 22;
+  const metricY = heroY;
+  const metricGap = 16;
+  const metricW = (width - padX - metricX - metricGap * 2) / 3;
+  drawStatTile(ctx, metricX, metricY, metricW, heroH, "Words", words);
+  drawStatTile(ctx, metricX + metricW + metricGap, metricY, metricW, heroH, "Reads", reads);
+  drawStatTile(ctx, metricX + (metricW + metricGap) * 2, metricY, metricW, heroH, "Avg / read", avgRead);
+
+  // Chart panel.
+  const chartX = padX;
+  const chartY = 412;
+  const chartW = width - padX * 2;
+  const chartH = 188;
+  drawExportPanel(ctx, chartX, chartY, chartW, chartH, 20, "#ffffff", "rgba(18,24,38,0.08)");
+  ctx.fillStyle = "#0e1014";
+  ctx.font = "700 22px Arial, sans-serif";
+  ctx.fillText("14-day earning trend", chartX + 24, chartY + 42);
+  ctx.fillStyle = "#8a9099";
+  ctx.font = "600 15px Arial, sans-serif";
+  ctx.fillText("Paid word activity over time", chartX + 24, chartY + 66);
+  drawBarChart(ctx, chartX + 24, chartY + 76, chartW - 48, chartH - 104, trendValues);
+
+  // Footer.
+  const footY = height - 58;
+  ctx.fillStyle = "#eef2f7";
+  roundRect(ctx, padX, footY - 34, width - padX * 2, 46, 14);
   ctx.fill();
-  ctx.fillStyle = "#1f6ae0";
-  ctx.font = "800 21px Arial, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText("CREATOR EARNINGS", 1337, 132);
-  ctx.textAlign = "left";
 
-  drawLightPanel(ctx, 100, 250, 640, 245);
-  ctx.fillStyle = "#687082";
-  ctx.font = "800 22px Arial, sans-serif";
-  ctx.fillText("TOTAL EARNINGS", 146, 310);
+  ctx.font = "700 16px Arial, sans-serif";
+  ctx.fillStyle = "#7b838f";
+  ctx.fillText("Top article", padX + 18, footY - 5);
+  ctx.fillStyle = "#0e1014";
+  ctx.font = "700 17px Arial, sans-serif";
+  ctx.fillText(truncateForCanvas(ctx, topArticle, 470), padX + 112, footY - 5);
 
-  ctx.fillStyle = "#171a22";
-  ctx.font = "900 104px Arial, sans-serif";
-  ctx.fillText(amount, 146, 410);
-
-  ctx.fillStyle = "#687082";
-  ctx.font = "700 25px Arial, sans-serif";
-  ctx.fillText("earned from paid agent reads", 150, 452);
-
-  drawLightPanel(ctx, 805, 250, 655, 245);
-  ctx.fillStyle = "#171a22";
-  ctx.font = "800 40px Arial, sans-serif";
-  ctx.fillText("Activity over time", 855, 325);
-  ctx.fillStyle = "#687082";
-  ctx.font = "700 23px Arial, sans-serif";
-  ctx.fillText("Last 14 days", 856, 365);
-  drawMiniBars(ctx, trendValues, 880, 402, 490, 62);
-
-  drawLightMetric(ctx, 100, 548, 320, "READS", reads, "#1f6ae0");
-  drawLightMetric(ctx, 460, 548, 320, "PAID WORDS", words, "#58d59b");
-  drawLightMetric(ctx, 820, 548, 320, "AVG / READ", avgRead, "#f1b85b");
-  drawLightMetric(ctx, 1180, 548, 280, "LIVE ARTICLES", liveArticles, "#8fb6fa");
-
-  drawLightPanel(ctx, 100, 725, 860, 78);
-
-  ctx.fillStyle = "#687082";
-  ctx.font = "800 17px Arial, sans-serif";
-  ctx.fillText("TOP ARTICLE", 140, 758);
-  ctx.fillStyle = "#171a22";
-  ctx.font = "800 28px Arial, sans-serif";
-  ctx.fillText(truncateForCanvas(ctx, topArticle, 660), 140, 790);
-
-  drawLightPanel(ctx, 1000, 725, 460, 78);
-  ctx.fillStyle = "#687082";
-  ctx.font = "800 17px Arial, sans-serif";
-  ctx.fillText("WALLET", 1040, 758);
-  ctx.fillStyle = "#171a22";
-  ctx.font = "800 26px Arial, sans-serif";
-  ctx.fillText(wallet, 1040, 790);
+  ctx.font = "700 16px Arial, sans-serif";
+  const walletLabel = "Wallet";
+  const walletValue = wallet;
+  const walletValueW = ctx.measureText(walletValue).width;
+  const walletLabelW = ctx.measureText(walletLabel).width;
+  const walletX = width - padX - 18 - walletValueW - walletLabelW - 12;
+  ctx.fillStyle = "#7b838f";
+  ctx.fillText(walletLabel, walletX, footY - 5);
+  ctx.fillStyle = "#0e1014";
+  ctx.fillText(walletValue, walletX + walletLabelW + 12, footY - 5);
 
   return canvas.toDataURL("image/png");
 }
 
-function drawLightPanel(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number) {
-  ctx.fillStyle = "#ffffff";
-  roundRect(ctx, x, y, width, height, 20);
-  ctx.fill();
-  ctx.strokeStyle = "rgba(30,40,62,0.09)";
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
+function drawStatTile(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  label: string,
+  value: string,
+) {
+  const tileGradient = ctx.createLinearGradient(x, y, x, y + height);
+  tileGradient.addColorStop(0, "#ffffff");
+  tileGradient.addColorStop(1, "#f4f6fa");
+  drawExportGradientPanel(ctx, x, y, width, height, 18, tileGradient, "rgba(18,24,38,0.09)");
+  ctx.fillStyle = "#8d95a1";
+  ctx.font = "700 14px Arial, sans-serif";
+  ctx.fillText(label.toUpperCase(), x + 22, y + 44);
+  ctx.fillStyle = "#0e1014";
+  ctx.font = "760 38px Arial, sans-serif";
+  ctx.fillText(truncateForCanvas(ctx, value, width - 44), x + 22, y + 104);
 }
 
-function drawLightMetric(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, label: string, value: string, accent: string) {
-  ctx.fillStyle = "#f1f5fb";
-  roundRect(ctx, x, y, width, 120, 22);
-  ctx.fill();
-
-  ctx.fillStyle = accent;
-  roundRect(ctx, x + 28, y + 30, 10, 60, 5);
-  ctx.fill();
-
-  ctx.fillStyle = "#171a22";
-  ctx.font = "900 38px Arial, sans-serif";
-  ctx.fillText(value, x + 58, y + 58);
-
-  ctx.fillStyle = "#687082";
-  ctx.font = "800 17px Arial, sans-serif";
-  ctx.fillText(label, x + 58, y + 88);
-}
-
-function drawMiniBars(ctx: CanvasRenderingContext2D, values: number[], x: number, y: number, width: number, height: number) {
-  const data = values.slice(-10);
+function drawBarChart(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  values: number[],
+) {
+  const data = values.length > 0 ? values : [12, 20, 16, 28, 24, 32, 26, 36, 30, 22, 18, 28, 24, 14];
+  // Scale against the actual peak (not a $1 floor) so sub-dollar earnings still
+  // produce full-height, clearly visible bars.
   const max = Math.max(...data, 0);
-  const gap = 8;
-  const barWidth = (width - gap * (data.length - 1)) / Math.max(data.length, 1);
-  data.forEach((value, index) => {
-    const pct = max > 0 ? value / max : 0.12;
-    const barHeight = Math.max(8, pct * height);
-    ctx.fillStyle = value > 0 ? "#2f7df6" : "#dbe4f0";
-    roundRect(ctx, x + index * (barWidth + gap), y + height - barHeight, barWidth, barHeight, 8);
+  const baseline = y + height;
+  ctx.strokeStyle = "#eef1f5";
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 2; i += 1) {
+    const gy = y + (height / 2) * i;
+    ctx.beginPath();
+    ctx.moveTo(x, gy);
+    ctx.lineTo(x + width, gy);
+    ctx.stroke();
+  }
+
+  const gap = 9;
+  const barW = (width - gap * (data.length - 1)) / data.length;
+  data.forEach((value, i) => {
+    const barH = max > 0 && value > 0 ? Math.max((value / max) * height, 7) : 0;
+    const bx = x + i * (barW + gap);
+    const barGradient = ctx.createLinearGradient(bx, baseline - barH, bx, baseline);
+    barGradient.addColorStop(0, "#4f8cff");
+    barGradient.addColorStop(1, "#2563eb");
+    ctx.fillStyle = barGradient;
+    roundRect(ctx, bx, baseline - barH, barW, barH, 7);
     ctx.fill();
   });
 }
 
-function drawRubiconLogo(ctx: CanvasRenderingContext2D, image: HTMLImageElement, x: number, y: number, width: number) {
-  const sourceX = 95;
-  const sourceY = 825;
-  const sourceWidth = 1745;
-  const sourceHeight = 340;
-  const height = width * (sourceHeight / sourceWidth);
-  ctx.drawImage(image, sourceX, sourceY, sourceWidth, sourceHeight, x, y, width, height);
+function drawExportPill(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  label: string,
+) {
+  drawExportPanel(ctx, x, y, width, height, height / 2, "#ffffff", "rgba(18,24,38,0.14)");
+  ctx.fillStyle = "#16181d";
+  ctx.font = "600 18px Arial, sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(label, x + width / 2, y + height / 2 + 6);
+  ctx.textAlign = "left";
 }
 
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const image = new Image();
-    image.onload = () => resolve(image);
-    image.onerror = reject;
-    image.src = src;
-  });
+function drawExportPanel(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+  fill: string,
+  stroke = "rgba(30,40,62,0.12)",
+) {
+  ctx.fillStyle = fill;
+  roundRect(ctx, x, y, width, height, radius);
+  ctx.fill();
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+}
+
+function drawExportGradientPanel(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+  fill: CanvasGradient,
+  stroke = "rgba(30,40,62,0.12)",
+) {
+  ctx.fillStyle = fill;
+  roundRect(ctx, x, y, width, height, radius);
+  ctx.fill();
+  ctx.strokeStyle = stroke;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
 }
 
 function truncateForCanvas(ctx: CanvasRenderingContext2D, text: string, maxWidth: number) {
@@ -755,6 +817,16 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: n
   ctx.closePath();
 }
 
+/** Loads a same-origin image for canvas drawing; resolves null on failure. */
+function loadImage(src: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = src;
+  });
+}
+
 function OnchainCard({ address }: { address: string | null }) {
   const balance = useNativeBalance(address);
   const [copied, setCopied] = useState(false);
@@ -773,7 +845,7 @@ function OnchainCard({ address }: { address: string | null }) {
         <WithdrawDialog open={withdrawOpen} onClose={() => setWithdrawOpen(false)} walletAddress={address} />
       )}
       <CardHeader
-        title="On-chain"
+        title="Payout connection"
         action={
           address ? (
             <div className="flex items-center gap-4">
@@ -799,17 +871,17 @@ function OnchainCard({ address }: { address: string | null }) {
         <div className="p-5">
           <EmptyState
             icon={<Wallet2 size={22} aria-hidden="true" />}
-            title="No wallet set up yet"
-            description="Set up your Privy wallet to see your on-chain address, network, and balance."
-            action={<PrimaryLink href="/dashboard/settings">Set up wallet</PrimaryLink>}
+            title="Connection not confirmed"
+            description="Confirm the secure Privy connection Rubicon uses for payouts."
+            action={<PrimaryLink href="/dashboard/settings">Confirm connection</PrimaryLink>}
           />
         </div>
       ) : (
         <div className="grid gap-3 px-3 pb-3">
-          <p className="px-2 text-xs text-[var(--muted)]">Withdrawable earnings are sent to your connected wallet.</p>
+          <p className="px-2 text-xs text-[var(--muted)]">Withdrawable earnings are sent through your confirmed payout connection.</p>
           <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
           {/* Wallet address */}
-          <div className="rounded-[12px] bg-[var(--surface-muted)] p-5">
+          <div className="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-5">
             <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Wallet address</div>
             <div className="mt-2 flex items-center gap-2">
               <span className="mono text-sm font-medium">{shortWallet(address)}</span>
@@ -829,7 +901,7 @@ function OnchainCard({ address }: { address: string | null }) {
           </div>
 
           {/* Network */}
-          <div className="rounded-[12px] bg-[var(--surface-muted)] p-5">
+          <div className="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-5">
             <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Network</div>
             <div className="mt-2 flex items-center gap-2 text-sm font-medium">
               <Link2 size={15} className="text-[var(--river)]" aria-hidden="true" /> {ACTIVE_CHAIN.name}
@@ -838,7 +910,7 @@ function OnchainCard({ address }: { address: string | null }) {
           </div>
 
           {/* Balance */}
-          <div className="rounded-[12px] bg-[var(--surface-muted)] p-5">
+          <div className="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-5">
             <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Balance</div>
             <div className="mt-2 text-2xl font-semibold tracking-[-0.01em]">
               {balance.status === "loading" ? (
@@ -861,22 +933,96 @@ function OnchainCard({ address }: { address: string | null }) {
   );
 }
 
-function SegButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function formatInt(n: number): string {
+  return Math.round(n).toLocaleString();
+}
+
+/* ---------- momentum (week-over-week) ---------- */
+
+interface WeeklyDeltas {
+  /** Percent change vs the prior week, or null when there's no prior baseline. */
+  earnings: number | null;
+  words: number | null;
+  reads: number | null;
+}
+
+/** Compares the last 7 days against the 7 days before, for the stat-tile hints. */
+function buildWeeklyDeltas(activity: PaymentActivity[]): WeeklyDeltas {
+  const now = Date.now();
+  const week = 7 * 86_400_000;
+  const cur = { earnings: 0, words: 0, reads: 0 };
+  const prev = { earnings: 0, words: 0, reads: 0 };
+  for (const row of activity) {
+    if (row.status === "failed") continue;
+    const t = new Date(row.date).getTime();
+    if (Number.isNaN(t)) continue;
+    const age = now - t;
+    const bucket = age < week ? cur : age < 2 * week ? prev : null;
+    if (!bucket) continue;
+    bucket.earnings += atomicToUsd(row.creatorAmount);
+    bucket.words += row.wordsRead;
+    bucket.reads += 1;
+  }
+  const pct = (a: number, b: number): number | null => (b <= 0 ? (a > 0 ? 100 : null) : ((a - b) / b) * 100);
+  return {
+    earnings: pct(cur.earnings, prev.earnings),
+    words: pct(cur.words, prev.words),
+    reads: pct(cur.reads, prev.reads),
+  };
+}
+
+function buildActivityCalendar(activity: PaymentActivity[], weeks = 12): Array<{ date: string; count: number }> {
+  const now = new Date();
+  const start = new Date(now);
+  start.setDate(start.getDate() - weeks * 7 + 1);
+  start.setHours(0, 0, 0, 0);
+  const counts = new Map<string, number>();
+
+  for (const row of activity) {
+    const date = new Date(row.date);
+    if (Number.isNaN(date.getTime()) || date < start || date > now) continue;
+    const key = date.toISOString().slice(0, 10);
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+
+  const days: Array<{ date: string; count: number }> = [];
+  const cursor = new Date(start);
+  while (cursor <= now) {
+    const key = cursor.toISOString().slice(0, 10);
+    days.push({ date: key, count: counts.get(key) ?? 0 });
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return days;
+}
+
+function DeltaHint({ pct, onDark = false }: { pct: number | null; onDark?: boolean }) {
+  const muted = onDark ? "text-white/55" : "text-[var(--muted)]";
+  if (pct === null) return null;
+  if (Math.abs(pct) < 1) return <span className={muted}>Flat vs last week</span>;
+  const up = pct > 0;
+  const color = up
+    ? onDark
+      ? "text-[var(--gain-on-dark)]"
+      : "text-[var(--gain)]"
+    : onDark
+      ? "text-[var(--loss-on-dark)]"
+      : "text-[var(--loss)]";
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-        active ? "bg-white text-[var(--ink)] shadow-[0_1px_3px_rgba(47,125,246,0.18)]" : "text-[var(--muted)] hover:text-[var(--ink)]"
-      }`}
-    >
-      {children}
-    </button>
+    <span className={`font-medium ${color}`}>
+      {up ? "+" : "−"}
+      {Math.abs(Math.round(pct))}% vs last week
+    </span>
   );
 }
 
-function formatInt(n: number): string {
-  return Math.round(n).toLocaleString();
+function LiveDot() {
+  return (
+    <span className="relative inline-flex h-2 w-2" aria-label="Recent activity">
+      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--green)] opacity-75" />
+      <span className="relative inline-flex h-2 w-2 rounded-full bg-[var(--green)]" />
+    </span>
+  );
 }
 
 /** Local YYYY-MM-DD key so day buckets line up with the creator's calendar. */
@@ -937,38 +1083,4 @@ function buildEarningsSlices(articles: Article[]): DonutSlice[] {
     });
   }
   return slices;
-}
-
-function ChecklistItem({
-  done,
-  title,
-  description,
-  href,
-  cta,
-}: {
-  done: boolean;
-  title: string;
-  description: string;
-  href?: string;
-  cta?: string;
-}) {
-  return (
-    <li className="flex items-start gap-3 rounded-lg bg-[var(--surface-muted)] p-4">
-      {done ? (
-        <CheckCircle2 size={20} className="mt-0.5 shrink-0 text-[var(--green)]" aria-hidden="true" />
-      ) : (
-        <Circle size={20} className="mt-0.5 shrink-0 text-[var(--line)]" aria-hidden="true" />
-      )}
-      <div className="min-w-0 flex-1">
-        <div className="font-medium">{title}</div>
-        <div className="mt-0.5 text-sm text-[var(--muted)]">{description}</div>
-      </div>
-      {!done && href && cta && (
-        <Link href={href} className="button button-secondary shrink-0 text-sm">
-          {href.includes("wallet") || href.includes("settings") ? <Wallet2 size={15} aria-hidden="true" /> : null}
-          {cta}
-        </Link>
-      )}
-    </li>
-  );
 }

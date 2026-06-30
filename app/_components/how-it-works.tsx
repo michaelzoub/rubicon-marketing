@@ -48,6 +48,7 @@ export function HowItWorks({ tone = "default" }: { tone?: "default" | "hero" | "
   return (
     <section
       id={isLanding ? "how-it-works" : "product"}
+      data-analytics-section="product"
       className={
         isHero
           ? "landing-section-block landing-hero-product"

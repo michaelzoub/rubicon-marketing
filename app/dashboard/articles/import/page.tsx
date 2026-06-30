@@ -161,7 +161,7 @@ function messageForError(status: number, code?: string, message?: string): strin
     case "too_large":
       return "That page is too large to import.";
     case "unavailable":
-      return message || "That content is private or unavailable. Only the creator can provide gated content.";
+      return message || "That content is private or unavailable. Only the writer can provide gated content.";
     default:
       if (status === 429) return "Too many import requests. Try again shortly.";
       return message || "Couldn't import that URL. Try again, or write the article manually.";

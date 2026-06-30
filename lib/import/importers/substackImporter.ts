@@ -51,6 +51,7 @@ function extractBodyHtml(html: string): string | null {
   const endMarkers = [
     /<div[^>]*class=["'][^"']*\bpaywall\b/i,
     /<div[^>]*class=["'][^"']*\bpost-footer\b/i,
+    /<div[^>]*data-component-name=["']DigestPostEmbed["']/i,
     /<\/article>/i,
   ];
   let end = rest.length;

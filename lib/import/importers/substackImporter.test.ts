@@ -20,9 +20,14 @@ const FULL_POST_HTML = `<!doctype html><html><head>
     <div class="available-content">
       <div class="body markup">
         <h2>Consensus</h2>
-        <p>${LONG_BODY}</p>
+        <p>${LONG_BODY} <strong>Bold claim</strong>, <em>careful caveat</em>, and <a href="https://example.com/source">a source</a>.</p>
+        <blockquote><p>Agents should preserve quoted context.</p></blockquote>
+        <figure><img src="https://cdn.substack.com/image/chart.png" alt="Consensus chart"><figcaption>Consensus over time</figcaption></figure>
+        <ol><li>Observe</li><li>Verify</li></ol>
         <h2>Replication</h2>
         <p>Replication keeps copies in sync. ${LONG_BODY}</p>
+        <div data-component-name="DigestPostEmbed">Related article</div>
+        <p>Disclosure outside the article.</p>
       </div>
     </div>
     <div class="post-footer">footer junk we should not import</div>
@@ -67,7 +72,16 @@ describe("parseSubstack — full public post", () => {
     expect(result.isPartial).toBe(false);
     expect(result.body).toContain("## Consensus");
     expect(result.body).toContain("## Replication");
+    expect(result.body).toContain("**Bold claim**");
+    expect(result.body).toContain("*careful caveat*");
+    expect(result.body).toContain("[a source](https://example.com/source)");
+    expect(result.body).toContain("> Agents should preserve quoted context.");
+    expect(result.body).toContain("![Consensus chart](https://cdn.substack.com/image/chart.png)");
+    expect(result.body).toContain("1. Observe");
+    expect(result.body).toContain("2. Verify");
     expect(result.body).not.toContain("footer junk");
+    expect(result.body).not.toContain("Related article");
+    expect(result.body).not.toContain("Disclosure outside");
     const headings = result.sections.map((s) => s.heading);
     expect(headings).toContain("Consensus");
     expect(headings).toContain("Replication");

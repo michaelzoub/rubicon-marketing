@@ -10,7 +10,7 @@ const LANDING_FAQ = [
     id: "word-level-metering",
     question: "What is word-level metering?",
     answer:
-      "Rubicon prices content by the word. Creators set a per-word rate in USDC, and agents pay only for the words that are actually streamed and read—not for the full article upfront.",
+      "Rubicon prices content by the word. Writers set a per-word rate in USDC, and agents pay only for the words that are actually streamed and read—not for the full article upfront.",
   },
   {
     id: "short-reads",
@@ -40,7 +40,7 @@ const LANDING_FAQ = [
     id: "micropayments-clear",
     question: "How do thousands of micropayments actually clear?",
     answer:
-      "A single word can cost a fraction of a cent. Card rails would lose that to fees, so Rubicon settles every word as a USDC nanopayment—a transfer small enough to move per word, instantly, without a fee swallowing the payment. Creators set the per-word price, and each word settles in USDC with no card fees eating sub-cent amounts.",
+      "A single word can cost a fraction of a cent. Card rails would lose that to fees, so Rubicon settles every word as a USDC nanopayment—a transfer small enough to move per word, instantly, without a fee swallowing the payment. Writers set the per-word price, and each word settles in USDC with no card fees eating sub-cent amounts.",
   },
   {
     id: "settlement-infrastructure",

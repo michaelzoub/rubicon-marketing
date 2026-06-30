@@ -60,7 +60,7 @@ export function AgentPreviewDialog({
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-[rgba(16,24,40,0.28)] px-4 py-6" role="dialog" aria-modal="true" aria-labelledby="agent-preview-title">
       <button type="button" className="absolute inset-0 cursor-default" aria-label="Close preview" onClick={onClose} />
-      <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[18px] bg-white shadow-[0_24px_80px_rgba(16,24,40,0.22)]">
+      <div className="relative max-h-[92vh] w-full max-w-2xl overflow-y-auto rounded-[18px] border border-[var(--line)] bg-white">
         <div className="flex items-start justify-between gap-4 border-b border-[var(--line)] p-5">
           <div className="min-w-0">
             <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[var(--river-pale)] px-3 py-1 text-xs font-semibold text-[var(--river-deep)]">

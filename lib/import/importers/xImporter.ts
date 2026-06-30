@@ -87,22 +87,104 @@ export async function importX(
 }
 
 interface XApiBlock {
+  data?: { caption?: unknown };
+  entityRanges?: Array<{ key?: unknown; length?: unknown; offset?: unknown }>;
+  inlineStyleRanges?: Array<{ length?: unknown; offset?: unknown; style?: unknown }>;
   text?: unknown;
   type?: unknown;
 }
 
 interface XApiMedia {
+  media_id?: unknown;
   media_info?: {
     original_img_url?: unknown;
   };
 }
 
-/** Convert X Article editor blocks into readable Markdown. */
-function articleBlocksToMarkdown(blocks: XApiBlock[]): string {
+interface XApiEntity {
+  key?: unknown;
+  value?: { data?: { caption?: unknown; url?: unknown; mediaItems?: Array<{ mediaId?: unknown }> }; type?: unknown };
+}
+
+function escapeMarkdown(text: string): string {
+  return text.replace(/([\\`*_[\]])/g, "\\$1");
+}
+
+/** Preserve Draft.js inline marks and links while converting an X block. */
+function inlineBlockToMarkdown(block: XApiBlock, entities: Map<string, XApiEntity["value"]>): string {
+  if (typeof block.text !== "string") return "";
+  const text = block.text;
+  const styles = Array.isArray(block.inlineStyleRanges) ? block.inlineStyleRanges : [];
+  const entityRanges = Array.isArray(block.entityRanges) ? block.entityRanges : [];
+  const boundaries = new Set([0, text.length]);
+  for (const range of [...styles, ...entityRanges]) {
+    if (typeof range.offset !== "number" || typeof range.length !== "number") continue;
+    boundaries.add(Math.max(0, range.offset));
+    boundaries.add(Math.min(text.length, range.offset + range.length));
+  }
+  const points = [...boundaries].sort((a, b) => a - b);
+  const pieces: string[] = [];
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const start = points[index];
+    const end = points[index + 1];
+    if (end <= start) continue;
+    let value = escapeMarkdown(text.slice(start, end));
+    const activeStyles = styles
+      .filter((range) => typeof range.offset === "number" && typeof range.length === "number" && range.offset <= start && range.offset + range.length >= end)
+      .map((range) => (typeof range.style === "string" ? range.style.toLowerCase() : ""));
+    if (activeStyles.includes("code") || activeStyles.includes("monospace")) value = `\`${value.replace(/`/g, "\\`")}\``;
+    const bold = activeStyles.includes("bold");
+    const italic = activeStyles.includes("italic");
+    if (bold && italic) value = `***${value}***`;
+    else if (bold) value = `**${value}**`;
+    else if (italic) value = `*${value}*`;
+    if (activeStyles.includes("strikethrough")) value = `~~${value}~~`;
+
+    const entityRange = entityRanges.find(
+      (range) => typeof range.offset === "number" && typeof range.length === "number" && range.offset <= start && range.offset + range.length >= end,
+    );
+    const entity = entityRange && (typeof entityRange.key === "string" || typeof entityRange.key === "number")
+      ? entities.get(String(entityRange.key))
+      : null;
+    const href = entity?.type === "LINK" && typeof entity.data?.url === "string" ? entity.data.url : null;
+    if (href) value = `[${value}](${href.replace(/\(/g, "%28").replace(/\)/g, "%29")})`;
+    pieces.push(value);
+  }
+  return pieces.join("");
+}
+
+/** Convert X Article editor blocks into Markdown, including inline media. */
+function articleBlocksToMarkdown(
+  blocks: XApiBlock[],
+  entityMap: XApiEntity[],
+  mediaById: Map<string, XApiMedia>,
+): string {
+  const entities = new Map(
+    entityMap
+      .filter((entry) => typeof entry.key === "string" || typeof entry.key === "number")
+      .map((entry) => [String(entry.key), entry.value] as const),
+  );
   return blocks
     .map((block) => {
+      if (block.type === "atomic") {
+        const range = block.entityRanges?.[0];
+        const entity = range && (typeof range.key === "string" || typeof range.key === "number")
+          ? entities.get(String(range.key))
+          : null;
+        const mediaItems = Array.isArray(entity?.data?.mediaItems) ? entity.data.mediaItems : [];
+        const images = mediaItems.flatMap((item) => {
+          const media = typeof item.mediaId === "string" ? mediaById.get(item.mediaId) : null;
+          const url = media?.media_info?.original_img_url;
+          return typeof url === "string" ? [`![](${url})`] : [];
+        });
+        const rawCaption = block.data?.caption ?? entity?.data?.caption;
+        const caption = typeof rawCaption === "string" && rawCaption.trim()
+          ? `*${escapeMarkdown(rawCaption.trim())}*`
+          : null;
+        return [...images, caption].filter(Boolean).join("\n\n") || null;
+      }
       if (typeof block.text !== "string" || !block.text.trim()) return null;
-      const text = block.text.trim();
+      const text = inlineBlockToMarkdown(block, entities).trim();
       if (block.type === "header-one") return `# ${text}`;
       if (block.type === "header-two") return `## ${text}`;
       if (block.type === "header-three") return `### ${text}`;
@@ -112,9 +194,6 @@ function articleBlocksToMarkdown(blocks: XApiBlock[]): string {
           .map((line) => `> ${line}`)
           .join("\n");
       }
-      // Atomic blocks are inline media/embed placeholders. Their media is
-      // preserved separately and a blank placeholder is not useful prose.
-      if (block.type === "atomic") return null;
       return text;
     })
     .filter((block): block is string => Boolean(block))
@@ -143,7 +222,7 @@ export function buildXApiResult(
     created_at?: unknown;
     article?: {
       title?: unknown;
-      content?: { blocks?: unknown };
+      content?: { blocks?: unknown; entityMap?: unknown };
       cover_media?: XApiMedia;
       media_entities?: unknown;
     };
@@ -154,7 +233,16 @@ export function buildXApiResult(
   const blocks = Array.isArray(article?.content?.blocks)
     ? (article.content.blocks as XApiBlock[])
     : [];
-  const articleBody = articleBlocksToMarkdown(blocks);
+  const entityMap = Array.isArray(article?.content?.entityMap)
+    ? (article.content.entityMap as XApiEntity[])
+    : [];
+  const articleMedia = Array.isArray(article?.media_entities) ? (article.media_entities as XApiMedia[]) : [];
+  const mediaById = new Map(
+    articleMedia.flatMap((item) =>
+      typeof item.media_id === "string" ? [[item.media_id, item] as const] : [],
+    ),
+  );
+  const articleBody = articleBlocksToMarkdown(blocks, entityMap, mediaById);
   const tweetBody = typeof data.text === "string" ? data.text.trim() : "";
   const body = articleBody || tweetBody;
   if (!body) return null;

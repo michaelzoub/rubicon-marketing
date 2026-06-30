@@ -8,8 +8,10 @@ import {
   ArrowRight,
   ChevronDown,
   ChevronUp,
+  FileText,
   Link2,
-  Upload,
+  PenLine,
+  Puzzle,
 } from "lucide-react";
 import { useRubiconMutation, useRubiconQuery } from "@/lib/rubicon/hooks";
 import {
@@ -19,8 +21,9 @@ import {
 } from "@/lib/rubicon/pricing";
 import { parseSections } from "@/lib/rubicon/sections";
 import type { ArticleSourceInput, ArticleSectionInput } from "@/lib/rubicon/types";
+import { isStolenXContent, normalizeHandle } from "@/lib/articles/ownership";
 import { MarkdownEditor } from "../../_components/markdown-editor";
-import { Card, formatDate, PageHeader, shortWallet, WalletStatePill } from "../../_components/ui";
+import { Card, formatDate, PageHeader, SafetyWarning, shortWallet, WalletStatePill } from "../../_components/ui";
 import { takeImport } from "../_import-handoff";
 
 const PARTIAL_IMPORT_NOTICE =
@@ -118,6 +121,18 @@ export default function NewArticlePage() {
     setStep(1);
   }
 
+  // Content-ownership guard: an imported X post may only be published by the
+  // account that wrote it. A confirmed handle/username mismatch blocks every
+  // path that would put this content live.
+  const ownershipMismatch = isStolenXContent(source, creator.data?.username);
+  const safetyNotice = ownershipMismatch ? (
+    <SafetyWarning>
+      This post was written by <strong>@{normalizeHandle(source?.authorHandle)}</strong>, which doesn’t
+      match your account <strong>@{normalizeHandle(creator.data?.username)}</strong>. You can’t publish or
+      save someone else’s X post as your own — that would be stealing their content.
+    </SafetyWarning>
+  ) : null;
+
   const includedWords = sections.reduce((sum, s) => sum + s.wordCount, 0);
   const atomicPerWord = pricePerWord ? usdToAtomic(Number(pricePerWord)) : "0";
   const estFullPrice = atomicForWords(atomicPerWord, includedWords);
@@ -153,6 +168,12 @@ export default function NewArticlePage() {
   async function submit(publish: boolean) {
     setSubmitError(null);
     setSavedDraftId(null);
+    if (ownershipMismatch) {
+      setSubmitError(
+        "This imported X post belongs to another account, so it can’t be saved or published here.",
+      );
+      return;
+    }
     try {
       const article = await createArticle.run(buildInput());
       if (publish) {
@@ -177,10 +198,13 @@ export default function NewArticlePage() {
   const submitting = createArticle.pending || publishArticle.pending;
 
   return (
-    <div className="grid gap-6">
-      <PageHeader title="New article" description="Saved as a draft first. Nothing goes live until you publish." />
-
-      <Stepper current={step} />
+    <div className={step === 0 ? "article-compose-page" : "grid gap-6"}>
+      {step === 0 ? null : (
+        <>
+          <PageHeader title="New article" description="Saved as a draft first. Nothing goes live until you publish." />
+          <Stepper current={step} />
+        </>
+      )}
 
       {step === 0 && (
         <StepAddArticle
@@ -188,6 +212,8 @@ export default function NewArticlePage() {
           author={author}
           content={content}
           source={source}
+          ownershipMismatch={ownershipMismatch}
+          safetyNotice={safetyNotice}
           onTitle={setTitle}
           onAuthor={setAuthor}
           onContent={setContent}
@@ -228,6 +254,8 @@ export default function NewArticlePage() {
           submitting={submitting}
           error={submitError}
           savedDraftId={savedDraftId}
+          ownershipMismatch={ownershipMismatch}
+          safetyNotice={safetyNotice}
           onBack={() => setStep(2)}
           onSaveDraft={() => submit(false)}
           onPublish={() => submit(true)}
@@ -330,6 +358,8 @@ function StepAddArticle({
   author,
   content,
   source,
+  ownershipMismatch,
+  safetyNotice,
   onTitle,
   onAuthor,
   onContent,
@@ -339,12 +369,22 @@ function StepAddArticle({
   author: string;
   content: string;
   source: ImportedSource | null;
+  ownershipMismatch: boolean;
+  safetyNotice: React.ReactNode;
   onTitle: (v: string) => void;
   onAuthor: (v: string) => void;
   onContent: (v: string) => void;
   onNext: () => void;
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
+  const titleRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const el = titleRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [title]);
 
   async function onUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -354,55 +394,104 @@ function StepAddArticle({
     if (!title) onTitle(file.name.replace(/\.(md|markdown|txt)$/i, ""));
   }
 
-  const ready = title.trim() && author.trim() && content.trim();
+  const ready = title.trim() && author.trim() && content.trim() && !ownershipMismatch;
   const stillPartial = source ? isStillPartial(source, content) : false;
 
   return (
-    <Card className="p-6">
-      {source && (
-        <div className="mb-5 grid gap-3">
-          <ImportedSourceBanner source={source} partial={stillPartial} />
-          {stillPartial && (
-            <div className="rounded-lg bg-[#fdf6ec] px-4 py-3 text-sm leading-5 text-[#7b4e12]">
-              {/* Prefer the importer's source-specific guidance; fall back to the
-                  generic preview-only notice when it didn't supply one. */}
-              {source.warnings[0] ?? PARTIAL_IMPORT_NOTICE}
-            </div>
-          )}
+    <div className="substack-compose">
+      <header className="substack-compose-topbar">
+        <Link href="/dashboard/articles" className="substack-compose-back" aria-label="Back to articles">
+          <ArrowLeft size={21} aria-hidden="true" />
+        </Link>
+        <div className="substack-compose-status">
+          <span aria-hidden="true" />
+          Draft
         </div>
-      )}
-      <div className="grid gap-5">
-        <Field label="Article title">
-          <input value={title} onChange={(e) => onTitle(e.target.value)} placeholder="A clear, descriptive title" className={inputClass} />
-        </Field>
-        <Field label="Author">
-          <input value={author} onChange={(e) => onAuthor(e.target.value)} placeholder="Author name" className={inputClass} />
-        </Field>
-        <Field label="Editor" hint="Paste a whole article from Substack or X, or write it here. Each heading starts a new section — shown boxed below — and becomes a section agents can navigate.">
-          <MarkdownEditor
-            value={content}
-            onChange={onContent}
-            placeholder="Paste your article from Substack or X, or start writing…"
-          />
-        </Field>
-        <div className="flex flex-wrap items-center gap-3">
-          <input ref={fileRef} type="file" accept=".md,.markdown,.txt" onChange={onUpload} className="hidden" />
-          <button type="button" onClick={() => fileRef.current?.click()} className="button button-secondary text-sm">
-            <Upload size={15} aria-hidden="true" /> Upload Markdown
+        <div className="substack-compose-actions">
+          <button type="button" className="substack-compose-preview" disabled>
+            Preview
           </button>
-          {!source && (
-            <Link href="/dashboard/articles/import" className="button button-secondary text-sm">
-              <Link2 size={15} aria-hidden="true" /> Import from URL
-            </Link>
-          )}
+          <button type="button" onClick={onNext} disabled={!ready} className="substack-compose-continue">
+            Continue
+          </button>
         </div>
-      </div>
-      <div className="mt-6 flex justify-end pt-2">
-        <button type="button" onClick={onNext} disabled={!ready} className="button button-primary disabled:opacity-50">
-          Review sections <ArrowRight size={16} aria-hidden="true" />
-        </button>
-      </div>
-    </Card>
+      </header>
+
+      <main className="substack-compose-main">
+        {safetyNotice && <div className="mb-7">{safetyNotice}</div>}
+        {source && (
+          <div className="mb-7 grid gap-3">
+            <ImportedSourceBanner source={source} partial={stillPartial} />
+            {stillPartial && (
+              <div className="rounded-lg bg-[#fdf6ec] px-4 py-3 text-sm leading-5 text-[#7b4e12]">
+                {/* Prefer the importer's source-specific guidance; fall back to the
+                    generic preview-only notice when it didn't supply one. */}
+                {source.warnings[0] ?? PARTIAL_IMPORT_NOTICE}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="substack-compose-meta">
+          <textarea
+            ref={titleRef}
+            value={title}
+            onChange={(e) => onTitle(e.target.value)}
+            placeholder="Title"
+            rows={1}
+            maxLength={120}
+            className="substack-title-input"
+          />
+          <input
+            value={author}
+            onChange={(e) => onAuthor(e.target.value)}
+            placeholder="Add author..."
+            className="substack-subtitle-input"
+          />
+        </div>
+
+        <section className="substack-import-panel" aria-label="Import article">
+          <div className="substack-import-copy">
+            <span>Bring in an existing article</span>
+            <p>Import from URL, upload Markdown, or use the Chrome extension. Writing manually is below if nothing else works.</p>
+          </div>
+          <div className="substack-import-actions">
+            {!source && (
+              <Link href="/dashboard/articles/import" className="substack-import-action is-primary">
+                <Link2 size={16} aria-hidden="true" />
+                Import URL
+              </Link>
+            )}
+            <button type="button" onClick={() => fileRef.current?.click()} className="substack-import-action">
+              <FileText size={16} aria-hidden="true" />
+              Import Markdown
+            </button>
+            <a
+              href="https://chromewebstore.google.com/detail/rubicon/allmdpfkdgdcjfgeijembjfpnkfpocab"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="substack-import-action"
+            >
+              <Puzzle size={16} aria-hidden="true" />
+              Chrome extension
+            </a>
+          </div>
+        </section>
+
+        <input ref={fileRef} type="file" accept=".md,.markdown,.txt" onChange={onUpload} className="hidden" />
+        <div className="substack-manual-editor">
+          <div className="substack-manual-editor-label">
+            <PenLine size={15} aria-hidden="true" />
+            <span>Write manually</span>
+          </div>
+        <MarkdownEditor
+          value={content}
+          onChange={onContent}
+          placeholder="Start writing..."
+        />
+        </div>
+      </main>
+    </div>
   );
 }
 
@@ -437,7 +526,7 @@ function StepReviewSections({
 
       {sections.length === 0 ? (
         <p className="mt-6 rounded-lg bg-[var(--surface-muted)] p-6 text-center text-sm text-[var(--muted)]">
-          No headings detected. Your article will be offered as a single section. Add Markdown <code className="mono">#</code> headings to split it.
+          No headers or subheaders detected. Your article will be offered as a single section. Use Header or Subheader to split it.
         </p>
       ) : (
         <ul className="mt-5 grid gap-3">
@@ -556,6 +645,8 @@ function StepPublish({
   submitting,
   error,
   savedDraftId,
+  ownershipMismatch,
+  safetyNotice,
   onBack,
   onSaveDraft,
   onPublish,
@@ -570,6 +661,8 @@ function StepPublish({
   submitting: boolean;
   error: string | null;
   savedDraftId: string | null;
+  ownershipMismatch: boolean;
+  safetyNotice: React.ReactNode;
   onBack: () => void;
   onSaveDraft: () => void;
   onPublish: () => void;
@@ -579,6 +672,8 @@ function StepPublish({
     <Card className="p-6">
       <h2 className="text-lg font-semibold">Review and publish</h2>
       <p className="mt-1 text-sm text-[var(--muted)]">Confirm the details below. You can save a draft or publish it live to agents.</p>
+
+      {safetyNotice && <div className="mt-5">{safetyNotice}</div>}
 
       <dl className="mt-5 grid gap-3 rounded-xl bg-[var(--surface-muted)] p-5 text-sm">
         <Row term="Article title" value={title || "Untitled"} />
@@ -621,10 +716,10 @@ function StepPublish({
           <ArrowLeft size={16} aria-hidden="true" /> Back
         </button>
         <div className="flex flex-wrap gap-3">
-          <button type="button" onClick={onSaveDraft} disabled={submitting} className="button button-secondary disabled:opacity-50">
+          <button type="button" onClick={onSaveDraft} disabled={submitting || ownershipMismatch} className="button button-secondary disabled:opacity-50">
             Save draft
           </button>
-          <button type="button" onClick={onPublish} disabled={submitting || noWallet} className="button button-primary disabled:opacity-50">
+          <button type="button" onClick={onPublish} disabled={submitting || noWallet || ownershipMismatch} className="button button-primary disabled:opacity-50">
             {submitting ? "Publishing…" : "Publish article"}
           </button>
         </div>

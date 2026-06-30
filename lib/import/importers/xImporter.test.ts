@@ -138,4 +138,45 @@ describe("buildXApiResult", () => {
     expect(buildXApiResult(parsed.canonicalUrl, parsed, "not json")).toBeNull();
     expect(buildXApiResult(parsed.canonicalUrl, parsed, '{"tweet":{"text":""}}')).toBeNull();
   });
+
+  it("preserves X Article inline formatting, links, images, and captions", () => {
+    const parsed = parseXUrl("https://x.com/wenkafka/status/2069445106382332284");
+    const result = buildXApiResult(parsed.canonicalUrl, parsed, JSON.stringify({
+      tweet: {
+        author: { name: "kafka", screen_name: "wenkafka" },
+        article: {
+          title: "Turn Your Writing into Agent Revenue",
+          content: {
+            blocks: [
+              {
+                type: "unstyled",
+                text: "Note: Rubicon links here and earns exactly.",
+                inlineStyleRanges: [
+                  { offset: 0, length: 5, style: "Bold" },
+                  { offset: 29, length: 14, style: "Italic" },
+                ],
+                entityRanges: [{ offset: 14, length: 10, key: 0 }],
+              },
+              { type: "header-one", text: "Getting familiar with the dashboard" },
+              { type: "atomic", text: " ", entityRanges: [{ offset: 0, length: 1, key: 1 }] },
+            ],
+            entityMap: [
+              { key: "0", value: { type: "LINK", data: { url: "https://www.rubiconpay.xyz/" } } },
+              { key: "1", value: { type: "MEDIA", data: { caption: "The dashboard", mediaItems: [{ mediaId: "image-1" }] } } },
+            ],
+          },
+          media_entities: [
+            { media_id: "image-1", media_info: { original_img_url: "https://pbs.twimg.com/dashboard.png" } },
+          ],
+        },
+      },
+    }));
+
+    expect(result?.body).toContain("**Note:**");
+    expect(result?.body).toContain("[links here](https://www.rubiconpay.xyz/)");
+    expect(result?.body).toContain("*earns exactly.*");
+    expect(result?.body).toContain("# Getting familiar with the dashboard");
+    expect(result?.body).toContain("![](https://pbs.twimg.com/dashboard.png)");
+    expect(result?.body).toContain("*The dashboard*");
+  });
 });

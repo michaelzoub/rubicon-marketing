@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { RubiconBrand } from "../rubicon-brand";
+import { ThemeToggle } from "../theme-toggle";
 
 const githubUrl = "https://github.com/michaelzoub/rubicon";
 
 const footerLinks = {
   product: [
     { href: "/", label: "Home" },
-    { href: "/creators", label: "Creators" },
+    { href: "/creators", label: "Writers" },
     { href: "/developers", label: "Developers" },
     { href: "/explore", label: "Explore" },
   ],
@@ -52,8 +52,10 @@ export function SiteFooter() {
     <footer className="site-footer">
       <div className="container site-footer-main">
         <div className="site-footer-brand">
-          <RubiconBrand className="h-7" />
-          <p className="site-footer-tagline">Pay-per-word, between agents and creators.</p>
+          <Link href="/" className="site-wordmark site-footer-wordmark" aria-label="Rubicon home">
+            rubicon
+          </Link>
+          <p className="site-footer-tagline">Pay-per-word, between agents and writers.</p>
           <div className="site-footer-caliga">
             <span className="site-footer-caliga-logo">
               <img src="/caliga-logo.png" alt="" className="site-footer-caliga-image" />
@@ -98,6 +100,7 @@ export function SiteFooter() {
       <div className="site-footer-bar">
         <div className="container site-footer-bar-inner">
           <p className="site-footer-bar-copy">© 2026 Rubicon · Built by Caliga</p>
+          <ThemeToggle />
         </div>
       </div>
     </footer>

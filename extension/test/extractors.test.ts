@@ -71,6 +71,39 @@ describe("extension extractors", () => {
     expect(result.title).toBe("An essay about agents");
   });
 
+  it("parses a Substack custom-domain article with rich content", () => {
+    const doc = new DOMParser().parseFromString(`
+      <html><head>
+        <meta property="og:site_name" content="a16z">
+        <meta property="og:title" content="NASA’s Artemis II Mission - a16z">
+        <meta name="author" content="William Whittenbury">
+        <link rel="canonical" href="https://www.a16z.news/p/nasas-artemis-ii-mission">
+      </head><body><article><div class="available-content"><div class="body markup">
+        <p>Opening with <strong>important context</strong> and <a href="https://www.nasa.gov/">a NASA source</a>.</p>
+        <h3>Why Did It Take 54 Years?</h3>
+        <blockquote><p>First line</p><p>Second line</p></blockquote>
+        <figure><img src="/images/artemis.png" alt="Artemis II"><figcaption>The Artemis II mission.</figcaption></figure>
+        <ul><li>Radiation</li><li>Propulsion</li></ul>
+        <div data-component-name="DigestPostEmbed">Related story that is not part of this article.</div>
+        <p>Footer disclosure that should not be imported.</p>
+      </div></div></article></body></html>
+    `, "text/html");
+    const result = extractSubstack(doc, "https://www.a16z.news/p/nasas-artemis-ii-mission");
+
+    expect(result.sourceUrl).toBe("https://www.a16z.news/p/nasas-artemis-ii-mission");
+    expect(result.title).toBe("NASA’s Artemis II Mission");
+    expect(result.authorName).toBe("William Whittenbury");
+    expect(result.body).toContain("**important context**");
+    expect(result.body).toContain("[a NASA source](https://www.nasa.gov/)");
+    expect(result.body).toContain("## Why Did It Take 54 Years?");
+    expect(result.body).toContain("> First line\n>\n> Second line");
+    expect(result.body).toContain("![Artemis II](https://www.a16z.news/images/artemis.png)");
+    expect(result.body).toContain("*The Artemis II mission.*");
+    expect(result.body).toContain("- Radiation\n- Propulsion");
+    expect(result.body).not.toContain("Related story");
+    expect(result.body).not.toContain("Footer disclosure");
+  });
+
   it("extracts the selected X post", () => {
     const result = extractX(fixture("x.html"), "https://x.com/ada/status/123?s=20");
     expect(result).toMatchObject({

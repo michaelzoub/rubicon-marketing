@@ -1,14 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Rubicon",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Turn the current Substack or X post into a Rubicon draft.",
-  "permissions": ["activeTab", "storage"],
+  "permissions": ["activeTab", "storage", "scripting"],
   "host_permissions": [
-    "https://*.substack.com/*",
-    "https://substack.com/*",
-    "https://x.com/*",
-    "https://twitter.com/*",
     "https://www.rubiconpay.xyz/*",
     "http://localhost:3000/*"
   ],
@@ -23,17 +19,10 @@
     "48": "rubicon-new.png",
     "128": "rubicon-new.png"
   },
-  "content_scripts": [
-    {
-      "matches": ["https://*.substack.com/*", "https://substack.com/*", "https://x.com/*", "https://twitter.com/*"],
-      "js": ["contentScript.js"],
-      "run_at": "document_idle"
-    }
-  ],
   "web_accessible_resources": [
     {
       "resources": ["platformExtractors/*.js"],
-      "matches": ["https://*.substack.com/*", "https://substack.com/*", "https://x.com/*", "https://twitter.com/*"]
+      "matches": ["<all_urls>"]
     }
   ]
 }

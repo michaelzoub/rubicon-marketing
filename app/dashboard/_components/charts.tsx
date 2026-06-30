@@ -121,17 +121,17 @@ export function TrendChart({
             >
               {/* tooltip */}
               {isActive && bar.value > 0 && (
-                <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg bg-white px-2.5 py-1.5 text-center shadow-[0_8px_24px_rgba(47,125,246,0.18)]">
+                <div className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-2 -translate-x-1/2 whitespace-nowrap rounded-lg border border-[var(--line)] bg-white px-2.5 py-1.5 text-center">
                   <div className="text-sm font-semibold text-[var(--ink)]">{formatValue(bar.value)}</div>
                   <div className="mono text-[0.6rem] uppercase tracking-[0.1em] text-[var(--muted)]">{bar.fullLabel}</div>
                   {bar.detail && <div className="text-[0.7rem] text-[var(--muted)]">{bar.detail}</div>}
                 </div>
               )}
               {/* track */}
-              <div className="absolute inset-x-0 bottom-0 top-0 rounded-md bg-[var(--surface-muted)] opacity-0 transition-opacity group-hover:opacity-100" />
+              <div className="absolute inset-x-0 bottom-0 top-0 rounded bg-[var(--surface-muted)] opacity-0 transition-opacity group-hover:opacity-100" />
               {/* bar */}
               <motion.div
-                className="relative w-full rounded-md rounded-b-sm"
+                className="relative w-full rounded rounded-b-sm"
                 style={{
                   minHeight: bar.value > 0 ? 4 : 0,
                   background: isActive ? "var(--river-deep)" : "var(--river)",
@@ -162,8 +162,8 @@ export interface DonutSlice {
   color: string;
 }
 
-/** Brand-friendly slice colors, brightest → faintest. */
-export const DONUT_COLORS = ["#2f7df6", "#5d99f8", "#8fb6fa", "#bcd3fc", "#dde8fe"];
+/** Financial-dashboard slice colors: blue, near-black, green, gold, slate. */
+export const DONUT_COLORS = ["#2f6de5", "#101114", "#15803d", "#c98a17", "#9aa3b2"];
 
 /**
  * Ring chart with a centered headline. Slices sweep in clockwise on mount and
@@ -199,11 +199,15 @@ export function Donut({
           {total > 0 &&
             slices.map((slice, i) => {
               const fraction = slice.value / total;
-              const dash = fraction * circumference;
+              // Clean butt-capped arcs with a small visual gap between slices, so
+              // the ring reads as distinct segments instead of overlapping blobs.
+              const gapFraction = slices.length > 1 ? Math.min(0.02, fraction * 0.5) : 0;
+              const dash = Math.max((fraction - gapFraction) * circumference, 0.0001);
               const gap = circumference - dash;
               const dashOffset = -offsetAcc * circumference;
               offsetAcc += fraction;
-              const dim = active !== null && active !== i;
+              const isActive = active === i;
+              const dim = active !== null && !isActive;
               return (
                 <motion.circle
                   key={i}
@@ -212,16 +216,16 @@ export function Donut({
                   r={radius}
                   fill="none"
                   stroke={slice.color}
-                  strokeWidth={stroke}
-                  strokeLinecap="round"
+                  strokeWidth={isActive ? stroke + 4 : stroke}
+                  strokeLinecap="butt"
                   strokeDasharray={`${dash} ${gap}`}
                   strokeDashoffset={dashOffset}
                   initial={reduce ? false : { strokeDasharray: `0 ${circumference}` }}
-                  animate={{ strokeDasharray: `${dash} ${gap}`, opacity: dim ? 0.4 : 1 }}
+                  animate={{ strokeDasharray: `${dash} ${gap}`, opacity: dim ? 0.35 : 1 }}
                   transition={{ duration: 0.8, delay: reduce ? 0 : 0.1 + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
                   onMouseEnter={() => setActive(i)}
                   onMouseLeave={() => setActive((cur) => (cur === i ? null : cur))}
-                  style={{ cursor: "default" }}
+                  style={{ cursor: "pointer", transition: "stroke-width 180ms ease" }}
                 />
               );
             })}
@@ -239,7 +243,7 @@ export function Donut({
           return (
             <li
               key={i}
-              className={`flex items-center gap-2.5 rounded-lg px-2 py-1 transition-colors ${active === i ? "bg-[var(--surface-muted)]" : ""}`}
+              className={`flex items-center gap-2.5 rounded-md px-2 py-1 transition-colors ${active === i ? "bg-[var(--surface-muted)]" : ""}`}
               onMouseEnter={() => setActive(i)}
               onMouseLeave={() => setActive((cur) => (cur === i ? null : cur))}
             >
@@ -267,7 +271,7 @@ export function InsightTile({
   className?: string;
 }) {
   return (
-    <div className={`flex flex-col justify-between rounded-[18px] bg-[var(--surface-muted)] p-5 ${className}`}>
+    <div className={`flex flex-col justify-between rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-5 ${className}`}>
       <div className="text-3xl font-semibold tracking-[-0.02em] sm:text-[2.1rem]">{value}</div>
       <div className="mt-2 text-sm text-[var(--muted)]">{caption}</div>
     </div>

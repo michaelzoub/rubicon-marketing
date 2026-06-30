@@ -6,6 +6,6 @@
 4. Choose **Open Rubicon settings** in the popup. Rubicon Settings opens at
    `https://www.rubiconpay.xyz/dashboard/settings`; generate a token and paste
    it into the popup, then **Save & connect**.
-5. Open a Substack or X post, click the extension, and choose **Send to Rubicon**.
+5. Open a Substack post (including a custom-domain publication such as a16z) or an X post, click the extension, and choose **Send to Rubicon**.
 
 For local development, set the popup's Rubicon app URL to `http://localhost:3000`.

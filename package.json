@@ -15,6 +15,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@posthog/react": "^1.10.3",
     "@privy-io/node": "^0.21.0",
     "@privy-io/react-auth": "^3.31.0",
     "@rolldown/binding-win32-x64-msvc": "^1.0.3",
@@ -32,11 +33,13 @@
     "lucide-react": "^0.468.0",
     "next": "^15.3.3",
     "ox": "^0.14.27",
+    "posthog-js": "^1.393.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "tailwind-merge": "^2.6.0",
     "tailwindcss": "^4.1.10",
     "tiptap-markdown": "^0.9.0",
+    "turndown": "^7.2.4",
     "viem": "^2.52.0"
   },
   "devDependencies": {
@@ -44,6 +47,7 @@
     "@types/node": "^22.15.31",
     "@types/react": "^19.0.12",
     "@types/react-dom": "^19.0.4",
+    "@types/turndown": "^5.0.6",
     "eslint": "^9.28.0",
     "eslint-config-next": "^15.3.3",
     "happy-dom": "^20.10.6",

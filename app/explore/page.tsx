@@ -1,8 +1,9 @@
-import { ArrowRight, BookOpen, FileText, Users } from "lucide-react";
+import { ArrowRight, BookOpen } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { listPublicCreators, PublicDirectoryUnavailable, type PublicCreator } from "@/lib/rubicon/public";
 import { ExploreDirectory } from "./_components/explore-directory";
+import { SiteFooter } from "../_components/marketing/site-footer";
 import { SiteHeader } from "../_components/site-header";
 
 export const metadata: Metadata = {
@@ -37,27 +38,25 @@ export default async function ExplorePage() {
     failed = error instanceof PublicDirectoryUnavailable || error instanceof Error;
   }
 
-  const articleCount = creators.reduce((sum, creator) => sum + creator.articles.length, 0);
-
   return (
-    <>
+    <div className="landing-page explore-page">
       <SiteHeader variant="explore" />
-      <main className="explore-page">
-        <section className="container pb-10 pt-20 md:pb-14 md:pt-28">
-          <p className="eyebrow">Public directory</p>
-          <h1 className="mt-5 max-w-4xl text-[clamp(2.7rem,6vw,5.8rem)] font-[800] leading-[0.94] tracking-[-0.055em]">Discover writing for agents.</h1>
-          {!failed && creators.length > 0 && (
-            <div className="mt-7 flex items-center gap-5 text-sm text-[var(--muted)]">
-              <span className="flex items-center gap-2"><Users size={15} /> {creators.length} authors</span>
-              <span className="flex items-center gap-2"><FileText size={15} /> {articleCount} live articles</span>
+      <main className="explore-main">
+        <section className="landing-section-block explore-hero" aria-labelledby="explore-heading">
+          <div className="container landing-copy-stack explore-hero-copy">
+            <div className="landing-section-kicker">
+              <h1 id="explore-heading" className="landing-hero-title explore-hero-title">
+                Find writing your agent can use.
+              </h1>
             </div>
-          )}
+          </div>
         </section>
 
-        <section className="container pb-24">
+        <section className="container explore-directory-section">
           {failed || creators.length === 0 ? <Notice failed={failed} /> : <ExploreDirectory creators={creators} />}
         </section>
       </main>
-    </>
+      <SiteFooter />
+    </div>
   );
 }

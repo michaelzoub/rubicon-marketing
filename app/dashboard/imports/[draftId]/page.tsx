@@ -78,7 +78,7 @@ export default function ImportedDraftReviewPage() {
           <label className="grid gap-2"><span className="text-sm font-medium">Author</span><input value={author} onChange={(e) => setAuthor(e.target.value)} className={inputClass} /></label>
           <div className="grid gap-2">
             <span className="text-sm font-medium">Body</span>
-            <MarkdownEditor value={body} onChange={setBody} placeholder="Review the imported article…" />
+            <MarkdownEditor value={body} onChange={setBody} placeholder="Review the imported article…" contained />
           </div>
           <label className="grid max-w-xs gap-2">
             <span className="text-sm font-medium">Price per word (USD)</span>

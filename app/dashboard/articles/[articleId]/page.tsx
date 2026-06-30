@@ -11,6 +11,7 @@ import {
   formatUsd,
   usdToAtomic,
 } from "@/lib/rubicon/pricing";
+import { isStolenXContent, normalizeHandle } from "@/lib/articles/ownership";
 import {
   ArticleStatePill,
   Card,
@@ -21,15 +22,18 @@ import {
   formatRelative,
   LoadingState,
   PaymentStatusPill,
+  SafetyWarning,
   StatTile,
 } from "../../_components/ui";
 import { AgentPreviewDialog } from "../_components/agent-preview-dialog";
+import { MarkdownEditor } from "../../_components/markdown-editor";
 
 export default function ArticleDetailPage() {
   const params = useParams<{ articleId: string }>();
   const articleId = params.articleId;
   const router = useRouter();
   const article = useRubiconQuery<ArticleDetail>((c) => c.getArticle(articleId), [articleId]);
+  const creator = useRubiconQuery((c) => c.getCreator(), []);
 
   const publish = useRubiconMutation((c, id: string) => c.publishArticle(id));
   const pause = useRubiconMutation((c, id: string) => c.pauseArticle(id));
@@ -37,6 +41,15 @@ export default function ArticleDetailPage() {
   const update = useRubiconMutation((c, ...args: Parameters<typeof c.updateArticle>) => c.updateArticle(...args));
 
   const data = article.data;
+
+  // Content-ownership guard for imported X posts: block publishing when the
+  // original author handle doesn't match the logged-in creator's username.
+  const ownershipSource =
+    data?.importMeta?.sourcePlatform
+      ? { platform: data.importMeta.sourcePlatform, authorHandle: data.importMeta.sourceAuthorHandle }
+      : null;
+  const ownershipMismatch = isStolenXContent(ownershipSource, creator.data?.username);
+
   const [editing, setEditing] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const agentPreviewArticle = data
@@ -80,11 +93,13 @@ export default function ArticleDetailPage() {
                 <button
                   type="button"
                   onClick={async () => {
+                    // Never let an imported X post that isn't theirs go live.
+                    if (data.state !== "live" && ownershipMismatch) return;
                     if (data.state === "live") await pause.run(data.id);
                     else await publish.run(data.id);
                     article.refetch();
                   }}
-                  disabled={publish.pending || pause.pending}
+                  disabled={publish.pending || pause.pending || (data.state !== "live" && ownershipMismatch)}
                   className="button button-secondary text-sm disabled:opacity-50"
                 >
                   {data.state === "live" ? <><Pause size={15} aria-hidden="true" /> Pause</> : <><Play size={15} aria-hidden="true" /> Publish</>}
@@ -109,6 +124,14 @@ export default function ArticleDetailPage() {
             <p className="-mt-4 text-sm text-[var(--muted)]">
               Agents can preview metadata, but paid content remains hidden until purchased.
             </p>
+          )}
+          {ownershipMismatch && (
+            <SafetyWarning>
+              This article was imported from{" "}
+              <strong>@{normalizeHandle(data.importMeta?.sourceAuthorHandle)}</strong> on X, which doesn’t
+              match your account <strong>@{normalizeHandle(creator.data?.username)}</strong>. It can’t be
+              published — monetizing someone else’s content isn’t allowed.
+            </SafetyWarning>
           )}
           <AgentPreviewDialog article={agentPreviewArticle} open={previewOpen} onClose={() => setPreviewOpen(false)} />
 
@@ -200,7 +223,7 @@ export default function ArticleDetailPage() {
                     <tr className="text-left text-xs uppercase tracking-[0.08em] text-[var(--muted)]">
                       <th className="px-5 py-3 font-medium">Date</th>
                       <th className="px-5 py-3 font-medium">Words read</th>
-                      <th className="px-5 py-3 font-medium">Creator amount</th>
+                      <th className="px-5 py-3 font-medium">Writer amount</th>
                       <th className="px-5 py-3 font-medium">Status</th>
                       <th className="px-5 py-3 font-medium">Settlement</th>
                     </tr>
@@ -235,16 +258,18 @@ function EditPanel({
   article: ArticleDetail;
   pending: boolean;
   error: string | null;
-  onSave: (input: { title: string; author: string; pricePerWordAtomic: string; maxArticlePriceAtomic: string | null }) => void;
+  onSave: (input: { title: string; author: string; body: string; pricePerWordAtomic: string; maxArticlePriceAtomic: string | null }) => void;
 }) {
   const [title, setTitle] = useState(article.title);
   const [author, setAuthor] = useState(article.author);
+  const [body, setBody] = useState(article.body);
   const [pricePerWord, setPricePerWord] = useState(atomicToUsd(article.pricePerWordAtomic).toString());
   const [maxPrice, setMaxPrice] = useState(article.maxArticlePriceAtomic ? atomicToUsd(article.maxArticlePriceAtomic).toString() : "");
 
   useEffect(() => {
     setTitle(article.title);
     setAuthor(article.author);
+    setBody(article.body);
     setPricePerWord(atomicToUsd(article.pricePerWordAtomic).toString());
     setMaxPrice(article.maxArticlePriceAtomic ? atomicToUsd(article.maxArticlePriceAtomic).toString() : "");
   }, [article]);
@@ -257,6 +282,10 @@ function EditPanel({
           <span className="text-sm font-medium">Article title</span>
           <input value={title} onChange={(e) => setTitle(e.target.value)} className="h-11 rounded-lg bg-[var(--surface-muted)] px-3 outline-none transition focus:bg-white focus:ring-2 focus:ring-[var(--river-line)]" />
         </label>
+        <div className="grid gap-2">
+          <span className="text-sm font-medium">Article body</span>
+          <MarkdownEditor value={body} onChange={setBody} placeholder="Edit your article…" contained />
+        </div>
         <label className="grid gap-2">
           <span className="text-sm font-medium">Author</span>
           <input value={author} onChange={(e) => setAuthor(e.target.value)} className="h-11 rounded-lg bg-[var(--surface-muted)] px-3 outline-none transition focus:bg-white focus:ring-2 focus:ring-[var(--river-line)]" />
@@ -277,11 +306,12 @@ function EditPanel({
       <div className="mt-5 flex justify-end">
         <button
           type="button"
-          disabled={pending || !title.trim() || !author.trim() || !(Number(usdToAtomic(Number(pricePerWord))) > 0)}
+          disabled={pending || !title.trim() || !author.trim() || !body.trim() || !(Number(usdToAtomic(Number(pricePerWord))) > 0)}
           onClick={() =>
             onSave({
               title: title.trim(),
               author: author.trim(),
+              body: body.trim(),
               pricePerWordAtomic: usdToAtomic(Number(pricePerWord)),
               maxArticlePriceAtomic: maxPrice ? usdToAtomic(Number(maxPrice)) : null,
             })
