@@ -7,9 +7,11 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  FileText,
   Link2,
   MousePointer2,
-  Upload,
+  PenLine,
+  Puzzle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { DashboardFrame } from "../../dashboard/_components/shell";
@@ -86,10 +88,13 @@ function PublishWizard() {
   const step = t < T.s1 ? 0 : t < T.s2 ? 1 : t < T.s3 ? 2 : t < T.published ? 3 : 4;
 
   return (
-    <div className="grid gap-6">
-      <PageHeader title="New article" description="Saved as a draft first. Nothing goes live until you publish." />
-
-      {step < 4 && <Stepper current={Math.min(step, 3)} />}
+    <div className={step === 0 ? "article-compose-page" : "grid gap-6"}>
+      {step > 0 && (
+        <>
+          <PageHeader title="New article" description="Saved as a draft first. Nothing goes live until you publish." />
+          {step < 4 && <Stepper current={Math.min(step, 3)} />}
+        </>
+      )}
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -139,9 +144,6 @@ function Stepper({ current }: { current: number }) {
   );
 }
 
-const inputClass =
-  "h-11 rounded-lg bg-[var(--surface-muted)] px-3 outline-none transition flex items-center";
-
 function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
   return (
     <label className="grid gap-2">
@@ -190,45 +192,43 @@ function StepAddArticle({ t }: { t: number }) {
   const focus = t < 1500 ? "title" : t < 2300 ? "author" : "body";
 
   return (
-    <Card className="p-6">
-      <div className="grid gap-5">
-        <Field label="Article title">
-          <div className={`${inputClass} ${focus === "title" ? "cpf-input-focus" : ""}`}>
-            <span>{titleText}</span>
-            {focus === "title" && <Caret />}
-          </div>
-        </Field>
-        <Field label="Author">
-          <div className={`${inputClass} ${focus === "author" ? "cpf-input-focus" : ""}`}>
-            <span>{authorActive ? authorText : <span className="text-[var(--muted)]">Author name</span>}</span>
-            {focus === "author" && <Caret />}
-          </div>
-        </Field>
-        <Field
-          label="Editor"
-          hint="Paste a whole article from Substack or X, or write it here. Headers and subheaders become sections agents can navigate."
-        >
-          <div className={`min-h-[120px] rounded-lg bg-[var(--surface-muted)] p-3 text-sm leading-6 ${focus === "body" ? "cpf-input-focus" : ""}`}>
-            <strong className="font-semibold">Consent Decree Language</strong>
-            <p className="mt-1 text-[var(--muted)]">
-              {bodyActive ? bodyText : <span className="text-[var(--muted)]">Paste your article from Substack or X, or start writing…</span>}
-              {focus === "body" && <Caret />}
-            </p>
-          </div>
-        </Field>
-        <div className="flex flex-wrap items-center gap-3">
-          <span className="button button-secondary text-sm">
-            <Upload size={15} aria-hidden="true" /> Upload Markdown
-          </span>
-          <span className="button button-secondary text-sm">
-            <Link2 size={15} aria-hidden="true" /> Import from URL
-          </span>
+    <div className="substack-compose">
+      <header className="substack-compose-topbar">
+        <span className="substack-compose-back"><ArrowLeft size={21} aria-hidden="true" /></span>
+        <div className="substack-compose-status"><span aria-hidden="true" /> Draft</div>
+        <div className="substack-compose-actions">
+          <span className="substack-compose-preview">Preview</span>
+          <span className={`substack-compose-continue ${pressingAt(t, T.s1Click) ? "cpf-pressing" : ""}`}>Continue</span>
         </div>
-      </div>
-      <div className="mt-6 flex justify-end pt-2">
-        <PrimaryAction label="Review sections" pressing={pressingAt(t, T.s1Click)} />
-      </div>
-    </Card>
+      </header>
+
+      <main className="substack-compose-main">
+        <div className="substack-compose-meta">
+          <div className="substack-title-input">{titleText || "Title"}{focus === "title" && <Caret />}</div>
+          <div className="substack-subtitle-input">{authorActive ? authorText : "Add author..."}{focus === "author" && <Caret />}</div>
+        </div>
+
+        <section className="mb-7 mt-8 grid gap-3" aria-label="Import article">
+          <div>
+            <span className="text-sm font-semibold">Bring in an existing article</span>
+            <p className="mt-1 text-sm text-[var(--muted)]">Import from URL, upload Markdown, or use the Chrome extension. Writing manually is below if nothing else works.</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <span className="button button-primary text-sm"><Link2 size={15} aria-hidden="true" /> Import URL</span>
+            <span className="button button-secondary text-sm"><FileText size={15} aria-hidden="true" /> Import Markdown</span>
+            <span className="button button-secondary text-sm"><Puzzle size={15} aria-hidden="true" /> Chrome extension</span>
+          </div>
+        </section>
+
+        <div className="substack-manual-editor">
+          <div className="substack-manual-editor-label"><PenLine size={15} aria-hidden="true" /><span>Write manually</span></div>
+          <div className="substack-editor min-h-[150px] text-sm leading-6 text-[var(--muted)]">
+            <strong className="font-semibold text-[var(--ink)]">Consent Decree Language</strong>
+            <p className="mt-1">{bodyActive ? bodyText : "Start writing..."}{focus === "body" && <Caret />}</p>
+          </div>
+        </div>
+      </main>
+    </div>
   );
 }
 
@@ -378,7 +378,7 @@ function StepPublished() {
 
 function Row({ term, value, hint }: { term: string; value: React.ReactNode; hint?: string }) {
   return (
-    <div className="grid grid-cols-[1fr_auto] items-baseline gap-4 rounded-[14px] px-3 py-2 even:bg-[var(--surface-muted)]">
+    <div className="grid grid-cols-[1fr_auto] items-baseline gap-4 rounded-lg px-3 py-2 even:bg-[var(--surface-muted)]">
       <dt className="text-[var(--muted)]">{term}</dt>
       <dd className="text-right font-medium">
         {value}

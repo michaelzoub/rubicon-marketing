@@ -1471,6 +1471,10 @@ a {
     clamp(2.5rem, 6vh, 4rem);
 }
 
+.creators-page .creators-hero-content {
+  background: transparent;
+}
+
 .creators-hero-quote-box {
   display: flex;
   width: min(56rem, calc(100% - 2rem));
@@ -1482,7 +1486,6 @@ a {
   border: 1px solid rgba(27, 26, 32, 0.08);
   border-radius: var(--radius-ui);
   background: #ffffff;
-  box-shadow: 0 12px 40px -20px rgba(0, 0, 0, 0.18);
   text-align: center;
 }
 

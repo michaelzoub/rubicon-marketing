@@ -234,7 +234,7 @@ function Sidebar({
         <>
           <div className="dashboard-sidebar-chrome">
             <Link href="/" className="min-w-0" aria-label="Rubicon home">
-              <span className="site-wordmark text-[1.3rem]">rubicon</span>
+              <RubiconBrand className="h-7" onLight />
             </Link>
             <button type="button" onClick={onToggle} className="dashboard-icon-button" aria-label="Close sidebar" aria-expanded={true}>
               <PanelLeft size={15} aria-hidden="true" />
@@ -292,7 +292,7 @@ function MobileBar({ onLogout, activePath }: { onLogout?: () => void; activePath
     <div className="sticky top-0 z-30 border-b border-[var(--line)] bg-white/90 backdrop-blur lg:hidden">
       <div className="flex items-center justify-between px-5 py-3">
         <Link href="/" className="flex items-center" aria-label="Rubicon home">
-          <span className="site-wordmark text-[1.25rem]">rubicon</span>
+          <RubiconBrand className="h-7" onLight />
         </Link>
         {onLogout && (
           <button type="button" onClick={onLogout} className="text-[var(--muted)]" aria-label="Sign out">

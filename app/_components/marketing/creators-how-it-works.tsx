@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { CreatorsDemoVideo } from "./creators-demo-video";
+import { CreatorPublishFlow } from "./creator-publish-flow";
 import { fade } from "./motion";
 
 const STEPS = [
@@ -39,7 +39,11 @@ export function CreatorsHowItWorks() {
         </div>
 
         <div className="creators-how-layout">
-          <CreatorsDemoVideo />
+          <div className="creators-how-video">
+            <div className="creators-how-demo-frame">
+              <CreatorPublishFlow />
+            </div>
+          </div>
 
           <ol className="creators-how-steps">
             {STEPS.map((step, index) => (

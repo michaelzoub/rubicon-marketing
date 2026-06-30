@@ -50,7 +50,7 @@ function DashboardShowcase() {
               <div className="landing-dashboard-texture-border">
                 <div className="landing-dashboard-frame">
                   <img
-                    src="/landing-dashboard-main.png"
+                    src="/dashboard-preview.png"
                     alt="Rubicon creator dashboard showing earnings, agent reads, words read, and payout wallet"
                     className="landing-dashboard-image"
                     decoding="async"
@@ -134,6 +134,19 @@ export default function Home() {
       <div className="landing-page">
         <SiteHeader variant="home" overlay />
         <div className="landing-hero-stage">
+          <div className="landing-hero-bg" aria-hidden="true">
+            <video
+              className="landing-hero-video"
+              autoPlay
+              muted
+              loop
+              playsInline
+              poster="/HEROBG.png"
+              preload="metadata"
+            >
+              <source src="/HEROBGVIDEO.mp4" type="video/mp4" />
+            </video>
+          </div>
           <section className="landing-hero">
             <Hero />
           </section>

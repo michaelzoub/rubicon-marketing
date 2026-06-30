@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function DevelopersPage() {
   return (
     <div className="landing-page developers-page">
-      <SiteHeader overlay />
+      <SiteHeader />
       <AgentsPaidReadingSection />
       <DevelopersSdkSection />
       <SiteFooter />
