@@ -4639,66 +4639,6 @@ a {
   color: #333333;
 }
 
-.substack-import-panel {
-  display: grid;
-  gap: 1rem;
-  margin-top: 2.4rem;
-  border: 1px solid #e4e4e4;
-  border-radius: 12px;
-  background: #fafafa;
-  padding: 1rem;
-}
-
-.substack-import-copy span {
-  display: block;
-  color: #252525;
-  font-size: 0.92rem;
-  font-weight: 750;
-}
-
-.substack-import-copy p {
-  margin-top: 0.3rem;
-  color: #737373;
-  font-size: 0.84rem;
-  line-height: 1.45;
-}
-
-.substack-import-actions {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.55rem;
-}
-
-.substack-import-action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  min-height: 2.75rem;
-  border: 1px solid #dedede;
-  border-radius: 8px;
-  background: #ffffff;
-  padding: 0 0.95rem;
-  color: #303030;
-  font-size: 0.88rem;
-  font-weight: 720;
-  transition:
-    border-color 160ms var(--ease-soft),
-    background-color 160ms var(--ease-soft),
-    color 160ms var(--ease-soft);
-}
-
-.substack-import-action:hover,
-.substack-import-action.is-primary {
-  border-color: #b9d2ff;
-  background: #eef5ff;
-  color: #2555a3;
-}
-
-.substack-import-action.is-primary:hover {
-  background: #e3efff;
-}
-
 .substack-manual-editor {
   margin-top: 2rem;
   padding-top: 1.35rem;
@@ -4912,12 +4852,6 @@ a {
 
 .md-canvas .ProseMirror-focused {
   outline: none;
-}
-
-@media (max-width: 720px) {
-  .substack-import-actions {
-    grid-template-columns: 1fr;
-  }
 }
 
 /* 2026 light workspace redesign ------------------------------------------------ */
@@ -5476,25 +5410,101 @@ a {
 .dashboard-theme {
   --background: #fff;
   --surface: #fff;
-  --surface-muted: #efeff1;
-  --card: #f5f5f6;
+  --surface-muted: #f1f1f2;
+  --card: #fff;
   --hovered: #ececee;
   --line: rgba(18,18,22,.08);
   --muted: #68686f;
   --quiet: #96969d;
+  --river: #303034;
+  --river-deep: #1d1d20;
+  --river-pale: #ededee;
+  --river-line: #dedee1;
 }
-.dashboard-canvas { background: #fff; }
-.dashboard-sidebar { border-right: 1px solid #f0f0f0 !important; background: #fff !important; }
-.dashboard-sidebar-chrome { justify-content: space-between; padding: 0.85rem 0.9rem 0.5rem; }
-.dashboard-card { border: 0 !important; background: var(--card); }
-.dashboard-card:hover { border-color: transparent; }
-.dashboard-nav-link:hover { background: #f8f8f8; }
+.dashboard-canvas {
+  background-color: #e8e9ea;
+  background-image: url("/dashboard-ocean.png");
+  background-position: center;
+  background-size: cover;
+  background-attachment: fixed;
+}
+.dashboard-main { background: rgba(246,246,247,.97); }
+.dashboard-sidebar {
+  isolation: isolate;
+  overflow: hidden;
+  border-right: 1px solid rgba(18,18,22,.06) !important;
+  background: transparent !important;
+}
+.dashboard-sidebar::before,
+.dashboard-sidebar::after {
+  position: absolute;
+  content: "";
+  pointer-events: none;
+}
+.dashboard-sidebar::before {
+  z-index: 0;
+  inset: -28px;
+  background: url("/dashboard-ocean.png") center / cover no-repeat;
+  filter: blur(18px) saturate(.72);
+  transform: scale(1.08);
+}
+.dashboard-sidebar::after {
+  z-index: 1;
+  inset: 0;
+  background: rgba(247,247,248,.58);
+}
+.dashboard-sidebar > * { position: relative; z-index: 2; }
+.dashboard-sidebar-chrome { justify-content: space-between; padding: 0.7rem 0.7rem 0.35rem; }
+.dashboard-card { border: 1px solid rgba(18,18,22,.065) !important; background: #fff; }
+.dashboard-card:hover { border-color: rgba(18,18,22,.10) !important; }
+.dashboard-theme .dashboard-card { border-radius: 9px; }
+.dashboard-theme .dashboard-card.p-5,
+.dashboard-theme .dashboard-card.p-6 { padding: 1rem !important; }
+.dashboard-theme .dashboard-card > .p-5 { padding: 1rem !important; }
+.dashboard-theme .button {
+  border: 0 !important;
+  min-height: 32px;
+  gap: 0.4rem;
+  border-radius: 8px;
+  padding: 0.38rem 0.7rem;
+  transition: transform 140ms var(--ease-out), background-color 140ms ease, border-color 140ms ease;
+}
+.dashboard-theme button { border: 0 !important; }
+.dashboard-theme .button:active { transform: scale(.97); }
+.dashboard-nav { padding: 0.25rem 0.45rem 0.75rem; }
+.dashboard-nav-group { margin-top: 1rem; }
+.dashboard-nav-link {
+  min-height: 2rem;
+  gap: 0.55rem;
+  padding-inline: 0.55rem;
+  border-radius: 8px !important;
+  font-size: 0.875rem;
+}
+.dashboard-nav-section-title { padding-inline: 0.55rem; margin-bottom: 0.25rem; font-size: 0.75rem; }
+.dashboard-sidebar-foot { padding: 0.35rem 0.45rem 0.55rem; }
+.dashboard-icon-button { width: 2rem; height: 2rem; min-width: 2rem; min-height: 2rem; border-radius: 8px; }
+.dashboard-main button svg,
+.dashboard-main a.button svg { width: 14px; height: 14px; stroke-width: 1.75; }
+.dashboard-data-viz {
+  --river: #2f6de5;
+  --river-deep: #2459bd;
+}
+.dashboard-nav-link:hover { background: rgba(255,255,255,.42); }
 .dashboard-nav-link.is-active,
-.dashboard-nav-icon-link.is-active { background: #f6f6f6; }
+.dashboard-nav-icon-link.is-active { background: rgba(255,255,255,.58); }
 .dashboard-theme .button-secondary,
 .dashboard-theme input,
 .dashboard-theme textarea,
 .dashboard-theme select { background: #fff; }
+.dashboard-theme .button-secondary:hover { background: #ececee; }
+.dashboard-theme .export-copy-button.is-copied {
+  background: #16794c;
+  color: #fff;
+}
+
+@media (max-width: 1023px) {
+  .dashboard-canvas { background-attachment: scroll; }
+}
 
 @media (prefers-color-scheme: light) {
   .landing-page { --surface-muted: #fafafa; --hovered: #f7f7f7; --line: rgba(18,18,22,.07); }
@@ -5517,3 +5527,29 @@ a {
 .creators-hero-quote-text,
 .creators-hero-quote-text strong,
 .creators-hero-quote-attribution { color: #111; }
+
+/* ---------- skeleton loading ---------- */
+/* Calm, matte, barely-visible shimmer. The sheen sweeps across the muted
+   surface slowly (3s) so the layout settles quietly rather than flashing. */
+:root { --skeleton-sheen: #1c1e22; }
+.dashboard-theme { --skeleton-sheen: #ececed; }
+
+@keyframes rubicon-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.rubicon-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--surface-muted) 0%,
+    var(--skeleton-sheen, var(--surface-muted)) 50%,
+    var(--surface-muted) 100%
+  );
+  background-size: 200% 100%;
+  animation: rubicon-shimmer 3s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rubicon-skeleton { animation: none; background: var(--surface-muted); }
+}

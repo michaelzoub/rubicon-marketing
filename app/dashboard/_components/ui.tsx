@@ -19,9 +19,9 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h1 className="text-2xl font-semibold tracking-[-0.01em] sm:text-[1.7rem]">{title}</h1>
+        <h1 className="text-2xl font-semibold tracking-[-0.025em] sm:text-[1.65rem]">{title}</h1>
         {description && <p className="mt-1.5 max-w-2xl text-sm leading-6 text-[var(--muted)]">{description}</p>}
       </div>
       {action && <div className="shrink-0">{action}</div>}
@@ -49,7 +49,7 @@ export function Card({
 
 export function CardHeader({ title, action }: { title: ReactNode; action?: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-[var(--line)] px-5 pb-4 pt-5">
+    <div className="flex items-center justify-between gap-3 border-b border-[var(--line)] px-4 py-3">
       <h2 className="text-base font-semibold">{title}</h2>
       {action}
     </div>
@@ -69,7 +69,7 @@ export function StatTile({
 }) {
   return (
     <Card
-      className={`grid min-h-[118px] grid-rows-[2.4rem_1fr_auto] p-5 ${featured ? "text-white" : ""}`}
+      className={`grid h-full min-h-[104px] grid-rows-[1.65rem_1fr_1.75rem] p-3.5 ${featured ? "text-white" : ""}`}
       style={featured ? { background: "var(--tile-featured)", borderColor: "transparent" } : undefined}
     >
       <div
@@ -79,7 +79,7 @@ export function StatTile({
       >
         {label}
       </div>
-      <div className="flex items-center text-[1.7rem] font-semibold leading-none tracking-[-0.01em] tabular-nums">{value}</div>
+      <div className="flex items-center text-[1.45rem] font-semibold leading-none tracking-[-0.025em] tabular-nums">{value}</div>
       {hint ? <div className="mt-1 text-xs">{hint}</div> : <div aria-hidden="true" />}
     </Card>
   );
@@ -87,11 +87,66 @@ export function StatTile({
 
 /* ---------- states ---------- */
 
+/** A soft, neutral skeleton placeholder with a calm matte shimmer. */
+export function Skeleton({ className = "", rounded = "rounded-md" }: { className?: string; rounded?: string }) {
+  return <div className={`rubicon-skeleton ${rounded} ${className}`} aria-hidden="true" />;
+}
+
+/** A tiny inline indicator for refresh states — keeps existing data visible. */
+export function RefreshDots({ className = "" }: { className?: string }) {
+  return (
+    <span className={`inline-flex items-center gap-1.5 ${className}`} aria-label="Refreshing" role="status">
+      <Loader2 size={13} className="animate-spin text-[var(--muted)]" aria-hidden="true" />
+      <span className="text-xs text-[var(--muted)]">Updating…</span>
+    </span>
+  );
+}
+
 export function LoadingState({ label = "Loading…" }: { label?: string }) {
   return (
-    <div className="dashboard-card flex items-center justify-center gap-3 bg-[var(--card)] px-6 py-16 text-sm text-[var(--muted)]">
-      <Loader2 size={18} className="animate-spin text-[var(--river)]" aria-hidden="true" />
-      {label}
+    <div className="dashboard-card grid gap-5 bg-[var(--card)] p-4" aria-label={label} role="status">
+      <span className="sr-only">{label}</span>
+      <div className="flex items-center justify-between gap-4">
+        <Skeleton className="h-4 w-36" />
+        <Skeleton className="h-8 w-24" rounded="rounded-lg" />
+      </div>
+      <div className="grid gap-3">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="flex items-center justify-between gap-5 border-t border-[var(--line)] pt-3 first:border-t-0 first:pt-0">
+            <div className="grid flex-1 gap-2">
+              <Skeleton className={`h-3.5 ${index % 2 === 0 ? "w-2/5" : "w-1/3"}`} />
+              <Skeleton className={`h-3 ${index % 2 === 0 ? "w-3/5" : "w-1/2"}`} />
+            </div>
+            <Skeleton className="h-6 w-16" rounded="rounded-full" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Shared first-paint shell for dashboard routes that do not have a more
+    specific content skeleton. */
+export function DashboardPageSkeleton() {
+  return (
+    <div className="grid gap-4" aria-label="Loading dashboard" role="status">
+      <span className="sr-only">Loading dashboard…</span>
+      <div className="flex items-center justify-between gap-4">
+        <div className="grid gap-2">
+          <Skeleton className="h-7 w-40" />
+          <Skeleton className="h-3.5 w-72 max-w-[60vw]" />
+        </div>
+        <Skeleton className="h-8 w-28" rounded="rounded-lg" />
+      </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <Card key={index} className="grid min-h-[104px] content-between gap-5 p-4">
+            <Skeleton className="h-3.5 w-20" />
+            <Skeleton className="h-7 w-28" />
+          </Card>
+        ))}
+      </div>
+      <LoadingState label="Loading page…" />
     </div>
   );
 }

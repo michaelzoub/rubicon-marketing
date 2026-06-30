@@ -16,8 +16,8 @@ import {
 
 export default function SettingsPage() {
   const { user, logout } = usePrivy();
-  const creator = useRubiconQuery((c) => c.getCreator(), []);
-  const wallet = useRubiconQuery((c) => c.getWallet(), []);
+  const creator = useRubiconQuery((c) => c.getCreator(), [], { queryKey: ["creator"] });
+  const wallet = useRubiconQuery((c) => c.getWallet(), [], { queryKey: ["wallet"] });
   const updateCreator = useRubiconMutation((c, ...a: Parameters<typeof c.updateCreator>) => c.updateCreator(...a));
   const updateWallet = useRubiconMutation((c, walletInput: { address: string; network: string; verified: boolean }) => c.updateWallet(walletInput));
 
@@ -102,7 +102,7 @@ export default function SettingsPage() {
 }
 
 function ExtensionAccess() {
-  const tokens = useRubiconQuery((c) => c.listExtensionTokens(), []);
+  const tokens = useRubiconQuery((c) => c.listExtensionTokens(), [], { queryKey: ["extension-tokens"] });
   const createToken = useRubiconMutation((c, label?: string) => c.createExtensionToken(label));
   const revokeToken = useRubiconMutation((c, id: string) => c.revokeExtensionToken(id));
   const [newToken, setNewToken] = useState<string | null>(null);

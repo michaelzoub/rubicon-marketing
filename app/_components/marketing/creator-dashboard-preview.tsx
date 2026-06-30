@@ -94,18 +94,17 @@ export function CreatorDashboardPreview({ embedded = false }: { embedded?: boole
       stats: [
         { label: "Total earnings", value: 501.09, format: formatUsd, deltaPct: 14 },
         { label: "Words read", value: 50005, format: formatInt, deltaPct: 9 },
-        { label: "Agent reads", value: 183, format: formatInt, deltaPct: 6 },
         { label: "Live articles", value: 3, format: formatInt },
       ],
       trendBars,
       trendMetric,
       onTrendMetricChange: setTrendMetric,
-      topArticle: {
-        id: "article_agent_economy",
-        title: "The Agent Economy Is Already Here",
-        earnings: "$142.60",
-        href: "/dashboard/articles/article_agent_economy",
-      },
+      topArticles: previewArticles.slice(0, 3).map((article) => ({
+        id: article.id,
+        title: article.title,
+        earnings: article.earnings,
+        href: `/dashboard/articles/${article.id}`,
+      })),
       breakdown: {
         avgPerRead: 2.73,
         wordsAvailable: 41080,

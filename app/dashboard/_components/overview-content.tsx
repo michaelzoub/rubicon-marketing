@@ -1,15 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
+  Check,
   CheckCircle2,
   Copy,
   Download,
   ExternalLink,
   FileText,
   Link2,
+  ImagePlus,
   RefreshCw,
   ShieldCheck,
   Wallet2,
@@ -18,7 +21,7 @@ import {
 import type { ArticleState, PaymentStatus } from "@/lib/rubicon/types";
 import { formatUsdDisplay } from "@/lib/rubicon/pricing";
 import { RubiconBrand } from "../../_components/rubicon-brand";
-import { CountUp, Donut, InsightTile, Reveal, type DonutSlice, type TrendBar } from "./charts";
+import { CountUp, Donut, InsightTile, Reveal, TrendChart, type DonutSlice, type TrendBar } from "./charts";
 import {
   ArticleStatePill,
   Card,
@@ -26,6 +29,8 @@ import {
   EmptyState,
   PageHeader,
   PaymentStatusPill,
+  RefreshDots,
+  Skeleton,
   shortWallet,
   StatTile,
 } from "./ui";
@@ -91,12 +96,12 @@ export interface DashboardOverviewProps {
   activityCalendar: DashboardActivityDay[];
   stats: DashboardOverviewStat[];
   trendBars: TrendBar[];
-  topArticle?: {
+  topArticles?: Array<{
     id?: string;
     title: string;
     earnings: string;
     href?: string;
-  } | null;
+  }>;
   breakdown?: {
     avgPerRead: number;
     wordsAvailable: number;
@@ -106,103 +111,88 @@ export interface DashboardOverviewProps {
   paymentRows: DashboardOverviewPaymentRow[];
   articleRows: DashboardOverviewArticleRow[];
   wallet: DashboardOverviewWallet;
+  /** True while a background refresh is in flight — shows a tiny inline cue
+      without tearing down the visible data. */
+  refreshing?: boolean;
 }
 
 export function DashboardOverviewContent({
   greeting,
   exportData,
-  activityCalendar,
   stats,
   trendBars,
-  topArticle,
+  topArticles = [],
   breakdown,
   paymentRows,
   articleRows,
   wallet,
+  refreshing = false,
 }: DashboardOverviewProps) {
   return (
-    <div className="grid gap-7">
+    <div className="grid gap-4">
       <PageHeader
         title="Overview"
         action={
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            {refreshing && <RefreshDots />}
             <ContentProtectionPolicy />
             {exportData && <ExportButton {...exportData} />}
           </div>
         }
       />
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,360px)]">
-        <div className="grid min-w-0 gap-6">
-          <Reveal className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
-            {stats.map((stat) => (
-              <StatTile
-                key={stat.label}
-                label={stat.label}
-                value={<CountUp value={stat.value} format={stat.format} />}
-                hint={stat.deltaPct !== undefined ? <DeltaHint pct={stat.deltaPct} /> : undefined}
-              />
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,300px)]">
+        <div className="grid min-w-0 gap-3">
+          <div className="grid items-stretch gap-3 sm:grid-cols-3">
+            {stats.map((stat, index) => (
+              <Reveal key={stat.label} delay={index * 0.035} className="h-full">
+                <StatTile
+                  label={stat.label}
+                  value={<CountUp value={stat.value} format={stat.format} />}
+                  hint={stat.deltaPct !== undefined ? <DeltaHint pct={stat.deltaPct} /> : undefined}
+                />
+              </Reveal>
             ))}
-          </Reveal>
+          </div>
 
-          <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.45fr)_minmax(0,0.95fr)]">
+          <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,1fr)]">
             <Reveal delay={0.08} className="h-full">
-              <AgentActivityCalendar days={activityCalendar} />
+              <MoneyActivityChart bars={exportData?.trendBars ?? trendBars} />
             </Reveal>
 
-            {topArticle && (
+            {topArticles.length > 0 && (
               <Reveal delay={0.1} className="h-full">
-                <Card className="flex h-full flex-col justify-between gap-6 overflow-hidden p-5">
-                  <div className="flex min-h-[13rem] flex-col">
-                    <h2 className="text-base font-semibold">Top article</h2>
-                    <div className="flex flex-1 items-center py-6 text-2xl font-semibold leading-tight">{topArticle.title}</div>
-                  </div>
-                  <div className="flex items-end justify-between gap-4 pt-4">
-                    <div>
-                      <div className="text-2xl font-semibold">{topArticle.earnings}</div>
-                      <div className="text-xs text-[var(--muted)]">earned</div>
-                    </div>
-                    {topArticle.href ? (
-                      <Link href={topArticle.href} className="button button-secondary text-sm">
-                        View <ArrowRight size={15} aria-hidden="true" />
-                      </Link>
-                    ) : (
-                      <span className="button button-secondary text-sm">
-                        View <ArrowRight size={15} aria-hidden="true" />
-                      </span>
-                    )}
-                  </div>
-                </Card>
+                <TopArticlesPodium articles={topArticles} />
               </Reveal>
             )}
           </div>
 
           {breakdown && breakdown.slices.length > 0 && (
             <Reveal delay={0.12}>
-              <Card className="p-5">
+              <Card className="p-3.5">
                 <div>
                   <h2 className="text-base font-semibold">Earnings breakdown</h2>
                 </div>
-                <div className="mt-6 grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.25fr)]">
+                <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.35fr)]">
                   <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-1">
                     <InsightTile value={<CountUp value={breakdown.avgPerRead} format={formatUsdDisplay} />} caption="Average earned per agent read" />
                     <InsightTile value={<CountUp value={breakdown.wordsAvailable} format={formatInt} />} caption="Words live and available to agents" />
                   </div>
-                  <div className="min-w-0 rounded-lg bg-[var(--surface-muted)] p-5">
-                    <Donut slices={breakdown.slices} centerValue={breakdown.totalEarned} centerLabel="Total earned" />
+                  <div className="flex min-w-0 items-center rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-3.5">
+                    <Donut slices={breakdown.slices} centerValue={breakdown.totalEarned} centerLabel="Total earned" size={142} stroke={18} />
                   </div>
                 </div>
               </Card>
             </Reveal>
           )}
 
-          <div className="grid gap-6 lg:grid-cols-2">
+          <div className="grid gap-3 lg:grid-cols-2">
             <PaymentActivityRows rows={paymentRows} />
             <ArticleRows rows={articleRows} />
           </div>
         </div>
 
-        <aside className="grid h-fit gap-6 xl:sticky xl:top-8">
+        <aside className="grid h-fit gap-3 xl:sticky xl:top-5">
           <WalletCard wallet={wallet} />
         </aside>
       </div>
@@ -210,78 +200,151 @@ export function DashboardOverviewContent({
   );
 }
 
-function AgentActivityCalendar({ days }: { days: DashboardActivityDay[] }) {
-  const max = Math.max(...days.map((day) => day.count), 0);
-  const activeDays = days.filter((day) => day.count > 0).length;
-  const interactions = days.reduce((sum, day) => sum + day.count, 0);
-  const monthLabels = days.reduce<Array<{ key: string; label: string; index: number }>>((labels, day, index) => {
-    const date = new Date(`${day.date}T00:00:00`);
-    const key = `${date.getFullYear()}-${date.getMonth()}`;
-    if (labels.some((label) => label.key === key)) return labels;
-    labels.push({ key, label: date.toLocaleDateString(undefined, { month: "short" }), index });
-    return labels;
-  }, []);
-  const leadingBlanks = days[0] ? new Date(`${days[0].date}T00:00:00`).getDay() : 0;
-  const cells = [
-    ...Array.from({ length: leadingBlanks }, (_, index) => ({ type: "blank" as const, key: `blank-${index}` })),
-    ...days.map((day) => ({ type: "day" as const, key: day.date, day })),
-  ];
-  const weekColumns = Math.max(1, Math.ceil(cells.length / 7));
-
+/** A deliberately simple loading shimmer — a few calm placeholder blocks that
+    echo the dashboard's shape (stat row, two content cards, two lists, wallet)
+    without trying to pixel-match it. No rigid min-width tracks, so it can't
+    overflow, and generous spacing keeps it from feeling cramped. */
+export function OverviewSkeleton({ refreshing = false }: { refreshing?: boolean }) {
   return (
-    <Card className="flex h-full min-h-[18rem] flex-col overflow-hidden p-4">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-base font-semibold">Recent activity</h2>
-          <p className="text-xs text-[var(--muted)]">Agent interactions with your author profile</p>
-        </div>
-        <div className="flex items-center gap-3 text-xs text-[var(--muted)]">
-          <span>{activeDays} active days</span>
-          <span>{interactions} interactions</span>
-        </div>
-      </div>
+    <div className="grid gap-4">
+      <PageHeader
+        title="Overview"
+        action={
+          <div className="flex flex-wrap items-center gap-2">
+            {refreshing && <RefreshDots />}
+            <ContentProtectionPolicy />
+            <Skeleton className="h-8 w-28" />
+          </div>
+        }
+      />
 
-      <div className="flex flex-1 items-center pb-1 pt-3">
-        <div className="w-full">
-          <div
-            className="relative ml-[2px] grid gap-1.5 text-xs text-[var(--muted)]"
-            style={{ gridTemplateColumns: `repeat(${weekColumns}, minmax(0, 1fr))` }}
-          >
-            {monthLabels.map((month) => (
-              <span key={month.key} className="whitespace-nowrap" style={{ gridColumnStart: Math.max(1, Math.floor((month.index + leadingBlanks) / 7) + 1) }}>
-                {month.label}
-              </span>
+      <div className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,300px)]">
+        {/* main column */}
+        <div className="grid min-w-0 gap-3">
+          {/* stat tiles */}
+          <div className="grid gap-3 sm:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Card key={i} className="grid min-h-[108px] content-between gap-6 p-4">
+                <Skeleton className="h-3.5 w-20" />
+                <Skeleton className="h-7 w-28" />
+              </Card>
             ))}
           </div>
-          <div
-            className="mt-3 grid grid-flow-col gap-1.5"
-            style={{ gridTemplateColumns: `repeat(${weekColumns}, minmax(0, 1fr))`, gridTemplateRows: "repeat(7, auto)" }}
-          >
-            {cells.map((cell) =>
-              cell.type === "blank" ? (
-                <span key={cell.key} className="aspect-square w-full" aria-hidden="true" />
-              ) : (
-                <span
-                  key={cell.key}
-                  title={`${cell.day.date}: ${cell.day.count} interaction${cell.day.count === 1 ? "" : "s"}`}
-                  className={`aspect-square w-full rounded-[4px] ${activityCellClass(cell.day.count, max)}`}
-                  aria-label={`${cell.day.date}: ${cell.day.count} interaction${cell.day.count === 1 ? "" : "s"}`}
-                />
-              ),
-            )}
+
+          {/* chart + secondary */}
+          <div className="grid min-w-0 gap-3 lg:grid-cols-2">
+            <Card className="min-h-[13rem] p-4">
+              <Skeleton className="h-4 w-36" />
+              <div className="mt-6 flex h-[9rem] items-end gap-2">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <Skeleton key={i} className="flex-1" rounded="rounded" />
+                ))}
+              </div>
+            </Card>
+            <Card className="min-h-[13rem] p-4">
+              <Skeleton className="h-4 w-28" />
+              <div className="mt-6 grid gap-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="h-12 w-full" rounded="rounded-lg" />
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          {/* list cards */}
+          <div className="grid min-w-0 gap-3 lg:grid-cols-2">
+            {[0, 1].map((card) => (
+              <Card key={card} className="p-4">
+                <Skeleton className="h-4 w-40" />
+                <div className="mt-5 grid gap-4">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="flex items-center justify-between gap-4">
+                      <Skeleton className="h-3.5 w-40" />
+                      <Skeleton className="h-3.5 w-12" />
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            ))}
           </div>
         </div>
+
+        {/* wallet sidebar */}
+        <aside className="min-w-0">
+          <Card className="p-4">
+            <Skeleton className="h-4 w-32" />
+            <div className="mt-5 grid gap-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 w-full" rounded="rounded-lg" />
+              ))}
+            </div>
+          </Card>
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+const PODIUM_STYLES = [
+  { label: "1st", fill: "bg-[#f7e7ad]", ink: "text-[#78580b]", border: "border-[#dfc76c]" },
+  { label: "2nd", fill: "bg-[#e7e9ed]", ink: "text-[#545b66]", border: "border-[#cbd0d8]" },
+  { label: "3rd", fill: "bg-[#efd6c2]", ink: "text-[#7b4b2f]", border: "border-[#d6ae91]" },
+] as const;
+
+function TopArticlesPodium({ articles }: { articles: NonNullable<DashboardOverviewProps["topArticles"]> }) {
+  const podiumOrder = articles.length === 3 ? [articles[1], articles[0], articles[2]] : articles;
+  return (
+    <Card className="flex h-full min-h-[13rem] flex-col overflow-hidden p-3.5">
+      <h2 className="text-base font-semibold">Top articles</h2>
+      <div className="mt-3 grid flex-1 grid-cols-3 items-end gap-2">
+        {podiumOrder.map((article) => {
+          const rank = articles.indexOf(article);
+          const style = PODIUM_STYLES[rank] ?? PODIUM_STYLES[2];
+          const content = (
+            <>
+              <span className={`grid h-8 w-8 place-items-center rounded-full border text-xs font-bold ${style.fill} ${style.ink} ${style.border}`}>
+                {style.label}
+              </span>
+              <span className="mt-3 truncate text-sm font-semibold leading-snug">{article.title}</span>
+              <span className="mt-auto pt-3 text-sm font-semibold tabular-nums">{article.earnings}</span>
+            </>
+          );
+
+          const height = rank === 0 ? "min-h-[10.75rem]" : rank === 1 ? "min-h-[9.75rem]" : "min-h-[9rem]";
+          const className = `flex flex-col rounded-lg border p-3 ${height} ${style.fill} ${style.border}`;
+          return article.href ? (
+            <Link key={article.id ?? article.title} href={article.href} className={className}>
+              {content}
+            </Link>
+          ) : (
+            <div key={article.id ?? article.title} className={className}>{content}</div>
+          );
+        })}
       </div>
     </Card>
   );
 }
 
-function activityCellClass(count: number, max: number) {
-  if (count <= 0 || max <= 0) return "bg-[#eeeeef]";
-  const ratio = count / max;
-  if (ratio > 0.75) return "bg-[#2f6de5]";
-  if (ratio > 0.45) return "bg-[#5f94f1]";
-  return "bg-[#a8c8ff]";
+function MoneyActivityChart({ bars }: { bars: TrendBar[] }) {
+  const total = bars.reduce((sum, bar) => sum + bar.value, 0);
+  const paidDays = bars.filter((bar) => bar.value > 0).length;
+  return (
+    <Card className="flex h-full min-h-[13rem] flex-col overflow-hidden p-3.5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-base font-semibold">Earnings activity</h2>
+          <p className="text-xs text-[var(--muted)]">Daily earnings from agent reads</p>
+        </div>
+        <div className="text-right">
+          <div className="text-sm font-semibold tabular-nums">{formatUsdDisplay(total)}</div>
+          <div className="text-[0.68rem] text-[var(--muted)]">{paidDays} paid days</div>
+        </div>
+      </div>
+      <div className="mt-3 min-h-0 flex-1">
+        <TrendChart bars={bars} formatValue={formatUsdDisplay} height={132} />
+      </div>
+    </Card>
+  );
 }
 
 const CONTENT_PROTECTION_RULES = [
@@ -313,9 +376,9 @@ export function ContentProtectionPolicy() {
       <button type="button" className="button button-secondary text-sm">
         <ShieldCheck size={15} aria-hidden="true" /> Content Protection Policy
       </button>
-      <div className="pointer-events-none absolute right-0 top-[calc(100%+0.5rem)] z-40 w-[min(27rem,calc(100vw-2rem))] translate-y-1 rounded-[10px] border border-[var(--line)] bg-white p-5 text-left opacity-0 transition group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+      <div className="pointer-events-none absolute right-0 top-[calc(100%+0.5rem)] z-40 w-[min(27rem,calc(100vw-2rem))] translate-y-1 rounded-[10px] bg-white p-4 text-left opacity-0 transition group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
         <div className="flex items-center gap-2.5">
-          <span className="grid h-9 w-9 place-items-center rounded-lg border border-[var(--river-line)] bg-[var(--river-pale)] text-[var(--river)]">
+          <span className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--surface-muted)] text-[var(--muted)]">
             <ShieldCheck size={17} aria-hidden="true" />
           </span>
           <h2 className="text-base font-semibold">Content Protection Policy</h2>
@@ -366,7 +429,7 @@ function PaymentActivityRows({ rows }: { rows: DashboardOverviewPaymentRow[] }) 
       ) : (
         <ul className="grid gap-1 px-2 pb-2">
           {rows.slice(0, 5).map((row) => (
-            <li key={row.id} className="flex min-w-0 items-center justify-between gap-4 rounded-lg px-3 py-4 hover:bg-[var(--surface-muted)]">
+            <li key={row.id} className="flex min-w-0 items-center justify-between gap-4 rounded-lg px-3 py-2.5 hover:bg-[var(--surface-muted)]">
               <div className="min-w-0">
                 <div className="truncate font-medium">{row.title}</div>
                 <div className="truncate text-xs text-[var(--muted)]">{row.meta}</div>
@@ -425,11 +488,11 @@ function ArticleRows({ rows }: { rows: DashboardOverviewArticleRow[] }) {
             return (
               <li key={row.id} className="min-w-0">
                 {row.href ? (
-                  <Link href={row.href} className="flex min-w-0 flex-col gap-3 rounded-lg px-3 py-4 hover:bg-[var(--surface-muted)] sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                  <Link href={row.href} className="flex min-w-0 flex-col gap-3 rounded-lg px-3 py-2.5 hover:bg-[var(--surface-muted)] sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                     {content}
                   </Link>
                 ) : (
-                  <div className="flex min-w-0 flex-col gap-3 rounded-lg px-3 py-4 hover:bg-[var(--surface-muted)] sm:flex-row sm:items-center sm:justify-between sm:gap-4">{content}</div>
+                  <div className="flex min-w-0 flex-col gap-3 rounded-lg px-3 py-2.5 hover:bg-[var(--surface-muted)] sm:flex-row sm:items-center sm:justify-between sm:gap-4">{content}</div>
                 )}
               </li>
             );
@@ -476,10 +539,10 @@ function WalletCard({ wallet }: { wallet: DashboardOverviewWallet }) {
           />
         </div>
       ) : (
-        <div className="grid gap-3 px-3 pb-3 pt-5">
+        <div className="grid gap-2.5 p-3">
           <p className="px-2 text-xs text-[var(--muted)]">Withdrawable earnings are sent through your confirmed payout connection.</p>
           <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
-            <div className="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-5">
+            <div className="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-3.5">
               <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Wallet address</div>
               <div className="mt-2 flex items-center gap-2">
                 <span className="mono text-sm font-medium">{wallet.addressLabel ?? shortWallet(wallet.address)}</span>
@@ -502,15 +565,15 @@ function WalletCard({ wallet }: { wallet: DashboardOverviewWallet }) {
               )}
             </div>
 
-            <div className="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-5">
+            <div className="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-3.5">
               <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Network</div>
               <div className="mt-2 flex items-center gap-2 text-sm font-medium">
-                <Link2 size={15} className="text-[var(--river)]" aria-hidden="true" /> {wallet.networkName ?? "Not connected"}
+                <Link2 size={14} className="text-[var(--muted)]" aria-hidden="true" /> {wallet.networkName ?? "Not connected"}
               </div>
               {wallet.chainId && <div className="mt-2 text-xs text-[var(--muted)]">Chain ID {wallet.chainId}</div>}
             </div>
 
-            <div className="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-5">
+            <div className="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-3.5">
               <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Balance</div>
               <div className="mt-2 text-2xl font-semibold tracking-[-0.01em]">{wallet.balanceLabel ?? <span className="text-base font-normal text-[var(--muted)]">Loading...</span>}</div>
               {wallet.balanceError && <div className="mt-1 text-xs text-[var(--muted)]">{wallet.balanceError}</div>}
@@ -522,6 +585,12 @@ function WalletCard({ wallet }: { wallet: DashboardOverviewWallet }) {
   );
 }
 
+const PRESET_BACKGROUNDS = [
+  { src: "/export-card-painting.png", label: "Painting" },
+];
+
+const PRESET_THUMB_SIZE = 44;
+
 function ExportButton({
   username,
   totalEarned,
@@ -531,9 +600,30 @@ function ExportButton({
   walletAddress,
   trendBars,
 }: DashboardOverviewExport) {
+  const reduceMotion = useReducedMotion();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [pngUrl, setPngUrl] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "blocked">("idle");
+  const [celebrationKey, setCelebrationKey] = useState(0);
+  const [bgImage, setBgImage] = useState<string>("/export-card-painting.png");
+  const [customBgs, setCustomBgs] = useState<{ src: string; label: string }[]>([]);
+  const [loadedPresets, setLoadedPresets] = useState<{ src: string; label: string }[]>([]);
+
+  // check which preset images actually load
+  useEffect(() => {
+    const checkPresets = async () => {
+      const results: { src: string; label: string }[] = [];
+      for (const p of PRESET_BACKGROUNDS) {
+        const img = await loadImage(p.src);
+        if (img) results.push(p);
+      }
+      setLoadedPresets(results);
+    };
+    checkPresets();
+  }, []);
+
+  const allBackgrounds = [...loadedPresets, ...customBgs];
 
   useEffect(() => {
     let cancelled = false;
@@ -546,14 +636,33 @@ function ExportButton({
       topArticle: topArticle ?? "Not available yet",
       wallet: shortWallet(walletAddress),
       avgRead: formatUsdDisplay(agentReads > 0 ? totalEarned / agentReads : 0),
-      trendValues: trendBars.map((bar) => bar.value),
+      trendBars,
+      bgImage,
     }).then((url) => {
       if (!cancelled) setPngUrl(url);
     });
     return () => {
       cancelled = true;
     };
-  }, [agentReads, topArticle, totalEarned, trendBars, username, walletAddress, wordsRead]);
+  }, [agentReads, topArticle, totalEarned, trendBars, username, walletAddress, wordsRead, bgImage]);
+
+  const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      const label = file.name.replace(/\.[^.]+$/, "").slice(0, 18);
+      setCustomBgs((prev) => {
+        if (prev.some((b) => b.src === dataUrl)) return prev;
+        return [...prev, { src: dataUrl, label }];
+      });
+      setBgImage(dataUrl);
+      // reset so re-selecting the same file triggers again
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    };
+    reader.readAsDataURL(file);
+  }, []);
 
   const download = () => {
     if (!pngUrl) return;
@@ -575,6 +684,7 @@ function ExportButton({
       }
       await navigator.clipboard.write([new ClipboardItem({ "image/png": dataUrlToPngBlob(pngUrl) })]);
       setCopyStatus("copied");
+      setCelebrationKey((key) => key + 1);
     } catch {
       setCopyStatus("blocked");
     }
@@ -587,18 +697,28 @@ function ExportButton({
         <Download size={15} aria-hidden="true" /> Export card
       </button>
 
-      {open && (
-        <div
+      <AnimatePresence>
+        {open && (
+        <motion.div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
           onClick={() => setOpen(false)}
           role="dialog"
           aria-modal="true"
           aria-label="Export card"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.16, ease: [0.23, 1, 0.32, 1] }}
         >
-          <div
-            className="w-full max-w-md overflow-hidden rounded-[var(--radius-lg)] border border-[var(--line)] bg-white"
+          <motion.div
+            className="relative w-full max-w-md overflow-hidden rounded-[var(--radius-lg)] bg-white"
             onClick={(e) => e.stopPropagation()}
+            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(8px) scale(0.97)" }}
+            animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
+            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(4px) scale(0.985)" }}
+            transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
           >
+            <AnimatePresence>{copyStatus === "copied" && <CopyCelebration key={celebrationKey} />}</AnimatePresence>
             <div className="flex items-center justify-between border-b border-[var(--faint)] px-5 py-4">
               <div>
                 <h2 className="text-base font-semibold">Export card</h2>
@@ -614,8 +734,54 @@ function ExportButton({
               </button>
             </div>
 
+            {allBackgrounds.length > 0 && (
+              <div className="border-b border-[var(--faint)] px-5 py-3">
+                <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.6px] text-[var(--muted)]">Background</p>
+                <div className="flex flex-wrap gap-2">
+                  {allBackgrounds.map((bg) => (
+                    <button
+                      key={bg.src}
+                      type="button"
+                      onClick={() => setBgImage(bg.src)}
+                      title={bg.label}
+                      className={`relative overflow-hidden rounded-[var(--radius-ui)] transition-all ${
+                        bgImage === bg.src
+                          ? "ring-2 ring-[var(--river)] ring-offset-1"
+                          : "ring-1 ring-[var(--line)] hover:ring-[var(--muted)]"
+                      }`}
+                      style={{ width: PRESET_THUMB_SIZE, height: PRESET_THUMB_SIZE }}
+                    >
+                      <img
+                        src={bg.src}
+                        alt={bg.label}
+                        className="h-full w-full object-cover"
+                        draggable={false}
+                      />
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    title="Upload custom image"
+                    className="flex items-center justify-center rounded-[var(--radius-ui)] border border-dashed border-[var(--line)] text-[var(--muted)] transition-colors hover:border-[var(--muted)] hover:text-[var(--ink)]"
+                    style={{ width: PRESET_THUMB_SIZE, height: PRESET_THUMB_SIZE }}
+                  >
+                    <ImagePlus size={17} aria-hidden="true" />
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    aria-label="Upload background image"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="p-5">
-              <div className="mx-auto w-full max-w-[320px] overflow-hidden rounded-[18px] border border-[var(--line)] bg-[#eceef4]">
+              <div className="mx-auto w-full max-w-[320px] overflow-hidden rounded-[18px] bg-[#eceef4]">
                 {pngUrl ? (
                   <img
                     src={pngUrl}
@@ -632,18 +798,64 @@ function ExportButton({
                 <button type="button" onClick={download} className="button button-primary justify-center text-sm" disabled={!pngUrl}>
                   <Download size={15} aria-hidden="true" /> Download
                 </button>
-                <button type="button" onClick={copyImage} className="button button-secondary justify-center text-sm" disabled={!pngUrl}>
-                  <Copy size={15} aria-hidden="true" /> {copyStatus === "copied" ? "Copied" : copyStatus === "blocked" ? "Copy blocked" : "Copy PNG"}
-                </button>
+                <motion.button
+                  type="button"
+                  onClick={copyImage}
+                  className={`button export-copy-button justify-center text-sm ${copyStatus === "copied" ? "is-copied" : "button-secondary"}`}
+                  disabled={!pngUrl}
+                  animate={!reduceMotion && copyStatus === "copied" ? { transform: ["scale(1)", "scale(1.045)", "scale(1)"] } : { transform: "scale(1)" }}
+                  transition={{ duration: 0.28, ease: [0.23, 1, 0.32, 1] }}
+                >
+                  {copyStatus === "copied" ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />}
+                  <span aria-live="polite">{copyStatus === "copied" ? "Copied" : copyStatus === "blocked" ? "Copy blocked" : "Copy PNG"}</span>
+                </motion.button>
               </div>
               {copyStatus === "blocked" && (
                 <p className="mt-2 text-xs text-[var(--muted)]">This browser blocked image clipboard access. Use Download as a fallback.</p>
               )}
             </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        </motion.div>
+        )}
+      </AnimatePresence>
     </>
+  );
+}
+
+const CONFETTI = [
+  [-150, -250, -38, "#2f6de5"], [-112, -292, 42, "#18181b"], [-72, -235, -76, "#62c79b"],
+  [-36, -320, 88, "#f0b64d"], [0, -260, -28, "#2f6de5"], [34, -305, 64, "#e46d67"],
+  [70, -242, -54, "#18181b"], [108, -286, 36, "#62c79b"], [148, -252, -82, "#f0b64d"],
+  [-132, -190, 70, "#e46d67"], [-88, -214, -44, "#2f6de5"], [-48, -178, 92, "#62c79b"],
+  [46, -196, -62, "#f0b64d"], [88, -218, 52, "#e46d67"], [130, -188, -96, "#2f6de5"],
+] as const;
+
+function CopyCelebration() {
+  const reduceMotion = useReducedMotion();
+  if (reduceMotion) return null;
+
+  return (
+    <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden" aria-hidden="true">
+      {CONFETTI.map(([x, y, rotate, color], index) => (
+        <motion.span
+          key={`${x}-${y}`}
+          className="absolute bottom-[62px] left-1/2 h-2.5 w-1.5 rounded-[2px]"
+          style={{ background: color }}
+          initial={{ opacity: 0, transform: "translate(-50%, 0) rotate(0deg) scale(0.92)" }}
+          animate={{
+            opacity: [0, 1, 1, 0],
+            transform: [
+              "translate(-50%, 0) rotate(0deg) scale(0.92)",
+              `translate(calc(-50% + ${x * 0.45}px), ${y * 0.58}px) rotate(${rotate * 0.45}deg) scale(1)`,
+              `translate(calc(-50% + ${x}px), ${y}px) rotate(${rotate}deg) scale(0.96)`,
+              `translate(calc(-50% + ${x * 1.08}px), ${y + 72}px) rotate(${rotate + 80}deg) scale(0.9)`,
+            ],
+          }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.78, delay: index * 0.018, ease: [0.23, 1, 0.32, 1] }}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -659,7 +871,8 @@ async function renderExportPng({
   topArticle,
   wallet,
   avgRead,
-  trendValues,
+  trendBars,
+  bgImage,
 }: {
   username: string;
   amount: string;
@@ -668,7 +881,8 @@ async function renderExportPng({
   topArticle: string;
   wallet: string;
   avgRead: string;
-  trendValues: number[];
+  trendBars: TrendBar[];
+  bgImage: string;
 }) {
   const W = 1080;
   const H = 1350;
@@ -691,8 +905,8 @@ async function renderExportPng({
   const GREEN_BG = "#e7f6ec";
   const GREEN = "#1f8f4e";
   const FONT = '"Helvetica Neue", Arial, sans-serif';
-  const logo = await loadImage("/rubicon-new.png");
-  const laurel = await loadImage("/laurelfooter.png");
+  const painting = await loadImage(bgImage);
+  const trendValues = trendBars.map((bar) => bar.value);
 
   // letterSpacing lands on the 2d context in modern browsers but isn't yet in
   // the TS DOM lib; cast so the source type-checks.
@@ -721,30 +935,31 @@ async function renderExportPng({
     ctx.textAlign = "left";
   };
 
-  // ---- backdrop ----------------------------------------------------------
-  ctx.fillStyle = "#ffffff";
+  // ---- backdrop (frosted glass) ------------------------------------------
+  ctx.fillStyle = "#e5e7e8";
   ctx.fillRect(0, 0, W, H);
-  if (laurel) {
-    const artW = 980;
-    const artH = artW * (laurel.height / laurel.width);
-    drawTintedImage(ctx, laurel, W - artW + 120, 34, artW, artH, "#dce7f8", 0.8);
+  if (painting) {
+    // Keep the blurred painting vivid — boosted saturation reads as colored
+    // glass rather than a washed-out grey.
+    drawBlurredCover(ctx, painting, -42, -42, W + 84, H + 84, { alpha: 1, saturate: 1.12 });
   }
+  // A whisper-thin light tint only — enough to lift the dark corner text off
+  // the busy image without flattening the color into white.
+  ctx.fillStyle = "rgba(255,255,255,0.12)";
+  ctx.fillRect(0, 0, W, H);
 
   // ---- top bar -----------------------------------------------------------
-  const logoX = 64;
+  // White wordmark with a soft shadow so it stays legible over the vivid,
+  // unpredictable glass backdrop.
   const logoY = 64;
-  if (logo) {
-    drawTintedImage(ctx, logo, logoX, logoY, 230, 58, "#111827", 1, { x: 90, y: 790, width: 1780, height: 450 });
-  } else {
-    ctx.fillStyle = INK;
-    ctx.font = `700 15px ${FONT}`;
-    ctx.fillText("Rubicon", logoX, logoY + 32);
-  }
-  ctx.fillStyle = MUTE;
-  ctx.font = `600 18px ${FONT}`;
-  ctx.textAlign = "right";
-  ctx.fillText(truncateForCanvas(ctx, username, 320), W - 64, logoY + 32);
-  ctx.textAlign = "left";
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,0.3)";
+  ctx.shadowBlur = 14;
+  ctx.shadowOffsetY = 1;
+  ctx.fillStyle = "#ffffff";
+  ctx.font = `700 30px ${FONT}`;
+  ctx.fillText("Rubicon", 64, logoY + 30);
+  ctx.restore();
 
   // ---- earn card ---------------------------------------------------------
   const cardW = 744;
@@ -766,17 +981,6 @@ async function renderExportPng({
   ctx.fillStyle = "#0b0d12";
   roundRect(ctx, cardX, cardY, cardW, cardH, cardR);
   ctx.fill();
-
-  // blue field across the top edge
-  ctx.save();
-  roundRect(ctx, cardX, cardY, cardW, cardH, cardR);
-  ctx.clip();
-  const topSheen = ctx.createLinearGradient(0, cardY, 0, cardY + 160);
-  topSheen.addColorStop(0, "rgba(47,109,229,0.72)");
-  topSheen.addColorStop(1, "rgba(47,109,229,0)");
-  ctx.fillStyle = topSheen;
-  ctx.fillRect(cardX, cardY, cardW, 210);
-  ctx.restore();
 
   // dark-card header
   ctx.fillStyle = "#ffffff";
@@ -826,11 +1030,11 @@ async function renderExportPng({
   // activity chart
   const chartY = div1 + 44;
   const chartH = innerY + innerH - chartY - 42;
-  drawLabel("PAID WORD ACTIVITY", cx, chartY);
+  drawLabel("EARNINGS ACTIVITY", cx, chartY);
   ctx.fillStyle = MUTE;
   ctx.font = `600 13px ${FONT}`;
   ctx.fillText(`${reads} reads · ${avgRead} avg / read`, cx, chartY + 28);
-  drawMiniActivityChart(ctx, cx, chartY + 58, cr - cx, chartH - 58, trendValues, BLUE);
+  drawExportMoneyChart(ctx, cx, chartY + 58, cr - cx, chartH - 58, trendBars, BLUE);
 
   // top article callout under the white panel
   const articleY = innerY + innerH + 54;
@@ -844,8 +1048,15 @@ async function renderExportPng({
   ctx.fillText(truncateForCanvas(ctx, topArticle, cardW - 108), cardX + 54, articleY + 34);
 
   // ---- footer ------------------------------------------------------------
+  // White corner text with a soft shadow, matching the wordmark, so the wallet
+  // and brand stay readable on the colored glass.
   const footY = H - 70;
-  ctx.fillStyle = MUTE;
+  ctx.save();
+  ctx.shadowColor = "rgba(0,0,0,0.3)";
+  ctx.shadowBlur = 14;
+  ctx.shadowOffsetY = 1;
+  // bottom-left: wallet, subdued white
+  ctx.fillStyle = "rgba(255,255,255,0.8)";
   ctx.font = `600 15px ${FONT}`;
   ctx.fillText(wallet, 64, footY);
   // bottom-right: "Built on Rubicon", brand emphasised
@@ -855,12 +1066,13 @@ async function renderExportPng({
   ctx.font = `700 18px ${FONT}`;
   const brandW = ctx.measureText("Rubicon").width;
   const startX = W - 64 - leadW - brandW;
-  ctx.fillStyle = MUTE;
+  ctx.fillStyle = "rgba(255,255,255,0.82)";
   ctx.font = `500 18px ${FONT}`;
   ctx.fillText(lead, startX, footY);
-  ctx.fillStyle = INK;
+  ctx.fillStyle = "#ffffff";
   ctx.font = `700 18px ${FONT}`;
   ctx.fillText("Rubicon", startX + leadW, footY);
+  ctx.restore();
 
   return canvas.toDataURL("image/png");
 }
@@ -881,34 +1093,30 @@ function drawTwoTone(ctx: CanvasRenderingContext2D, text: string, x: number, y: 
   ctx.fillText(tail, x + ctx.measureText(head).width, y);
 }
 
-function drawMiniActivityChart(
+function drawExportMoneyChart(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   width: number,
   height: number,
-  values: number[],
+  bars: TrendBar[],
   blue: string,
 ) {
-  const data = normalizeFourteenDays(values);
-  const max = Math.max(...data, 0);
-
-  // Horizontal bar chart: one bar per day spread across the full width so the
-  // 14-day window reads as a wide sparkline instead of a thin stacked grid.
-  const labelGap = 28;
+  const data = normalizeFourteenBars(bars);
+  const max = Math.max(...data.map((bar) => bar.value), 0);
+  const labelGap = 30;
   const barsH = height - labelGap;
   const count = data.length;
-  const gap = 8;
+  const gap = 7;
   const barW = (width - gap * (count - 1)) / count;
-  const radius = Math.min(6, barW / 2);
-  const minBar = Math.min(8, barsH); // visible stub so empty days still show
+  const radius = Math.min(4, barW / 2);
 
-  data.forEach((value, i) => {
-    const intensity = max > 0 ? value / max : 0;
-    const barH = value > 0 ? Math.max(minBar, intensity * barsH) : minBar;
+  data.forEach((bar, i) => {
+    if (bar.value <= 0 || max <= 0) return;
+    const barH = Math.max(4, (bar.value / max) * barsH);
     const bx = x + i * (barW + gap);
     const by = y + barsH - barH;
-    ctx.fillStyle = value > 0 ? mixActivityColor(blue, intensity) : "#eef2f8";
+    ctx.fillStyle = blue;
     roundRect(ctx, bx, by, barW, barH, radius);
     ctx.fill();
   });
@@ -916,10 +1124,88 @@ function drawMiniActivityChart(
   ctx.fillStyle = "#6b7280";
   ctx.font = "600 11px \"Helvetica Neue\", Arial, sans-serif";
   ctx.textAlign = "left";
-  ctx.fillText("14D", x, y + height);
+  ctx.fillText(data[0]?.label ?? "", x, y + height);
+  ctx.textAlign = "center";
+  ctx.fillText(data[Math.floor(data.length / 2)]?.label ?? "", x + width / 2, y + height);
   ctx.textAlign = "right";
-  ctx.fillText("NOW", x + width, y + height);
+  ctx.fillText(data[data.length - 1]?.label ?? "", x + width, y + height);
   ctx.textAlign = "left";
+}
+
+function normalizeFourteenBars(bars: TrendBar[]): TrendBar[] {
+  const fallback = Array.from({ length: 14 }, (_, index) => ({
+    label: index === 0 ? "14d" : index === 13 ? "Now" : "",
+    fullLabel: "",
+    value: 0,
+  }));
+  if (bars.length === 0) return fallback;
+  if (bars.length >= 14) return bars.slice(bars.length - 14);
+  return [...fallback.slice(0, 14 - bars.length), ...bars];
+}
+
+function drawCoverImage(
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+) {
+  const scale = Math.max(width / image.width, height / image.height);
+  const sourceW = width / scale;
+  const sourceH = height / scale;
+  const sourceX = (image.width - sourceW) / 2;
+  const sourceY = (image.height - sourceH) / 2;
+  ctx.drawImage(image, sourceX, sourceY, sourceW, sourceH, x, y, width, height);
+}
+
+/**
+ * Draws an image scaled to cover the target box, but heavily softened into a
+ * frosted-glass backdrop. Rather than relying on `ctx.filter = "blur(...)"`
+ * (which several browsers silently ignore for `drawImage`), it downsamples the
+ * cover crop to a tiny offscreen canvas and upscales it with smoothing — a
+ * cheap, reliable blur. A small `ctx.filter` pass on top, where supported,
+ * smooths the bilinear upscale and desaturates for the glassy look.
+ */
+function drawBlurredCover(
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  { alpha = 1, saturate = 1 }: { alpha?: number; saturate?: number } = {},
+) {
+  // cover-fit crop math (matches drawCoverImage)
+  const coverScale = Math.max(width / image.width, height / image.height);
+  const sourceW = width / coverScale;
+  const sourceH = height / coverScale;
+  const sourceX = (image.width - sourceW) / 2;
+  const sourceY = (image.height - sourceH) / 2;
+
+  // Intermediate ~1/30 of the target width reproduces roughly a 30px blur once
+  // upscaled, smearing brushstrokes into soft glassy color fields.
+  const smallW = Math.max(2, Math.round(width / 30));
+  const smallH = Math.max(2, Math.round(height / 30));
+  const small = document.createElement("canvas");
+  small.width = smallW;
+  small.height = smallH;
+  const sctx = small.getContext("2d");
+  if (!sctx) {
+    drawCoverImage(ctx, image, x, y, width, height);
+    return;
+  }
+  sctx.imageSmoothingEnabled = true;
+  sctx.imageSmoothingQuality = "high";
+  sctx.drawImage(image, sourceX, sourceY, sourceW, sourceH, 0, 0, smallW, smallH);
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = "high";
+  ctx.filter = `blur(8px) saturate(${saturate})`;
+  ctx.drawImage(small, 0, 0, smallW, smallH, x, y, width, height);
+  ctx.restore();
 }
 
 function drawTintedImage(
@@ -951,21 +1237,6 @@ function drawTintedImage(
   ctx.globalAlpha = alpha;
   ctx.drawImage(buffer, x, y, width, height);
   ctx.restore();
-}
-
-function normalizeFourteenDays(values: number[]) {
-  const fallback = [0, 1, 0, 2, 1, 0, 3, 5, 2, 0, 4, 7, 3, 8];
-  const source = values.length > 0 ? values : fallback;
-  if (source.length === 14) return source;
-  if (source.length > 14) return source.slice(source.length - 14);
-  return [...Array.from({ length: 14 - source.length }, () => 0), ...source];
-}
-
-function mixActivityColor(blue: string, intensity: number) {
-  if (intensity >= 0.78) return blue;
-  if (intensity >= 0.5) return "#8db2f4";
-  if (intensity >= 0.25) return "#c7d8fb";
-  return "#e0e9ff";
 }
 
 /**
@@ -1021,19 +1292,20 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
 }
 
 function DeltaHint({ pct, onDark = false }: { pct: number | null; onDark?: boolean }) {
-  const muted = onDark ? "text-white/55" : "text-[var(--muted)]";
   if (pct === null) return null;
-  if (Math.abs(pct) < 1) return <span className={muted}>Flat vs last week</span>;
+  if (Math.abs(pct) < 1) {
+    return <span className="inline-flex rounded-full bg-[var(--surface-muted)] px-2.5 py-1 font-medium text-[var(--muted)]">Flat vs last week</span>;
+  }
   const up = pct > 0;
   const color = up
     ? onDark
-      ? "text-[var(--gain-on-dark)]"
-      : "text-[var(--gain)]"
+      ? "bg-white/10 text-[var(--gain-on-dark)]"
+      : "bg-[#e8f6ef] text-[var(--gain)]"
     : onDark
-      ? "text-[var(--loss-on-dark)]"
-      : "text-[var(--loss)]";
+      ? "bg-white/10 text-[var(--loss-on-dark)]"
+      : "bg-[#fde8e6] text-[var(--loss)]";
   return (
-    <span className={`font-medium ${color}`}>
+    <span className={`inline-flex rounded-full px-2.5 py-1 font-medium ${color}`}>
       {up ? "+" : "−"}
       {Math.abs(Math.round(pct))}% vs last week
     </span>

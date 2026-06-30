@@ -20,8 +20,8 @@ import {
 import { AgentPreviewDialog } from "./_components/agent-preview-dialog";
 
 export default function ArticlesPage() {
-  const articles = useRubiconQuery((c) => c.listArticles(), []);
-  const creator = useRubiconQuery((c) => c.getCreator(), []);
+  const articles = useRubiconQuery((c) => c.listArticles(), [], { queryKey: ["articles"] });
+  const creator = useRubiconQuery((c) => c.getCreator(), [], { queryKey: ["creator"] });
   const publish = useRubiconMutation((c, id: string) => c.publishArticle(id));
   const pause = useRubiconMutation((c, id: string) => c.pauseArticle(id));
   const [busyId, setBusyId] = useState<string | null>(null);
