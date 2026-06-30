@@ -18,9 +18,9 @@ import {
 } from "../_components/ui";
 
 export default function EarningsPage() {
-  const earnings = useRubiconQuery((c) => c.getEarnings(), []);
-  const wallet = useRubiconQuery((c) => c.getWallet(), []);
-  const activity = useRubiconQuery((c) => c.getPaymentActivity(), []);
+  const earnings = useRubiconQuery((c) => c.getEarnings(), [], { queryKey: ["earnings"] });
+  const wallet = useRubiconQuery((c) => c.getWallet(), [], { queryKey: ["wallet"] });
+  const activity = useRubiconQuery((c) => c.getPaymentActivity(), [], { queryKey: ["payment-activity"] });
 
   return (
     <div className="grid gap-6">

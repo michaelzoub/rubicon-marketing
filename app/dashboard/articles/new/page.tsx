@@ -50,8 +50,8 @@ const steps = ["Add your article", "Review sections", "Choose pricing", "Publish
 
 export default function NewArticlePage() {
   const router = useRouter();
-  const creator = useRubiconQuery((c) => c.getCreator(), []);
-  const wallet = useRubiconQuery((c) => c.getWallet(), []);
+  const creator = useRubiconQuery((c) => c.getCreator(), [], { queryKey: ["creator"] });
+  const wallet = useRubiconQuery((c) => c.getWallet(), [], { queryKey: ["wallet"] });
   const createArticle = useRubiconMutation((c, ...args: Parameters<typeof c.createArticle>) => c.createArticle(...args));
   const publishArticle = useRubiconMutation((c, id: string) => c.publishArticle(id));
 
@@ -450,30 +450,27 @@ function StepAddArticle({
           />
         </div>
 
-        <section className="substack-import-panel" aria-label="Import article">
-          <div className="substack-import-copy">
-            <span>Bring in an existing article</span>
-            <p>Import from URL, upload Markdown, or use the Chrome extension. Writing manually is below if nothing else works.</p>
+        <section className="mb-7 grid gap-3" aria-label="Import article">
+          <div>
+            <span className="text-sm font-semibold">Bring in an existing article</span>
+            <p className="mt-1 text-sm text-[var(--muted)]">Import from URL, upload Markdown, or use the Chrome extension. Writing manually is below if nothing else works.</p>
           </div>
-          <div className="substack-import-actions">
+          <div className="flex flex-wrap gap-2">
             {!source && (
-              <Link href="/dashboard/articles/import" className="substack-import-action is-primary">
-                <Link2 size={16} aria-hidden="true" />
-                Import URL
+              <Link href="/dashboard/articles/import" className="button button-primary text-sm">
+                <Link2 size={15} aria-hidden="true" /> Import URL
               </Link>
             )}
-            <button type="button" onClick={() => fileRef.current?.click()} className="substack-import-action">
-              <FileText size={16} aria-hidden="true" />
-              Import Markdown
+            <button type="button" onClick={() => fileRef.current?.click()} className="button button-secondary text-sm">
+              <FileText size={15} aria-hidden="true" /> Import Markdown
             </button>
             <a
               href="https://chromewebstore.google.com/detail/rubicon/allmdpfkdgdcjfgeijembjfpnkfpocab"
               target="_blank"
               rel="noopener noreferrer"
-              className="substack-import-action"
+              className="button button-secondary text-sm"
             >
-              <Puzzle size={16} aria-hidden="true" />
-              Chrome extension
+              <Puzzle size={15} aria-hidden="true" /> Chrome extension
             </a>
           </div>
         </section>

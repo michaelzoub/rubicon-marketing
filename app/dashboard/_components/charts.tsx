@@ -23,7 +23,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 export function CountUp({
   value,
   format,
-  duration = 0.9,
+  duration = 0.55,
 }: {
   value: number;
   format: (n: number) => string;
@@ -67,9 +67,9 @@ export function Reveal({
   return (
     <motion.div
       className={className}
-      initial={reduce ? false : { opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay, ease: [0.16, 1, 0.3, 1] }}
+      initial={reduce ? false : { opacity: 0, transform: "translateY(6px)" }}
+      animate={{ opacity: 1, transform: "translateY(0px)" }}
+      transition={{ duration: 0.24, delay, ease: [0.23, 1, 0.32, 1] }}
     >
       {children}
     </motion.div>
@@ -107,7 +107,7 @@ export function TrendChart({
   const max = Math.max(...bars.map((b) => b.value), 0);
 
   return (
-    <div className="select-none">
+    <div className="dashboard-data-viz select-none">
       <div className="relative flex items-end gap-1.5" style={{ height }}>
         {bars.map((bar, i) => {
           const pct = max > 0 ? (bar.value / max) * 100 : 0;
@@ -134,11 +134,13 @@ export function TrendChart({
                 className="relative w-full rounded rounded-b-sm"
                 style={{
                   minHeight: bar.value > 0 ? 4 : 0,
+                  height: `${pct}%`,
                   background: isActive ? "var(--river-deep)" : "var(--river)",
+                  transformOrigin: "bottom",
                 }}
-                initial={reduce ? false : { height: 0 }}
-                animate={{ height: `${pct}%` }}
-                transition={{ duration: 0.7, delay: reduce ? 0 : i * 0.025, ease: [0.16, 1, 0.3, 1] }}
+                initial={reduce ? false : { transform: "scaleY(0)" }}
+                animate={{ transform: "scaleY(1)" }}
+                transition={{ duration: 0.38, delay: reduce ? 0 : i * 0.018, ease: [0.23, 1, 0.32, 1] }}
               />
             </div>
           );
@@ -222,7 +224,7 @@ export function Donut({
                   strokeDashoffset={dashOffset}
                   initial={reduce ? false : { strokeDasharray: `0 ${circumference}` }}
                   animate={{ strokeDasharray: `${dash} ${gap}`, opacity: dim ? 0.35 : 1 }}
-                  transition={{ duration: 0.8, delay: reduce ? 0 : 0.1 + i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                  transition={{ duration: 0.46, delay: reduce ? 0 : 0.05 + i * 0.045, ease: [0.23, 1, 0.32, 1] }}
                   onMouseEnter={() => setActive(i)}
                   onMouseLeave={() => setActive((cur) => (cur === i ? null : cur))}
                   style={{ cursor: "pointer", transition: "stroke-width 180ms ease" }}
@@ -271,9 +273,9 @@ export function InsightTile({
   className?: string;
 }) {
   return (
-    <div className={`flex flex-col justify-between rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-5 ${className}`}>
-      <div className="text-3xl font-semibold tracking-[-0.02em] sm:text-[2.1rem]">{value}</div>
-      <div className="mt-2 text-sm text-[var(--muted)]">{caption}</div>
+    <div className={`flex flex-col justify-between rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4 ${className}`}>
+      <div className="text-2xl font-semibold tracking-[-0.02em] sm:text-[1.8rem]">{value}</div>
+      <div className="mt-1.5 text-xs text-[var(--muted)]">{caption}</div>
     </div>
   );
 }

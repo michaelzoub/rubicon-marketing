@@ -14,7 +14,7 @@ const inputClass = "h-11 rounded-lg bg-[var(--surface-muted)] px-3 outline-none 
 export default function ImportedDraftReviewPage() {
   const { draftId } = useParams<{ draftId: string }>();
   const router = useRouter();
-  const article = useRubiconQuery((c) => c.getArticle(draftId), [draftId]);
+  const article = useRubiconQuery((c) => c.getArticle(draftId), [draftId], { queryKey: ["article"] });
   const update = useRubiconMutation((c, ...args: Parameters<typeof c.updateArticle>) => c.updateArticle(...args));
   const publish = useRubiconMutation((c, id: string) => c.publishArticle(id));
   const data = article.data;

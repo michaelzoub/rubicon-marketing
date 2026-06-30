@@ -8,7 +8,6 @@ import {
   BookOpen,
   FileText,
   LayoutDashboard,
-  Loader2,
   LogOut,
   PanelLeft,
   Plus,
@@ -18,6 +17,8 @@ import {
 import { type ReactNode, useEffect, useState } from "react";
 import { usePrivyConfigured } from "../../providers";
 import { RubiconBrand } from "../../_components/rubicon-brand";
+import { OverviewSkeleton } from "./overview-content";
+import { DashboardPageSkeleton } from "./ui";
 
 const navSections = [
   {
@@ -45,13 +46,16 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 
 function AuthGate({ children }: { children: ReactNode }) {
   const { ready, authenticated, login } = usePrivy();
+  const pathname = usePathname();
 
   if (!ready) {
+    // Show the dashboard chrome with the shimmer skeleton in place of a spinner
+    // screen — the loading state should look like the workspace settling in, not
+    // a black spinner flash.
     return (
-      <CenteredScreen>
-        <Loader2 size={22} className="animate-spin text-[var(--river)]" aria-hidden="true" />
-        <p className="mt-4 text-sm text-[var(--muted)]">Loading your workspace…</p>
-      </CenteredScreen>
+      <DashboardFrame identity="Writer">
+        {pathname === "/dashboard" ? <OverviewSkeleton /> : <DashboardPageSkeleton />}
+      </DashboardFrame>
     );
   }
 
@@ -154,13 +158,13 @@ export function DashboardFrame({
   return (
     <div
       className={`dashboard-theme dashboard-canvas min-h-screen bg-[var(--surface-muted)] lg:grid ${
-        sidebarOpen ? "lg:grid-cols-[224px_1fr]" : "lg:grid-cols-[64px_1fr]"
+        sidebarOpen ? "lg:grid-cols-[208px_1fr]" : "lg:grid-cols-[56px_1fr]"
       }`}
     >
       <Sidebar onLogout={onLogout} activePath={activePath} open={sidebarOpen} onToggle={() => setSidebarOpen((open) => !open)} />
-      <main className="min-w-0 lg:col-start-2">
+      <main className="dashboard-main min-w-0 lg:col-start-2">
         <MobileBar onLogout={onLogout} activePath={activePath} />
-        <div className="mx-auto w-full max-w-7xl px-4 py-5 sm:px-6 lg:px-8 lg:py-8 lg:pr-12 xl:pr-16">{children}</div>
+        <div className="w-full px-3.5 py-4 sm:px-4 lg:px-5 lg:py-5">{children}</div>
       </main>
     </div>
   );
@@ -199,7 +203,7 @@ function Sidebar({
   return (
     <aside
       className={`dashboard-sidebar hidden h-screen border-r border-[var(--line)] bg-white lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:flex lg:flex-col ${
-        open ? "lg:w-56" : "lg:w-16"
+        open ? "lg:w-[208px]" : "lg:w-14"
       }`}
     >
       {!open ? (

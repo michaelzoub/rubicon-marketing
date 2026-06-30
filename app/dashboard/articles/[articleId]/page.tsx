@@ -32,8 +32,8 @@ export default function ArticleDetailPage() {
   const params = useParams<{ articleId: string }>();
   const articleId = params.articleId;
   const router = useRouter();
-  const article = useRubiconQuery<ArticleDetail>((c) => c.getArticle(articleId), [articleId]);
-  const creator = useRubiconQuery((c) => c.getCreator(), []);
+  const article = useRubiconQuery<ArticleDetail>((c) => c.getArticle(articleId), [articleId], { queryKey: ["article"] });
+  const creator = useRubiconQuery((c) => c.getCreator(), [], { queryKey: ["creator"] });
 
   const publish = useRubiconMutation((c, id: string) => c.publishArticle(id));
   const pause = useRubiconMutation((c, id: string) => c.pauseArticle(id));

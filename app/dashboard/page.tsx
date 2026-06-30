@@ -25,7 +25,7 @@ import { explorerAddressUrl, formatBalance, useNativeBalance } from "@/lib/oncha
 import { WithdrawDialog } from "./_components/withdraw-dialog";
 import { AgentPreviewDialog, AGENT_PREVIEW_EVENT, hasSeenAgentPreview } from "./articles/_components/agent-preview-dialog";
 import { CountUp, Donut, DONUT_COLORS, InsightTile, Reveal, type DonutSlice, type TrendBar } from "./_components/charts";
-import { ContentProtectionPolicy, DashboardOverviewContent, type DashboardOverviewProps } from "./_components/overview-content";
+import { ContentProtectionPolicy, DashboardOverviewContent, OverviewSkeleton, type DashboardOverviewProps } from "./_components/overview-content";
 import {
   ArticleStatePill,
   Card,
@@ -33,23 +33,29 @@ import {
   EmptyState,
   ErrorState,
   formatRelative,
-  LoadingState,
   PageHeader,
   PaymentStatusPill,
   PrimaryLink,
+  RefreshDots,
   shortWallet,
+  Skeleton,
   StatTile,
 } from "./_components/ui";
 
 export default function OverviewPage() {
   const { user } = usePrivy();
-  const articles = useRubiconQuery((c) => c.listArticles(), []);
-  const wallet = useRubiconQuery((c) => c.getWallet(), []);
-  const earnings = useRubiconQuery((c) => c.getEarnings(), []);
-  const activity = useRubiconQuery((c) => c.getPaymentActivity(), []);
+  const articles = useRubiconQuery((c) => c.listArticles(), [], { queryKey: ["articles"] });
+  const wallet = useRubiconQuery((c) => c.getWallet(), [], { queryKey: ["wallet"] });
+  const earnings = useRubiconQuery((c) => c.getEarnings(), [], { queryKey: ["earnings"] });
+  const activity = useRubiconQuery((c) => c.getPaymentActivity(), [], { queryKey: ["payment-activity"] });
 
-  const loading = [articles, wallet, earnings].some((q) => q.status === "loading");
-  const firstError = [articles, wallet, earnings].find((q) => q.status === "error");
+  // Distinguish the first paint (no data yet → skeleton layout) from a
+  // background refresh (existing data stays visible with a tiny indicator).
+  const initialLoading = [articles, wallet, earnings].some((q) => q.status === "loading" && !q.data);
+  const refreshing =
+    !initialLoading &&
+    [articles, wallet, earnings, activity].some((q) => q.status === "loading" && q.data);
+  const firstError = [articles, wallet, earnings].find((q) => q.status === "error" && !q.data);
 
   const greeting = user?.twitter?.username ? `@${user.twitter.username}` : user?.email?.address ?? "writer";
 
@@ -127,18 +133,18 @@ export default function OverviewPage() {
       stats: [
         { label: "Total earnings", value: totalEarned, format: formatUsdDisplay, deltaPct: weeklyDeltas.earnings },
         { label: "Words read", value: earnings.data.wordsPaidFor ?? 0, format: formatInt, deltaPct: weeklyDeltas.words },
-        { label: "Agent reads", value: earnings.data.agentReads ?? 0, format: formatInt, deltaPct: weeklyDeltas.reads },
         { label: "Live articles", value: earnings.data.liveArticles ?? 0, format: formatInt },
       ],
       trendBars,
-      topArticle: earnings.data.topArticle
-        ? {
-            id: earnings.data.topArticle.id,
-            title: earnings.data.topArticle.title,
-            earnings: formatUsdAtomicDisplay(earnings.data.topArticle.earnings),
-            href: `/dashboard/articles/${earnings.data.topArticle.id}`,
-          }
-        : null,
+      topArticles: [...articleList]
+        .sort((a, b) => Number(b.usage.earnings) - Number(a.usage.earnings))
+        .slice(0, 3)
+        .map((article) => ({
+          id: article.id,
+          title: article.title,
+          earnings: formatUsdAtomicDisplay(article.usage.earnings),
+          href: `/dashboard/articles/${article.id}`,
+        })),
       breakdown: earningsSlices.length > 0
         ? {
             avgPerRead,
@@ -174,7 +180,6 @@ export default function OverviewPage() {
     trendBars,
     wallet.data,
     weeklyDeltas.earnings,
-    weeklyDeltas.reads,
     weeklyDeltas.words,
     wordsAvailable,
   ]);
@@ -197,17 +202,9 @@ export default function OverviewPage() {
 
   return (
     <div className="grid gap-5">
-      {!loading && !onboardingComplete && (
-        <PageHeader
-          title="Overview"
-          description={`Welcome back, ${greeting}.`}
-          action={<ContentProtectionPolicy />}
-        />
-      )}
-
-      {loading && <LoadingState />}
-
-      {!loading && firstError && firstError.error && (
+      {initialLoading ? (
+        <OverviewSkeleton />
+      ) : firstError && firstError.error ? (
         <ErrorState
           error={firstError.error}
           onRetry={() => {
@@ -217,12 +214,20 @@ export default function OverviewPage() {
             activity.refetch();
           }}
         />
-      )}
-
-      {!loading && !firstError && (
+      ) : (
         <>
           {!onboardingComplete && (
             <>
+              <PageHeader
+                title="Overview"
+                description={`Welcome back, ${greeting}.`}
+                action={
+                  <div className="flex flex-wrap items-center gap-2">
+                    <ContentProtectionPolicy />
+                    {refreshing && <RefreshDots />}
+                  </div>
+                }
+              />
               <OnboardingChecklistCard
                 articles={articles.data ?? []}
                 walletConnected={walletConnected}
@@ -242,6 +247,7 @@ export default function OverviewPage() {
               )}
               <DashboardOverviewContent
                 {...overviewProps}
+                refreshing={refreshing}
                 wallet={{
                   ...overviewProps.wallet,
                   onCopy: copyWallet,
@@ -350,7 +356,22 @@ function PaymentActivityCard({ activity }: { activity: QueryResult<PaymentActivi
           </Link>
         }
       />
-      {activity.status === "loading" && <div className="p-5"><LoadingState /></div>}
+      {activity.status === "loading" && (
+        <ul className="grid gap-1 px-2 pb-2" aria-hidden="true">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <li key={i} className="flex items-center justify-between gap-4 rounded-lg px-3 py-2.5">
+              <div className="min-w-0">
+                <Skeleton className="h-4 w-48" />
+                <Skeleton className="mt-1.5 h-3 w-32" />
+              </div>
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-4 w-14" />
+                <Skeleton className="h-5 w-16" rounded="rounded-md" />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
       {activity.status === "error" && activity.error && <div className="p-5"><ErrorState error={activity.error} onRetry={activity.refetch} /></div>}
       {activity.status === "success" && (activity.data?.length ?? 0) === 0 && (
         <div className="p-5">
@@ -364,7 +385,7 @@ function PaymentActivityCard({ activity }: { activity: QueryResult<PaymentActivi
       {activity.status === "success" && (activity.data?.length ?? 0) > 0 && (
         <ul className="grid gap-1 px-2 pb-2">
           {activity.data!.slice(0, 5).map((row) => (
-            <li key={row.id} className="flex items-center justify-between gap-4 rounded-lg px-3 py-4 hover:bg-[var(--surface-muted)]">
+            <li key={row.id} className="flex items-center justify-between gap-4 rounded-lg px-3 py-2.5 hover:bg-[var(--surface-muted)]">
               <div className="min-w-0">
                 <div className="truncate font-medium">{row.articleTitle}</div>
                 <div className="text-xs text-[var(--muted)]">
@@ -407,7 +428,7 @@ function ArticlesCard({ articles, hasArticles }: { articles: Article[]; hasArtic
         <ul className="grid gap-1 px-2 pb-2">
           {articles.slice(0, 4).map((a) => (
             <li key={a.id}>
-              <Link href={`/dashboard/articles/${a.id}`} className="flex items-center justify-between gap-4 rounded-lg px-3 py-4 hover:bg-[var(--surface-muted)]">
+              <Link href={`/dashboard/articles/${a.id}`} className="flex items-center justify-between gap-4 rounded-lg px-3 py-2.5 hover:bg-[var(--surface-muted)]">
                 <div className="min-w-0">
                   <div className="truncate font-medium">{a.title}</div>
                   <div className="text-xs text-[var(--muted)]">{a.usage.wordsRead.toLocaleString()} words read</div>
@@ -587,7 +608,7 @@ async function renderExportPng({
   if (!ctx) return "";
 
   // Backdrop + premium export card surface.
-  ctx.fillStyle = "#e9edf5";
+  ctx.fillStyle = "#f0f0f1";
   ctx.fillRect(0, 0, width, height);
   const cardX = 32;
   const cardY = 32;
@@ -635,7 +656,7 @@ async function renderExportPng({
   ctx.fillStyle = "#ffffff";
   ctx.font = "800 56px Arial, sans-serif";
   ctx.fillText(truncateForCanvas(ctx, amount, heroW - 56), heroX + 28, heroY + 104);
-  ctx.fillStyle = "#7dd3fc";
+  ctx.fillStyle = "#a7abb3";
   ctx.font = "600 18px Arial, sans-serif";
   ctx.fillText("Revenue from agent reads", heroX + 28, heroY + 134);
 

@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * Data-fetching hooks that surface explicit loading / success / error states
- * (including auth-expired) for the creator dashboard. No silent fallback to
- * fake or local data — when Rubicon is unreachable, the UI says so.
+ * TanStack Query adapters for the creator dashboard. They retain the small
+ * result shape used by the UI while adding shared caching, request deduping,
+ * retries, background refetching, mutations, and invalidation.
  */
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useMutation, useQuery, useQueryClient, type QueryKey } from "@tanstack/react-query";
 import { RubiconError, toUserFacingRubiconError, type RubiconClient } from "./client";
 import { getSupabasePublicKeyIssue, useRubiconClient } from "./auth";
 
@@ -35,53 +35,30 @@ function notConfiguredError() {
 export function useRubiconQuery<T>(
   fetcher: (client: RubiconClient) => Promise<T>,
   deps: ReadonlyArray<unknown>,
-  options: { enabled?: boolean } = {},
+  options: { enabled?: boolean; queryKey: QueryKey },
 ): QueryResult<T> {
   const enabled = options.enabled ?? true;
   const client = useRubiconClient();
-  const [status, setStatus] = useState<QueryStatus>("loading");
-  const [data, setData] = useState<T | null>(null);
-  const [error, setError] = useState<RubiconError | null>(null);
-  const [nonce, setNonce] = useState(0);
+  const query = useQuery<T, RubiconError>({
+    queryKey: ["rubicon", ...options.queryKey, ...deps],
+    enabled,
+    queryFn: async () => {
+      if (!client) throw notConfiguredError();
+      try {
+        return await fetcher(client);
+      } catch (error) {
+        throw toUserFacingRubiconError(error);
+      }
+    },
+  });
 
-  const fetcherRef = useRef(fetcher);
-  fetcherRef.current = fetcher;
-
-  const refetch = useCallback(() => setNonce((n) => n + 1), []);
-
-  useEffect(() => {
-    if (!enabled) return;
-    if (!client) {
-      setStatus("error");
-      setError(notConfiguredError());
-      setData(null);
-      return;
-    }
-
-    let active = true;
-    setStatus("loading");
-    setError(null);
-
-    fetcherRef
-      .current(client)
-      .then((result) => {
-        if (!active) return;
-        setData(result);
-        setStatus("success");
-      })
-      .catch((err) => {
-        if (!active) return;
-        setError(toUserFacingRubiconError(err));
-        setStatus("error");
-      });
-
-    return () => {
-      active = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [client, enabled, nonce, ...deps]);
-
-  return { status, data, error, refetch };
+  const status: QueryStatus = query.isError ? "error" : query.isSuccess ? "success" : "loading";
+  return {
+    status,
+    data: query.data ?? null,
+    error: query.error ?? null,
+    refetch: () => void query.refetch(),
+  };
 }
 
 export interface MutationState {
@@ -98,27 +75,22 @@ export function useRubiconMutation<TArgs extends unknown[], TResult>(
   error: RubiconError | null;
 } {
   const client = useRubiconClient();
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<RubiconError | null>(null);
-
-  const run = useCallback(
-    async (...args: TArgs) => {
+  const queryClient = useQueryClient();
+  const mutation = useMutation<TResult, RubiconError, TArgs>({
+    mutationFn: async (args) => {
       if (!client) throw notConfiguredError();
-      setPending(true);
-      setError(null);
       try {
         return await mutator(client, ...args);
       } catch (err) {
-        const rubiconErr = toUserFacingRubiconError(err);
-        setError(rubiconErr);
-        throw rubiconErr;
-      } finally {
-        setPending(false);
+        throw toUserFacingRubiconError(err);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [client],
-  );
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["rubicon"] }),
+  });
 
-  return { run, pending, error };
+  return {
+    run: (...args) => mutation.mutateAsync(args),
+    pending: mutation.isPending,
+    error: mutation.error,
+  };
 }

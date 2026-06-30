@@ -21,6 +21,7 @@
     "@rolldown/binding-win32-x64-msvc": "^1.0.3",
     "@supabase/supabase-js": "^2.108.2",
     "@tailwindcss/postcss": "^4.1.10",
+    "@tanstack/react-query": "^5.101.2",
     "@tiptap/core": "^3.27.1",
     "@tiptap/extension-image": "^3.27.1",
     "@tiptap/extensions": "^3.27.1",
