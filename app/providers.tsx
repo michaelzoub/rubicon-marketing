@@ -3,7 +3,7 @@
 import { PrivyProvider } from "@privy-io/react-auth";
 import { usePrivy } from "@privy-io/react-auth";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 import { ACTIVE_CHAIN } from "@/lib/chain";
 import { RubiconError } from "@/lib/rubicon/client";
 
@@ -33,56 +33,10 @@ function QueryProvider({ children }: { children: ReactNode }) {
 
 function PrivyQueryProvider({ children }: { children: ReactNode }) {
   const { user } = usePrivy();
+
+  // A new authenticated identity gets a new cache, so creator data can never
+  // bleed between account switches on the same browser.
   return <QueryProvider key={user?.id ?? "anonymous"}>{children}</QueryProvider>;
-}
-
-function useSystemTheme() {
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
-
-  useEffect(() => {
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const syncTheme = () => setTheme(media.matches ? "dark" : "light");
-    syncTheme();
-    media.addEventListener("change", syncTheme);
-    return () => media.removeEventListener("change", syncTheme);
-  }, []);
-
-  return theme;
-}
-
-function PrivyWithSystemTheme({
-  appId,
-  clientId,
-  children,
-}: {
-  appId: string;
-  clientId?: string;
-  children: ReactNode;
-}) {
-  const theme = useSystemTheme();
-
-  return (
-    <PrivyProvider
-      appId={appId}
-      clientId={clientId}
-      config={{
-        loginMethods: ["twitter", "email", "wallet"],
-        appearance: {
-          theme,
-          accentColor: "#2d91ed",
-        },
-        defaultChain: ACTIVE_CHAIN,
-        supportedChains: [ACTIVE_CHAIN],
-        embeddedWallets: {
-          ethereum: {
-            createOnLogin: "all-users",
-          },
-        },
-      }}
-    >
-      <PrivyQueryProvider>{children}</PrivyQueryProvider>
-    </PrivyProvider>
-  );
 }
 
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -99,9 +53,29 @@ export function AppProviders({ children }: { children: ReactNode }) {
 
   return (
     <PrivyConfiguredContext.Provider value>
-      <PrivyWithSystemTheme appId={appId} clientId={clientId}>
-        {children}
-      </PrivyWithSystemTheme>
+      <PrivyProvider
+        appId={appId}
+        clientId={clientId}
+        config={{
+          loginMethods: ["twitter", "email", "wallet"],
+          appearance: {
+            theme: "light",
+            accentColor: "#2f7df6",
+          },
+          // Transactions settle on Arc — Arc Testnet for now.
+          defaultChain: ACTIVE_CHAIN,
+          supportedChains: [ACTIVE_CHAIN],
+          embeddedWallets: {
+            // Give every creator a wallet on login, including email/Twitter
+            // sign-ins, so the receiving address is one click in Settings.
+            ethereum: {
+              createOnLogin: "all-users",
+            },
+          },
+        }}
+      >
+        <PrivyQueryProvider>{children}</PrivyQueryProvider>
+      </PrivyProvider>
     </PrivyConfiguredContext.Provider>
   );
 }
