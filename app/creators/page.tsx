@@ -6,7 +6,7 @@ import { SiteFooter } from "../_components/marketing/site-footer";
 import { SiteHeader } from "../_components/site-header";
 
 export const metadata: Metadata = {
-  title: "For writers · Rubicon",
+  title: "For creators · Rubicon",
   description: "Publish premium articles, set per-word pricing, and earn from AI agent traffic on your terms.",
 };
 

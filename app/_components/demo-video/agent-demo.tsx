@@ -49,20 +49,13 @@ export interface AgentDemoProps {
   loop?: boolean;
   paused?: boolean;
   className?: string;
-  /**
-   * Restrict playback to a subset of scenes, in the order listed. Used by the
-   * landing embeds so each section shows only the stage that matches its topic
-   * (e.g. the creator dashboard shows "solution", the agents block shows
-   * "paid-stream"). Defaults to the full scripted timeline.
-   */
-  scenes?: SceneId[];
 }
 
 /* ------------------------------------------------------------------ */
 /* Timeline                                                            */
 /* ------------------------------------------------------------------ */
 
-export type SceneId =
+type SceneId =
   | "problem"
   | "solution"
   | "paid-stream"
@@ -209,7 +202,6 @@ export function AgentDemo({
   loop: loopProp,
   paused: pausedProp,
   className,
-  scenes: scenesProp,
 }: AgentDemoProps = {}) {
   const [index, setIndex] = useState(0);
   const [progress, setProgress] = useState(0); // 0..1 within current scene
@@ -220,17 +212,7 @@ export function AgentDemo({
   const [soundBlocked, setSoundBlocked] = useState(false);
   const [loop, setLoop] = useState(loopProp ?? embedded);
 
-  // When a `scenes` subset is supplied, play only those scenes in the given
-  // order. A subset of one scene loops on just that stage.
-  const sceneFilter = scenesProp?.length ? scenesProp.join(",") : "";
-  const activeScenes = sceneFilter
-    ? (sceneFilter.split(",") as SceneId[])
-        .map((id) => SCENES.find((s) => s.id === id))
-        .filter((s): s is (typeof SCENES)[number] => Boolean(s))
-    : SCENES;
-
-  const safeIndex = Math.min(index, activeScenes.length - 1);
-  const scene = activeScenes[safeIndex].id;
+  const scene = SCENES[index].id;
   const isEnd = scene === "end";
 
   // Recording controls: hide chrome or seek to a deterministic frame.
@@ -239,7 +221,7 @@ export function AgentDemo({
     const params = new URLSearchParams(window.location.search);
     setMinimal(minimalProp ?? params.get("minimal") === "true");
     const requestedScene = params.get("scene") as SceneId | null;
-    const requestedIndex = requestedScene ? activeScenes.findIndex(({ id }) => id === requestedScene) : -1;
+    const requestedIndex = requestedScene ? SCENES.findIndex(({ id }) => id === requestedScene) : -1;
     const requestedProgress = Number(params.get("progress"));
     if (requestedIndex >= 0) setIndex(requestedIndex);
     if (Number.isFinite(requestedProgress)) setProgress(Math.max(0, Math.min(1, requestedProgress)));
@@ -249,8 +231,7 @@ export function AgentDemo({
   }, [embedded, loopProp, minimalProp, pausedProp]);
 
   // rAF playback. Advances sequentially; loops when embedded.
-  const ms = activeScenes[safeIndex].ms;
-  const sceneCount = activeScenes.length;
+  const ms = SCENES[index].ms;
   useEffect(() => {
     if (!ready || paused) return;
     let raf = 0;
@@ -260,7 +241,7 @@ export function AgentDemo({
       const p = Math.min(1, (now - start) / ms);
       setProgress(p);
       if (p >= 1) {
-        if (safeIndex < sceneCount - 1) {
+        if (index < SCENES.length - 1) {
           setIndex((i) => i + 1);
         } else if (loop) {
           setIndex(0);
@@ -271,7 +252,7 @@ export function AgentDemo({
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [safeIndex, loop, ms, paused, ready, sceneCount]);
+  }, [index, loop, ms, paused, ready]);
 
   return (
     <div className={`dv-root${embedded ? " dv-root--embed" : ""}${className ? ` ${className}` : ""}`}>
@@ -469,7 +450,7 @@ function ProblemScene({ progress }: { progress: number }) {
       segments={[
         { kind: "text", weight: 2, text: "Agents can’t buy paywalled content." },
         { kind: "ui", weight: 2.6, render: () => <BuyerBlocked /> },
-        { kind: "text", weight: 2, text: "And writers can’t sell to them either." },
+        { kind: "text", weight: 2, text: "And creators can’t sell to them either." },
         { kind: "ui", weight: 2.6, render: () => <CreatorBlocked /> },
       ]}
     />
@@ -533,27 +514,6 @@ function BuyerBlocked() {
   );
 }
 
-/**
- * The buyer-agent terminal animation, standalone and self-styled, for reuse
- * outside the full demo (e.g. the landing "For agents" section). Renders the
- * demo's scoped styles so the `dv-term*` classes resolve without mounting the
- * whole AgentDemo, and replays the animation on a loop when `loop` is set.
- */
-export function BuyerAgentTerminal({ loop = false }: { loop?: boolean }) {
-  const [cycle, setCycle] = useState(0);
-  useEffect(() => {
-    if (!loop) return;
-    const id = window.setInterval(() => setCycle((c) => c + 1), 6000);
-    return () => window.clearInterval(id);
-  }, [loop]);
-  return (
-    <>
-      <DemoStyles embedded />
-      <BuyerBlocked key={cycle} />
-    </>
-  );
-}
-
 function TimedSoundCue({ delay, sound = "terminal" }: { delay: number; sound?: DemoSound }) {
   useEffect(() => {
     const timeout = window.setTimeout(() => void playDemoSound(sound), delay * 1000);
@@ -573,7 +533,7 @@ function CreatorBlocked() {
           transition={{ duration: 0.5, ease: CINE, delay: 0.2 }}
         >
           <span className="dv-party-icon dv-party-creator"><PenLine size={25} /></span>
-          <div><span className="mono">WRITER</span><strong>Premium article</strong><small>Needs a way to charge</small></div>
+          <div><span className="mono">CREATOR</span><strong>Premium article</strong><small>Needs a way to charge</small></div>
         </motion.div>
 
         <div className="dv-connect-rail" aria-hidden="true">
@@ -629,7 +589,7 @@ function SolutionScene({ progress }: { progress: number }) {
             <CreatorDashboardDemo step={p >= 0.58 ? 1 : 0} phase={p} priced={false} published={false} />
           ),
         },
-        { kind: "text", weight: 1.75, text: "Writers can price their articles per word. Rubicon’s cut is 0%." },
+        { kind: "text", weight: 1.75, text: "Creators can price their articles per word. Rubicon’s cut is 0%." },
         // The pricing step.
         {
           kind: "ui",
@@ -719,7 +679,7 @@ function DashboardArticleStep({ focus }: { focus: "content" | "action" }) {
         <DashboardField label="Author" value="Mara Chen" />
       </div>
       <div className="dv-dashboard-editor">
-        <div className="dv-dashboard-toolbar"><strong>H</strong><span>B</span><i>I</i><span>☷</span><span>❞</span><small>Headers and subheaders start sections</small></div>
+        <div className="dv-dashboard-toolbar"><strong>H</strong><span>B</span><i>I</i><span>☷</span><span>❞</span><small>Each heading starts a new section</small></div>
         <div><strong>Consent Decree Language</strong><p>The resale fee applies only when the asset transfers through a covered venue…</p></div>
         <footer><span>3 sections</span><span className="mono">2,418 words</span></footer>
       </div>
@@ -776,7 +736,7 @@ function DashboardPricingStep({ phase, priced }: { phase: number; priced: boolea
 function DashboardReviewStep({ focus }: { focus: "review" | "action" }) {
   return (
     <>
-      <div className="dv-dashboard-title"><strong>Review and publish</strong><span>Confirm the writer listing before it goes live to agents.</span></div>
+      <div className="dv-dashboard-title"><strong>Review and publish</strong><span>Confirm the creator listing before it goes live to agents.</span></div>
       <div className="dv-dashboard-review">
         <div><span>Article</span><strong>{ARTICLE_TITLE}</strong></div>
         <div><span>Sections</span><strong>3 · 2,418 words</strong></div>
@@ -961,7 +921,7 @@ function ReceiptScene({ progress }: { progress: number }) {
       progress={progress}
       bg="🧾"
       segments={[
-        { kind: "text", weight: 1.75, text: "Every read settles to the writer, onchain." },
+        { kind: "text", weight: 1.75, text: "Every read settles to the creator, onchain." },
         { kind: "ui", weight: 3.7, render: (p) => <SettlementCard progress={p} /> },
       ]}
     />
@@ -984,13 +944,13 @@ function SettlementCard({ progress }: { progress: number }) {
   return (
     <div className="dv-simple-settlement">
       <header className="dv-simple-head">
-        <div className="dv-tx-brand"><img src="/arc-logo.webp" alt="" /><div><span className="mono">ARC NETWORK</span><strong>Settling writer payment</strong></div></div>
+        <div className="dv-tx-brand"><img src="/arc-logo.webp" alt="" /><div><span className="mono">ARC NETWORK</span><strong>Settling creator payment</strong></div></div>
       </header>
 
       <div className="dv-simple-transfer">
         <div><span className="mono">PAID READ</span><strong>137 words</strong></div>
         <ArrowRight size={18} />
-        <div><span className="mono">WRITER EARNS</span><strong>$0.0068 USDC</strong></div>
+        <div><span className="mono">CREATOR EARNS</span><strong>$0.0068 USDC</strong></div>
       </div>
 
       <div className="dv-simple-chain" aria-label="Transaction included in an Arc block">
@@ -1014,7 +974,7 @@ function SettlementCard({ progress }: { progress: number }) {
           {confirmed && (
             <motion.div className="dv-simple-paid" initial={{ opacity: 0, y: 10, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 4 }} transition={{ type: "spring", stiffness: 180, damping: 20 }}>
               <span className="dv-chain-check"><Check size={14} /></span>
-              <div><strong>Writer paid</strong><small className="mono">+$0.0068 USDC · FINAL ON ARC</small></div>
+              <div><strong>Creator paid</strong><small className="mono">+$0.0068 USDC · FINAL ON ARC</small></div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -1064,7 +1024,7 @@ function EndScene() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.7, ease: CINE, delay: 0.5 }}
       >
-        Writers earn. Agents access better sources. Every word is accounted for.
+        Creators earn. Agents access better sources. Every word is accounted for.
       </motion.p>
       {/* <motion.span
         className="dv-end-cta"
