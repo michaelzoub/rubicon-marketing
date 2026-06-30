@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
+import { trackClick } from "./_components/analytics-links";
 import { fade } from "./_components/marketing/motion";
 import { SiteFooter } from "./_components/marketing/site-footer";
 import { SiteHeader } from "./_components/site-header";
@@ -22,10 +23,18 @@ function Hero() {
           </h1>
           <div className="landing-hero-cta">
             <div className="landing-hero-actions">
-              <Link href="/dashboard" className="button button-primary">
+              <Link
+                href="/dashboard"
+                className="button button-primary"
+                onClick={() => trackClick("start_publishing_clicked", { location: "hero" })}
+              >
                 Start publishing <ArrowRight size={14} aria-hidden="true" />
               </Link>
-              <Link href="/developers" className="button button-secondary">
+              <Link
+                href="/developers"
+                className="button button-secondary"
+                onClick={() => trackClick("set_up_agent_clicked", { location: "hero" })}
+              >
                 Set up an agent
               </Link>
             </div>
@@ -64,7 +73,11 @@ function DashboardShowcase() {
           <div className="landing-section-kicker">
             <p className="landing-section-eyebrow">For writers</p>
             <h2 id="dashboard-showcase-heading" className="landing-section-title">
-              <Link href="/creators" className="landing-section-title-link">
+              <Link
+                href="/creators"
+                className="landing-section-title-link"
+                onClick={() => trackClick("dashboard_showcase_clicked", { location: "home_creators_link" })}
+              >
                 The dashboard creators get.
               </Link>
             </h2>
@@ -74,7 +87,11 @@ function DashboardShowcase() {
             ship with.
           </p>
           <div className="landing-dashboard-showcase-actions">
-            <Link href="/dashboard" className="button button-primary landing-dashboard-cta">
+            <Link
+              href="/dashboard"
+              className="button button-primary landing-dashboard-cta"
+              onClick={() => trackClick("start_publishing_clicked", { location: "dashboard_showcase" })}
+            >
               List an article <ArrowRight size={14} aria-hidden="true" />
             </Link>
           </div>

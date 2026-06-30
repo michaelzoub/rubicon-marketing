@@ -2,6 +2,7 @@
 
 import { Check, Copy, Link2 } from "lucide-react";
 import { useState } from "react";
+import { trackClick } from "../analytics-links";
 
 const skillUrl = "https://www.rubiconpay.xyz/skill.md";
 export const setupSkillPrompt = `Set up the Rubicon skill from ${skillUrl}. Help me fund my buyer wallet, then find and summarize the first available article. Spend no more than $0.01.`;
@@ -17,6 +18,7 @@ export function AgentSkillSetup({
   const copySetupPrompt = async () => {
     await navigator.clipboard.writeText(setupSkillPrompt);
     setCopied(true);
+    trackClick("copy_agent_prompt_clicked", { layout });
     window.setTimeout(() => setCopied(false), 1400);
   };
 

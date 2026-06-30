@@ -1,0 +1,22 @@
+"use client";
+
+import { ArrowRight, BookOpen } from "lucide-react";
+import Link from "next/link";
+import { trackClick } from "@/app/_components/analytics-links";
+
+export function ExploreTrackedNotice({ failed }: { failed: boolean }) {
+  return (
+    <div className="explore-notice">
+      <BookOpen size={22} aria-hidden="true" />
+      <h2>{failed ? "Catalog unavailable" : "No live articles"}</h2>
+      <p>{failed ? "The public directory could not be loaded." : "Publish the first article."}</p>
+      <Link
+        href="/dashboard/articles/new"
+        className="button button-primary text-sm"
+        onClick={() => trackClick("start_publishing_clicked", { location: "explore_empty_state" })}
+      >
+        Publish article <ArrowRight size={15} />
+      </Link>
+    </div>
+  );
+}

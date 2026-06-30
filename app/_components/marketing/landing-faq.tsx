@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
 import { useState } from "react";
+import { trackClick } from "../analytics-links";
 import { fade } from "./motion";
 
 const LANDING_FAQ = [
@@ -63,7 +64,15 @@ function FaqItem({
 }) {
   return (
     <div className="landing-faq-item">
-      <button type="button" className="landing-faq-trigger" aria-expanded={open} onClick={onToggle}>
+      <button
+        type="button"
+        className="landing-faq-trigger"
+        aria-expanded={open}
+        onClick={() => {
+          trackClick("faq_item_toggled", { question: question.slice(0, 60), action: open ? "close" : "open" });
+          onToggle();
+        }}
+      >
         <span className="landing-faq-question">{question}</span>
         <Plus size={20} strokeWidth={1.75} className={`landing-faq-icon${open ? " landing-faq-icon--open" : ""}`} aria-hidden="true" />
       </button>

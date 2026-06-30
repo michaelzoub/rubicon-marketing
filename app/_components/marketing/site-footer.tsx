@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { trackClick } from "../analytics-links";
 import { RubiconBrand } from "../rubicon-brand";
 
 const githubUrl = "https://github.com/michaelzoub/rubicon";
@@ -32,16 +35,20 @@ function FooterLink({
 }) {
   const className = "site-footer-link";
 
+  const handleClick = () => {
+    trackClick("footer_link_clicked", { label, external: external ?? false });
+  };
+
   if (external) {
     return (
-      <a href={href} className={className} target="_blank" rel="noreferrer">
+      <a href={href} className={className} target="_blank" rel="noreferrer" onClick={handleClick}>
         {label}
       </a>
     );
   }
 
   return (
-    <Link href={href} className={className}>
+    <Link href={href} className={className} onClick={handleClick}>
       {label}
     </Link>
   );

@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { trackClick } from "./analytics-links";
 import { RubiconBrand } from "./rubicon-brand";
 
 interface NavItem {
@@ -43,7 +44,12 @@ function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
   const className = `site-nav-link${isActive ? " site-nav-link--active" : ""}`;
 
   return (
-    <Link className={className} href={item.href} aria-current={isActive ? "page" : undefined}>
+    <Link
+      className={className}
+      href={item.href}
+      aria-current={isActive ? "page" : undefined}
+      onClick={() => trackClick("nav_link_clicked", { label: item.label })}
+    >
       {item.label}
     </Link>
   );
@@ -66,6 +72,7 @@ function SolutionsTrigger({
         type="button"
         className={`site-nav-link site-nav-dropdown-trigger${isActive ? " site-nav-link--active" : ""}`}
         aria-haspopup="true"
+        onClick={() => trackClick("nav_solutions_opened")}
       >
         Solutions
         <ChevronDown size={12} strokeWidth={2} aria-hidden="true" />
@@ -104,6 +111,7 @@ function SolutionsPanel({
                 role="menuitem"
                 aria-current={itemActive ? "page" : undefined}
                 style={{ transitionDelay: `${index * 50}ms` }}
+                onClick={() => trackClick("nav_solutions_card_clicked", { label: item.title })}
               >
                 <Image
                   src={item.image}
@@ -200,7 +208,7 @@ export function SiteHeader({
       className={`site-header${overlay ? " site-header--overlay" : ""}${scrolled ? " site-header--scrolled" : ""}${headerHidden ? " site-header--hidden" : ""}${solutionsOpen ? " site-header--solutions-open" : ""}`}
     >
       <nav className="container site-header-inner" aria-label="Main navigation">
-        <Link href="/" className="site-header-logo" aria-label="Rubicon home">
+        <Link href="/" className="site-header-logo" aria-label="Rubicon home" onClick={() => trackClick("nav_logo_clicked")}>
           <RubiconBrand className="site-header-brand site-header-brand--new" src="/Header-logo_w.svg" />
         </Link>
 
@@ -213,10 +221,18 @@ export function SiteHeader({
         </div>
 
         <div className="site-header-actions">
-          <Link href="/dashboard" className="site-nav-cta site-nav-cta--creator">
+          <Link
+            href="/dashboard"
+            className="site-nav-cta site-nav-cta--creator"
+            onClick={() => trackClick("nav_list_article_clicked")}
+          >
             List an article
           </Link>
-          <Link href="/demo-video" className="site-nav-cta site-nav-cta--sales">
+          <Link
+            href="/demo-video"
+            className="site-nav-cta site-nav-cta--sales"
+            onClick={() => trackClick("nav_book_demo_clicked")}
+          >
             Book a demo
           </Link>
         </div>

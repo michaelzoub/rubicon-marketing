@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { trackClick } from "../analytics-links";
 import { AgentSkillSetup } from "./agent-skill-setup";
 import { fade } from "./motion";
 
@@ -69,13 +70,21 @@ export function LandingAgentsSection({
             <p className="landing-section-eyebrow">For agents</p>
             {isPageLead ? (
               <h1 id="landing-agents-heading" className="landing-section-title landing-agents-title">
-                <Link href="/developers" className="landing-section-title-link">
+                <Link
+                  href="/developers"
+                  className="landing-section-title-link"
+                  onClick={() => trackClick("nav_link_clicked", { label: "Add paid reading to your agent" })}
+                >
                   Add paid reading to your agent.
                 </Link>
               </h1>
             ) : (
               <h2 id="landing-agents-heading" className="landing-section-title landing-agents-title">
-                <Link href="/developers" className="landing-section-title-link">
+                <Link
+                  href="/developers"
+                  className="landing-section-title-link"
+                  onClick={() => trackClick("nav_link_clicked", { label: "Add paid reading to your agent" })}
+                >
                   Add paid reading to your agent.
                 </Link>
               </h2>
@@ -87,7 +96,11 @@ export function LandingAgentsSection({
           </p>
           {showCta && (
             <div className="landing-agents-actions">
-              <Link href="/developers" className="button button-primary">
+              <Link
+                href="/developers"
+                className="button button-primary"
+                onClick={() => trackClick("set_up_agent_clicked", { location: "agents_section" })}
+              >
                 Set up an agent <ArrowRight size={16} aria-hidden="true" />
               </Link>
             </div>

@@ -5,53 +5,166 @@ import posthog from "posthog-js";
 import { useEffect, useRef } from "react";
 import type { AnchorHTMLAttributes, MouseEvent } from "react";
 
-type AnalyticsLinkProps = LinkProps &
-  Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps | "href"> & {
-    location: string;
-  };
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function currentPathname() {
   return typeof window === "undefined" ? "" : window.location.pathname;
 }
 
+/**
+ * Generic click tracker — call inside any onClick handler:
+ *   onClick={() => { trackClick("button_name", { extra: "props" }); doThing(); }}
+ */
+export function trackClick(
+  eventName: string,
+  properties?: Record<string, string | number | boolean>,
+) {
+  posthog.capture(eventName, {
+    current_url: currentPathname(),
+    ...properties,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Typed analytics-wrapped <Link> components
+// ---------------------------------------------------------------------------
+
+type AnalyticsLinkProps = LinkProps &
+  Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps | "href"> & {
+    location: string;
+  };
+
+// -- Existing funnel events (keep backwards-compatible) --
+
 export function StartPublishingLink({ location, onClick, ...props }: AnalyticsLinkProps) {
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
-    // Funnel step: visitor chooses to start the creator publishing flow.
     posthog.capture("start_publishing_clicked", {
       location,
       current_url: currentPathname(),
     });
     onClick?.(event);
   };
-
   return <Link {...props} onClick={handleClick} />;
 }
 
 export function SignInLink({ location, onClick, ...props }: AnalyticsLinkProps) {
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
-    // Funnel step: visitor chooses to enter the creator sign-in flow.
     posthog.capture("sign_in_clicked", {
       location,
       current_url: currentPathname(),
     });
     onClick?.(event);
   };
-
   return <Link {...props} onClick={handleClick} />;
 }
 
 export function ExploreLink({ location, onClick, ...props }: AnalyticsLinkProps) {
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
-    // Funnel step: visitor chooses to browse public articles.
     posthog.capture("explore_clicked", {
       location,
       current_url: currentPathname(),
     });
     onClick?.(event);
   };
-
   return <Link {...props} onClick={handleClick} />;
 }
+
+// -- New CTAs --
+
+export function SetUpAgentLink({ location, onClick, ...props }: AnalyticsLinkProps) {
+  const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    posthog.capture("set_up_agent_clicked", {
+      location,
+      current_url: currentPathname(),
+    });
+    onClick?.(event);
+  };
+  return <Link {...props} onClick={handleClick} />;
+}
+
+export function BookDemoLink({ location, onClick, ...props }: AnalyticsLinkProps) {
+  const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    posthog.capture("book_demo_clicked", {
+      location,
+      current_url: currentPathname(),
+    });
+    onClick?.(event);
+  };
+  return <Link {...props} onClick={handleClick} />;
+}
+
+export function ReadDocsLink({ location, onClick, ...props }: AnalyticsLinkProps) {
+  const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    posthog.capture("read_docs_clicked", {
+      location,
+      current_url: currentPathname(),
+    });
+    onClick?.(event);
+  };
+  return <Link {...props} onClick={handleClick} />;
+}
+
+// -- Navigation --
+
+export function NavLink({
+  location,
+  label,
+  onClick,
+  ...props
+}: AnalyticsLinkProps & { label: string }) {
+  const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    posthog.capture("nav_link_clicked", {
+      location,
+      label,
+      current_url: currentPathname(),
+    });
+    onClick?.(event);
+  };
+  return <Link {...props} onClick={handleClick} />;
+}
+
+// -- Footer --
+
+export function FooterAnalyticsLink({
+  location,
+  label,
+  onClick,
+  ...props
+}: AnalyticsLinkProps & { label: string }) {
+  const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    posthog.capture("footer_link_clicked", {
+      location,
+      label,
+      current_url: currentPathname(),
+    });
+    onClick?.(event);
+  };
+  return <Link {...props} onClick={handleClick} />;
+}
+
+// -- Generic "marketing CTA" for anything not covered by a typed component --
+
+export function MarketingCtaLink({
+  eventName,
+  location,
+  onClick,
+  ...props
+}: AnalyticsLinkProps & { eventName: string }) {
+  const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    posthog.capture(eventName, {
+      location,
+      current_url: currentPathname(),
+    });
+    onClick?.(event);
+  };
+  return <Link {...props} onClick={handleClick} />;
+}
+
+// ---------------------------------------------------------------------------
+// Page engagement tracker (scroll depth + time on page)
+// ---------------------------------------------------------------------------
 
 export function PageEngagementTracker() {
   const startedAt = useRef(0);
@@ -70,19 +183,15 @@ export function PageEngagementTracker() {
       (entries) => {
         for (const entry of entries) {
           if (!entry.isIntersecting) continue;
-
           const section = entry.target.getAttribute("data-analytics-section");
           const index = Number(entry.target.getAttribute("data-analytics-section-index") ?? "0");
           if (!section) continue;
-
           if (index >= deepestIndex.current) {
             deepestIndex.current = index;
             deepestSection.current = section;
           }
-
           if (!seenSections.has(section)) {
             seenSections.add(section);
-            // Funnel context: landing section reached during the visit.
             posthog.capture("section_viewed", {
               section,
               current_url: currentPathname(),
@@ -101,9 +210,7 @@ export function PageEngagementTracker() {
     const captureSummary = () => {
       if (capturedSummary.current || !startedAt.current) return;
       capturedSummary.current = true;
-
       const timeOnPageSeconds = Math.max(0, Math.round((performance.now() - startedAt.current) / 1000));
-      // Funnel context: page dwell time and deepest landing section reached before exit.
       posthog.capture("page_engagement_recorded", {
         current_url: currentPathname(),
         time_on_page_seconds: timeOnPageSeconds,

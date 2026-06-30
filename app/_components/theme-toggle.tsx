@@ -2,6 +2,7 @@
 
 import { Monitor, Moon, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
+import { trackClick } from "./analytics-links";
 
 type Theme = "system" | "light" | "dark";
 
@@ -41,6 +42,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
   }, []);
 
   const choose = (next: Theme) => {
+    trackClick("theme_toggled", { theme: next });
     setTheme(next);
     localStorage.setItem("theme", next);
     applyTheme(next);

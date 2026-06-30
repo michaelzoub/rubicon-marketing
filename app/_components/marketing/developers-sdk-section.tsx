@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { BookOpen, Check, Copy, Github } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
+import { trackClick } from "../analytics-links";
 import { fade } from "./motion";
 
 const githubUrl = "https://github.com/michaelzoub/rubicon";
@@ -42,6 +43,7 @@ function CodeShowcase() {
   const copyCode = async () => {
     await navigator.clipboard.writeText(developerCode[active]);
     setCopied(true);
+    trackClick("copy_code_clicked", { tab: active });
     window.setTimeout(() => setCopied(false), 1400);
   };
 
@@ -52,7 +54,10 @@ function CodeShowcase() {
           <button
             key={tab.id}
             type="button"
-            onClick={() => setActive(tab.id)}
+            onClick={() => {
+              setActive(tab.id);
+              trackClick("sdk_tab_clicked", { tab: tab.id });
+            }}
             className={`mono border-b-2 px-2 pb-3 pt-1 text-sm transition-colors ${
               active === tab.id
                 ? "border-[var(--ink)] text-[var(--ink)]"
@@ -111,10 +116,18 @@ export function DevelopersSdkSection() {
             </p>
             <div className="developers-sdk-install mono">npm install @rubicon-caliga/agent-sdk</div>
             <div className="developers-sdk-links">
-              <a href={githubUrl} className="button button-secondary text-sm">
+              <a
+                href={githubUrl}
+                className="button button-secondary text-sm"
+                onClick={() => trackClick("github_clicked", { location: "sdk_section" })}
+              >
                 <Github size={15} aria-hidden="true" /> View on GitHub
               </a>
-              <Link href="/docs" className="button button-secondary text-sm">
+              <Link
+                href="/docs"
+                className="button button-secondary text-sm"
+                onClick={() => trackClick("read_docs_clicked", { location: "sdk_section" })}
+              >
                 <BookOpen size={15} aria-hidden="true" /> Read the docs
               </Link>
             </div>

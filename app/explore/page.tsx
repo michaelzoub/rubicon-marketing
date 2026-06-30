@@ -1,8 +1,7 @@
-import { ArrowRight, BookOpen } from "lucide-react";
-import Link from "next/link";
 import type { Metadata } from "next";
 import { listPublicCreators, PublicDirectoryUnavailable, type PublicCreator } from "@/lib/rubicon/public";
 import { ExploreDirectory } from "./_components/explore-directory";
+import { ExploreTrackedNotice } from "./_components/explore-tracked-notice";
 import { SiteFooter } from "../_components/marketing/site-footer";
 import { SiteHeader } from "../_components/site-header";
 
@@ -18,12 +17,7 @@ export const revalidate = 0;
 
 function Notice({ failed }: { failed: boolean }) {
   return (
-    <div className="explore-notice">
-      <BookOpen size={22} aria-hidden="true" />
-      <h2>{failed ? "Catalog unavailable" : "No live articles"}</h2>
-      <p>{failed ? "The public directory could not be loaded." : "Publish the first article."}</p>
-      <Link href="/dashboard/articles/new" className="button button-primary text-sm">Publish article <ArrowRight size={15} /></Link>
-    </div>
+    <ExploreTrackedNotice failed={failed} />
   );
 }
 

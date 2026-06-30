@@ -4,6 +4,7 @@ import { Check, Copy, ExternalLink, Search, Sparkles, Terminal, UserRound } from
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { PublicCreator } from "@/lib/rubicon/public";
 import { atomicPerWordToPer1000Usd, formatUsdNumber } from "@/lib/rubicon/pricing";
+import { trackClick } from "@/app/_components/analytics-links";
 
 type SortMode = "popular" | "newest" | "price" | "depth";
 
@@ -88,6 +89,7 @@ function CopyCommand({ value, label }: { value: string; label: string }) {
   const copy = async () => {
     await navigator.clipboard.writeText(value);
     setCopied(true);
+    trackClick("explore_copy_command_clicked", { label });
     window.setTimeout(() => setCopied(false), 1400);
   };
 
@@ -112,6 +114,7 @@ function ArticleCard({ article }: { article: PublicCreator["articles"][number] }
   const copy = async () => {
     await navigator.clipboard.writeText(command);
     setCopied(true);
+    trackClick("explore_article_use_clicked", { article_id: article.id, article_title: article.title.slice(0, 80) });
     window.setTimeout(() => setCopied(false), 1400);
   };
 
@@ -125,7 +128,13 @@ function ArticleCard({ article }: { article: PublicCreator["articles"][number] }
           <span>{article.totalWords.toLocaleString()} words</span>
           <span className="text-[var(--river)]">{price} / 1k words</span>
           {article.sourcePlatform === "x" && article.sourceUrl && (
-            <a href={article.sourceUrl} target="_blank" rel="noopener noreferrer" className="explore-social-link">
+            <a
+              href={article.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="explore-social-link"
+              onClick={() => trackClick("explore_x_source_clicked", { article_id: article.id })}
+            >
               X source{sourceHandle(article) ? ` · @${sourceHandle(article)}` : ""} <ExternalLink size={11} aria-hidden="true" />
             </a>
           )}
@@ -157,7 +166,13 @@ function CreatorRoom({ creator, sort }: { creator: PublicCreator; sort: SortMode
           <img src={avatarSrc} alt="" aria-hidden="true" className="explore-room-cover-img" />
         )}
         {profileUrl && (
-          <a href={profileUrl} target="_blank" rel="noopener noreferrer" className="explore-room-profile">
+          <a
+            href={profileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="explore-room-profile"
+            onClick={() => trackClick("explore_x_profile_clicked", { creator_id: creator.id, username: creator.username })}
+          >
             X profile <ExternalLink size={13} aria-hidden="true" />
           </a>
         )}
@@ -254,7 +269,12 @@ export function ExploreDirectory({ creators }: { creators: PublicCreator[] }) {
           {filtered.map((creator) => {
             const avatarSrc = creatorAvatarSrc(creator);
             return (
-              <a key={creator.id} href={`#creator-${creator.id}`} className="explore-author-link">
+              <a
+                key={creator.id}
+                href={`#creator-${creator.id}`}
+                className="explore-author-link"
+                onClick={() => trackClick("explore_author_clicked", { creator_id: creator.id, display_name: creator.displayName })}
+              >
                 {avatarSrc ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={avatarSrc} alt="" />
@@ -274,7 +294,13 @@ export function ExploreDirectory({ creators }: { creators: PublicCreator[] }) {
           </div>
           <CopyCommand label="Install" value={installCommand} />
           <CopyCommand label="Agent prompt" value={promptCommand} />
-          <a href="/docs#cli" className="explore-docs-link">CLI reference</a>
+          <a
+            href="/docs#cli"
+            className="explore-docs-link"
+            onClick={() => trackClick("explore_cli_reference_clicked")}
+          >
+            CLI reference
+          </a>
         </div>
       </aside>
 
@@ -287,7 +313,15 @@ export function ExploreDirectory({ creators }: { creators: PublicCreator[] }) {
           </label>
           <div className="explore-sort" aria-label="Sort articles">
             {sortOptions.map((option) => (
-              <button key={option.id} type="button" className={sort === option.id ? "is-active" : ""} onClick={() => setSort(option.id)}>
+              <button
+                key={option.id}
+                type="button"
+                className={sort === option.id ? "is-active" : ""}
+                onClick={() => {
+                  setSort(option.id);
+                  trackClick("explore_sort_clicked", { sort: option.id });
+                }}
+              >
                 {option.label}
               </button>
             ))}

@@ -71,7 +71,7 @@ function WriterAuthScreen({ onLogin }: { onLogin: () => void }) {
     <div className="writer-auth-screen">
       <div className="writer-auth-card">
         <section className="writer-auth-story">
-          <span className="site-wordmark text-[1.6rem]">rubicon</span>
+          <RubiconBrand className="h-8" src="/w_logo.svg" />
           <div>
             <h1>Start earning when agents read your work</h1>
             <p className="writer-auth-copy">

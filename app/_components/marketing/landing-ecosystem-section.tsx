@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { trackClick } from "../analytics-links";
 import { fade } from "./motion";
 
 const cards = [
@@ -39,7 +40,12 @@ export function LandingEcosystemSection() {
 
         <div className="landing-ecosystem-grid">
           {cards.map((card) => (
-            <Link key={card.href} href={card.href} className="landing-ecosystem-card">
+            <Link
+              key={card.href}
+              href={card.href}
+              className="landing-ecosystem-card"
+              onClick={() => trackClick("ecosystem_card_clicked", { card: card.title })}
+            >
               <img src={card.image} alt="" className="landing-ecosystem-card-image" decoding="async" />
               <div className="landing-ecosystem-card-scrim" aria-hidden="true" />
               <div className="landing-ecosystem-card-content">

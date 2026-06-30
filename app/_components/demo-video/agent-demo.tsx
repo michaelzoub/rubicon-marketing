@@ -41,6 +41,7 @@ import {
 } from "lucide-react";
 import { Howl } from "howler";
 import { useEffect, useState } from "react";
+import { trackClick } from "../analytics-links";
 import { RubiconBrand } from "../rubicon-brand";
 
 export interface AgentDemoProps {
@@ -285,6 +286,7 @@ export function AgentDemo({
           className={`dv-sound-toggle${soundEnabled ? " is-on" : ""}${soundBlocked ? " is-blocked" : ""}`}
           onClick={async () => {
             const enabled = await enableDemoAudio();
+            trackClick("demo_sound_toggled", { enabled });
             setSoundEnabled(enabled);
             setSoundBlocked(!enabled);
           }}
@@ -1090,7 +1092,10 @@ function ProgressRail({ scene, onSelect }: { scene: SceneId; onSelect: (index: n
         <button
           key={label}
           type="button"
-          onClick={() => onSelect(i)}
+          onClick={() => {
+            trackClick("demo_scene_clicked", { scene: label, scene_index: i });
+            onSelect(i);
+          }}
           aria-label={`Jump to ${label}`}
           aria-current={i === current ? "step" : undefined}
           className={`dv-beat${i === current ? " is-on" : ""}${i < current ? " is-done" : ""}`}

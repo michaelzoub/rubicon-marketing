@@ -3,6 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, Coins, FileText, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
+import { trackClick } from "./analytics-links";
 
 const ease = [0.16, 1, 0.3, 1] as const;
 const AUTO_ADVANCE_MS = 5200;
@@ -110,7 +111,10 @@ export function HowItWorks({ tone = "default" }: { tone?: "default" | "hero" | "
                 <li key={step.key} className={i > 0 ? "border-t border-[var(--faint)]" : undefined}>
                   <button
                     type="button"
-                    onClick={() => setActive(i)}
+                    onClick={() => {
+                      trackClick("how_it_works_step_clicked", { step: step.key, step_index: i });
+                      setActive(i);
+                    }}
                     aria-pressed={isActive}
                     className={`hiw-step group w-full text-left transition-opacity duration-300 ${
                       isActive ? "opacity-100" : "opacity-55 hover:opacity-80"
