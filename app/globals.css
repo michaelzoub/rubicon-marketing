@@ -2463,6 +2463,23 @@ a {
   object-position: left center;
 }
 
+.site-header-logo .site-header-brand--new {
+  position: relative;
+  width: 7rem;
+  height: 2.45rem;
+  overflow: hidden;
+}
+
+.site-header-logo .site-header-brand--new .rubicon-brand-mark {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: auto;
+  height: 446.43%;
+  max-width: none;
+  transform: translate(-27.87%, -38.8%);
+}
+
 @media (min-width: 768px) {
   .site-header {
     --header-logo-height: 2.25rem;
@@ -3000,8 +3017,8 @@ a {
 
 .dashboard-icon-button:hover {
   border-color: rgba(30, 40, 62, 0.16);
-  background: #ffffff;
-  color: var(--ink);
+  background: rgba(18,18,22,.05);
+  color: #18181b;
 }
 
 .dashboard-nav-icon-link {
@@ -4625,6 +4642,64 @@ a {
   .docs-endpoints p { grid-column: 2; }
 }
 
+/* ---- Developer docs embedded in dashboard ---- */
+.dashboard-docs {
+  --docs-ink: var(--ink, #17191d);
+  --docs-muted: var(--muted, #626872);
+  --docs-line: var(--line, #e3e6eb);
+  --docs-accent: #255075;
+  color: var(--docs-ink);
+}
+
+.dashboard-docs-content {
+  padding: 0 0 60px;
+}
+
+.dashboard-docs .docs-anchor {
+  scroll-margin-top: 24px;
+}
+
+.dashboard-docs .docs-hero h1 {
+  font-size: clamp(2rem, 4vw, 3.25rem);
+}
+
+.dashboard-docs .docs-section {
+  padding-top: 64px;
+}
+
+.dashboard-docs .docs-packages,
+.dashboard-docs .docs-steps,
+.dashboard-docs .docs-split-cards {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.dashboard-docs .docs-mobile-nav {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+@media (max-width: 800px) {
+  .dashboard-docs .docs-mobile-nav {
+    display: flex;
+  }
+  .dashboard-docs .docs-packages,
+  .dashboard-docs .docs-steps,
+  .dashboard-docs .docs-split-cards {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-docs .docs-hero h1 {
+    font-size: clamp(1.75rem, 8vw, 2.25rem);
+  }
+}
+
+@media (max-width: 560px) {
+  .dashboard-docs .docs-event-grid,
+  .dashboard-docs .docs-checklist {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---- Article editor: Substack-style Tiptap compose surface ---- */
 .article-compose-page {
   container-type: inline-size;
@@ -5024,7 +5099,7 @@ a {
 
 .site-header-inner,
 .site-header--scrolled .site-header-inner {
-  height: 4rem;
+  height: 3.25rem;
 }
 
 .site-nav-link { color: #6b7079; }
@@ -5571,14 +5646,15 @@ a {
   --line: rgba(18,18,22,.08);
   --muted: #68686f;
   --quiet: #96969d;
-  --river: #303034;
-  --river-deep: #1d1d20;
-  --river-pale: #ededee;
-  --river-line: #dedee1;
+  --river: #246bfd;
+  --river-deep: #1646a0;
+  --river-rgb: 36, 107, 253;
+  --river-pale: rgba(36,107,253,.10);
+  --river-line: rgba(36,107,253,.28);
 }
 .dashboard-canvas {
   background-color: #e8e9ea;
-  background-image: url("/dashboard-ocean.png");
+  background-image: url("/dashboard-bg.png");
   background-position: center;
   background-size: cover;
   background-attachment: fixed;
@@ -5599,7 +5675,7 @@ a {
 .dashboard-sidebar::before {
   z-index: 0;
   inset: -28px;
-  background: url("/dashboard-ocean.png") center / cover no-repeat;
+  background: url("/dashboard-bg.png") center / cover no-repeat;
   filter: blur(18px) saturate(.72);
   transform: scale(1.08);
 }
@@ -5641,8 +5717,8 @@ a {
 .dashboard-main button svg,
 .dashboard-main a.button svg { width: 14px; height: 14px; stroke-width: 1.75; }
 .dashboard-data-viz {
-  --river: #2f6de5;
-  --river-deep: #2459bd;
+  --river: #246bfd;
+  --river-deep: #1646a0;
 }
 .dashboard-nav-link:hover { background: rgba(255,255,255,.42); }
 .dashboard-nav-link.is-active,

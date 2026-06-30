@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import "./marketing.css";
 import { AppProviders } from "./providers";
 
 const sans = Hanken_Grotesk({

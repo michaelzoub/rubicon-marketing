@@ -201,7 +201,7 @@ export function SiteHeader({
     >
       <nav className="container site-header-inner" aria-label="Main navigation">
         <Link href="/" className="site-header-logo" aria-label="Rubicon home">
-          <RubiconBrand className="site-header-brand" />
+          <RubiconBrand className="site-header-brand site-header-brand--new" src="/Header-logo_w.svg" />
         </Link>
 
         <div className="site-header-links">
@@ -213,10 +213,10 @@ export function SiteHeader({
         </div>
 
         <div className="site-header-actions">
-          <Link href="/dashboard" className="site-nav-cta site-nav-cta--primary">
+          <Link href="/dashboard" className="site-nav-cta site-nav-cta--creator">
             List an article
           </Link>
-          <Link href="/demo-video" className="site-nav-cta site-nav-cta--secondary">
+          <Link href="/demo-video" className="site-nav-cta site-nav-cta--sales">
             Book a demo
           </Link>
         </div>

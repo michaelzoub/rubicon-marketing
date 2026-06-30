@@ -1,9 +1,11 @@
 export function RubiconBrand({
   className = "h-7",
   onLight = false,
+  src = "/RUBICONLOGO.svg",
 }: {
   className?: string;
   onLight?: boolean;
+  src?: string;
 }) {
   const isHeaderBrand = className.includes("site-header-brand");
   return (
@@ -12,7 +14,7 @@ export function RubiconBrand({
       aria-label="Rubicon"
     >
       <img
-        src="/RUBICONLOGO.svg"
+        src={src}
         alt=""
         className={isHeaderBrand ? "rubicon-brand-mark" : "rubicon-brand-mark h-full w-auto max-w-full"}
         decoding="async"

@@ -32,7 +32,7 @@ const navSections = [
   {
     label: "Support",
     items: [
-      { href: "/docs", label: "Developer docs", icon: BookOpen, exact: false },
+      { href: "/dashboard/docs", label: "Developer docs", icon: BookOpen, exact: false },
       { href: "/dashboard/settings", label: "Settings", icon: Settings, exact: true },
     ],
   },
@@ -138,23 +138,6 @@ export function DashboardFrame({
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
-  // The landing page pins `overflow-x: clip` on <html>/<body>, which crops the
-  // dashboard if its content ever exceeds the viewport (e.g. zoomed in) instead
-  // of letting it scroll. Allow horizontal scrolling while the dashboard is
-  // mounted, then restore the global clip on unmount.
-  useEffect(() => {
-    const html = document.documentElement;
-    const { body } = document;
-    const prevHtml = html.style.overflowX;
-    const prevBody = body.style.overflowX;
-    html.style.overflowX = "auto";
-    body.style.overflowX = "auto";
-    return () => {
-      html.style.overflowX = prevHtml;
-      body.style.overflowX = prevBody;
-    };
-  }, []);
-
   return (
     <div
       className={`dashboard-theme dashboard-canvas min-h-screen bg-[var(--surface-muted)] lg:grid ${
@@ -207,11 +190,11 @@ function Sidebar({
       }`}
     >
       {!open ? (
-        <div className="flex h-full flex-col items-center gap-4 px-3 py-4">
+        <div className="flex h-full flex-col items-center gap-5 px-3 py-4">
           <button type="button" onClick={onToggle} className="dashboard-icon-button" aria-label="Open sidebar" aria-expanded={false}>
             <PanelLeft size={16} aria-hidden="true" />
           </button>
-          <nav className="grid gap-2" aria-label="Dashboard sections">
+          <nav className="grid gap-3" aria-label="Dashboard sections">
             {navSections.flatMap((section) => section.items).map((item) => {
               const active = item.exact ? currentPath === item.href : currentPath.startsWith(item.href);
               const Icon = item.icon;
@@ -234,7 +217,7 @@ function Sidebar({
         <>
           <div className="dashboard-sidebar-chrome">
             <Link href="/" className="min-w-0" aria-label="Rubicon home">
-              <RubiconBrand className="h-7" onLight />
+              <RubiconBrand className="h-7" onLight src="/w_logo.svg" />
             </Link>
             <button type="button" onClick={onToggle} className="dashboard-icon-button" aria-label="Close sidebar" aria-expanded={true}>
               <PanelLeft size={15} aria-hidden="true" />
@@ -292,7 +275,7 @@ function MobileBar({ onLogout, activePath }: { onLogout?: () => void; activePath
     <div className="sticky top-0 z-30 border-b border-[var(--line)] bg-white/90 backdrop-blur lg:hidden">
       <div className="flex items-center justify-between px-5 py-3">
         <Link href="/" className="flex items-center" aria-label="Rubicon home">
-          <RubiconBrand className="h-7" onLight />
+          <RubiconBrand className="h-7" onLight src="/w_logo.svg" />
         </Link>
         {onLogout && (
           <button type="button" onClick={onLogout} className="text-[var(--muted)]" aria-label="Sign out">
@@ -331,7 +314,7 @@ function CenteredScreen({ children }: { children: ReactNode }) {
 function ConfigNotice() {
   return (
     <CenteredScreen>
-      <RubiconBrand className="h-10" />
+      <RubiconBrand className="h-10" src="/w_logo.svg" />
       <h1 className="mt-6 text-2xl font-semibold text-white">Connect writer login</h1>
       <p className="mt-3 max-w-md text-sm leading-6 text-[#a7abb4]">
         Set <code className="mono rounded-md bg-[var(--surface-muted)] px-1.5 py-0.5">NEXT_PUBLIC_PRIVY_APP_ID</code>,{" "}

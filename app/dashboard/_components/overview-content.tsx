@@ -178,7 +178,7 @@ export function DashboardOverviewContent({
                     <InsightTile value={<CountUp value={breakdown.avgPerRead} format={formatUsdDisplay} />} caption="Average earned per agent read" />
                     <InsightTile value={<CountUp value={breakdown.wordsAvailable} format={formatInt} />} caption="Words live and available to agents" />
                   </div>
-                  <div className="flex min-w-0 items-center rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-3.5">
+                  <div className="flex min-w-0 items-center overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-3.5">
                     <Donut slices={breakdown.slices} centerValue={breakdown.totalEarned} centerLabel="Total earned" size={142} stroke={18} />
                   </div>
                 </div>
@@ -285,11 +285,7 @@ export function OverviewSkeleton({ refreshing = false }: { refreshing?: boolean 
   );
 }
 
-const PODIUM_STYLES = [
-  { label: "1st", fill: "bg-[#f7e7ad]", ink: "text-[#78580b]", border: "border-[#dfc76c]" },
-  { label: "2nd", fill: "bg-[#e7e9ed]", ink: "text-[#545b66]", border: "border-[#cbd0d8]" },
-  { label: "3rd", fill: "bg-[#efd6c2]", ink: "text-[#7b4b2f]", border: "border-[#d6ae91]" },
-] as const;
+const PODIUM_LABELS = ["1st", "2nd", "3rd"] as const;
 
 function TopArticlesPodium({ articles }: { articles: NonNullable<DashboardOverviewProps["topArticles"]> }) {
   const podiumOrder = articles.length === 3 ? [articles[1], articles[0], articles[2]] : articles;
@@ -299,11 +295,11 @@ function TopArticlesPodium({ articles }: { articles: NonNullable<DashboardOvervi
       <div className="mt-3 grid flex-1 grid-cols-3 items-end gap-2">
         {podiumOrder.map((article) => {
           const rank = articles.indexOf(article);
-          const style = PODIUM_STYLES[rank] ?? PODIUM_STYLES[2];
+          const label = PODIUM_LABELS[rank] ?? PODIUM_LABELS[2];
           const content = (
             <>
-              <span className={`grid h-8 w-8 place-items-center rounded-full border text-xs font-bold ${style.fill} ${style.ink} ${style.border}`}>
-                {style.label}
+              <span className="grid h-8 w-8 place-items-center rounded-full border border-[var(--river-line)] bg-[var(--river-pale)] text-xs font-bold text-[var(--river-deep)]">
+                {label}
               </span>
               <span className="mt-3 truncate text-sm font-semibold leading-snug">{article.title}</span>
               <span className="mt-auto pt-3 text-sm font-semibold tabular-nums">{article.earnings}</span>
@@ -311,7 +307,7 @@ function TopArticlesPodium({ articles }: { articles: NonNullable<DashboardOvervi
           );
 
           const height = rank === 0 ? "min-h-[10.75rem]" : rank === 1 ? "min-h-[9.75rem]" : "min-h-[9rem]";
-          const className = `flex flex-col rounded-lg border p-3 ${height} ${style.fill} ${style.border}`;
+          const className = `flex min-w-0 flex-col rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-3 ${height}`;
           return article.href ? (
             <Link key={article.id ?? article.title} href={article.href} className={className}>
               {content}
@@ -823,11 +819,11 @@ function ExportButton({
 }
 
 const CONFETTI = [
-  [-150, -250, -38, "#2f6de5"], [-112, -292, 42, "#18181b"], [-72, -235, -76, "#62c79b"],
-  [-36, -320, 88, "#f0b64d"], [0, -260, -28, "#2f6de5"], [34, -305, 64, "#e46d67"],
+  [-150, -250, -38, "#246bfd"], [-112, -292, 42, "#18181b"], [-72, -235, -76, "#62c79b"],
+  [-36, -320, 88, "#f0b64d"], [0, -260, -28, "#246bfd"], [34, -305, 64, "#e46d67"],
   [70, -242, -54, "#18181b"], [108, -286, 36, "#62c79b"], [148, -252, -82, "#f0b64d"],
-  [-132, -190, 70, "#e46d67"], [-88, -214, -44, "#2f6de5"], [-48, -178, 92, "#62c79b"],
-  [46, -196, -62, "#f0b64d"], [88, -218, 52, "#e46d67"], [130, -188, -96, "#2f6de5"],
+  [-132, -190, 70, "#e46d67"], [-88, -214, -44, "#246bfd"], [-48, -178, 92, "#62c79b"],
+  [46, -196, -62, "#f0b64d"], [88, -218, 52, "#e46d67"], [130, -188, -96, "#246bfd"],
 ] as const;
 
 function CopyCelebration() {
@@ -898,7 +894,7 @@ async function renderExportPng({
   ctx.textBaseline = "alphabetic";
 
   const INK = "#0b0d12";
-  const BLUE = "#2f6de5";
+  const BLUE = "#246bfd";
   const LABEL = "#9aa2af";
   const MUTE = "#6b7280";
   const FRAC = "#c4cad4"; // greyed decimal part of two-tone numbers

@@ -1,6 +1,5 @@
 "use client";
 
-import "./landing-9fdd2b3.css";
 import { motion } from "framer-motion";
 import { ArrowRight, Check } from "lucide-react";
 import Link from "next/link";

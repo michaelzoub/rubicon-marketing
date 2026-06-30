@@ -164,8 +164,8 @@ export interface DonutSlice {
   color: string;
 }
 
-/** Financial-dashboard slice colors: blue, near-black, green, gold, slate. */
-export const DONUT_COLORS = ["#2f6de5", "#101114", "#15803d", "#c98a17", "#9aa3b2"];
+/** Single-hue accent-blue ramp, deep → pale, so slices read as one family. */
+export const DONUT_COLORS = ["#1646a0", "#246bfd", "#2f87ff", "#6cb8ff", "#b9daff"];
 
 /**
  * Ring chart with a centered headline. Slices sweep in clockwise on mount and
@@ -193,7 +193,7 @@ export function Donut({
   let offsetAcc = 0;
 
   return (
-    <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-center sm:gap-7">
+    <div className="grid w-full min-w-0 grid-cols-1 items-center gap-5 sm:grid-cols-[auto_minmax(0,1fr)] sm:gap-5">
       <div className="relative shrink-0" style={{ width: size, height: size }}>
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90">
           {/* track */}
@@ -239,7 +239,7 @@ export function Donut({
       </div>
 
       {/* legend */}
-      <ul className="w-full min-w-0 flex-1 space-y-2.5">
+      <ul className="w-full min-w-0 space-y-2.5 overflow-hidden">
         {slices.map((slice, i) => {
           const pct = total > 0 ? Math.round((slice.value / total) * 100) : 0;
           return (
