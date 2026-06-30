@@ -6,13 +6,13 @@ import { RubiconBrand } from "./rubicon-brand";
 describe("RubiconBrand", () => {
   it("uses the canonical logo asset", () => {
     const markup = renderToStaticMarkup(createElement(RubiconBrand));
-    expect(markup).toContain('href="/rubicon-new.png"');
+    expect(markup).toContain('src="/RUBICONLOGO.svg"');
     expect(markup).toContain('aria-label="Rubicon"');
   });
 
-  it("uses the dark-wordmark asset on light surfaces", () => {
+  it("marks light-surface usage for styling", () => {
     const markup = renderToStaticMarkup(createElement(RubiconBrand, { onLight: true }));
-    expect(markup).toContain('href="/rubicon-new-dark.png"');
-    expect(markup).not.toContain("bg-[#0d0e11]");
+    expect(markup).toContain('src="/RUBICONLOGO.svg"');
+    expect(markup).toContain("rubicon-brand--on-light");
   });
 });

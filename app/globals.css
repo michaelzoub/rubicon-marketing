@@ -1688,6 +1688,10 @@ a {
 /* Creators page */
 .creators-page {
   min-height: 100dvh;
+  --river: #303034;
+  --river-deep: #1d1d20;
+  --river-pale: #ededee;
+  --river-line: #dedee1;
 }
 
 .creators-hero {
@@ -1838,6 +1842,14 @@ a {
 .creator-publish-flow .dashboard-sidebar {
   height: auto;
   min-height: 100%;
+  contain: paint;
+}
+
+/* Keep the real dashboard artwork on its own compositor layer so changing
+ * wizard steps does not flash the sidebar painting. */
+.creator-publish-flow .dashboard-sidebar::before {
+  backface-visibility: hidden;
+  transform: scale(1.08) translateZ(0);
 }
 
 /* Hold a steady height across steps so the section below doesn't jump as the
@@ -1855,35 +1867,14 @@ a {
     width: 100%;
   }
 
-  .creator-publish-flow .dashboard-canvas > main > div:last-child {
-    padding-inline: 0.75rem;
-  }
-
   .creator-publish-flow .sticky.top-0 {
     position: relative;
-  }
-
-  .creator-publish-flow .sticky.top-0 > div:first-child {
-    padding-inline: 0.75rem;
-  }
-
-  .creator-publish-flow .sticky.top-0 nav {
-    padding-inline: 0.5rem;
-  }
-
-  .creator-publish-flow .dashboard-card {
-    border-radius: 12px;
   }
 
   .creator-publish-flow .cpf-step {
     min-height: clamp(520px, 145vw, 620px);
   }
 
-  .creator-publish-flow .button {
-    min-height: 2.5rem;
-    padding-inline: 0.85rem;
-    white-space: normal;
-  }
 }
 
 /* Typing caret used across the simulated inputs. */
@@ -2446,6 +2437,154 @@ a {
   display: flex;
   shrink: 0;
   align-items: center;
+  min-width: 0;
+}
+
+/* Keep the shared wordmark bounded on routes that do not import the
+ * home-page-only stylesheet (notably /explore and /creators). */
+.site-header {
+  --header-logo-height: 2rem;
+  --header-logo-max-width: min(10rem, 34vw);
+}
+
+.site-header-logo .site-header-brand {
+  display: block;
+  width: auto;
+  height: var(--header-logo-height);
+  line-height: 0;
+}
+
+.site-header-logo .site-header-brand .rubicon-brand-mark {
+  display: block;
+  width: auto;
+  height: var(--header-logo-height);
+  max-width: var(--header-logo-max-width);
+  object-fit: contain;
+  object-position: left center;
+}
+
+@media (min-width: 768px) {
+  .site-header {
+    --header-logo-height: 2.25rem;
+    --header-logo-max-width: min(11rem, 18vw);
+  }
+}
+
+/* Shared Solutions menu. These rules must live globally because the header is
+ * rendered on /explore and /creators as well as the home route. */
+.site-nav-dropdown {
+  position: relative;
+}
+
+.site-nav-dropdown-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.site-nav-dropdown-trigger svg {
+  flex-shrink: 0;
+  opacity: 0.55;
+  transition: transform 220ms var(--ease-out), opacity 180ms var(--ease-soft);
+}
+
+.site-header--solutions-open .site-nav-dropdown-trigger svg {
+  opacity: 0.85;
+  transform: rotate(180deg);
+}
+
+.site-nav-solutions-panel {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  left: 0;
+  z-index: 40;
+  overflow: hidden;
+  border-bottom: 1px solid transparent;
+  background: #fff;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateY(-8px);
+  transition: opacity 220ms var(--ease-soft), transform 220ms var(--ease-out), visibility 220ms;
+}
+
+.site-header--solutions-open .site-nav-solutions-panel {
+  border-bottom-color: var(--line);
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.site-nav-solutions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.site-nav-solutions-card {
+  position: relative;
+  display: block;
+  overflow: hidden;
+  min-height: clamp(14rem, 32vh, 22rem);
+  background: #fff;
+  color: #fff;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(10px);
+  transition: opacity 220ms var(--ease-soft), transform 220ms var(--ease-out);
+}
+
+.site-header--solutions-open .site-nav-solutions-card {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.site-nav-solutions-card-image {
+  object-fit: cover;
+  object-position: center;
+  transition: transform 280ms var(--ease-out);
+}
+
+.site-nav-solutions-card:hover .site-nav-solutions-card-image,
+.site-nav-solutions-card:focus-visible .site-nav-solutions-card-image {
+  transform: scale(1.03);
+}
+
+.site-nav-solutions-card-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(12, 14, 18, 0.24);
+  pointer-events: none;
+}
+
+.site-nav-solutions-card-title {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  font-size: clamp(1.35rem, 2.8vw, 2rem);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-nav-solutions-panel,
+  .site-nav-solutions-card,
+  .site-nav-solutions-card-image {
+    transition-duration: 0.001ms;
+  }
 }
 
 .site-header-links {
@@ -2743,19 +2882,19 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
-  min-height: 38px;
-  border-radius: var(--radius-ui);
-  padding: 0 1.1rem;
+  gap: 0.4rem;
+  min-height: 32px;
+  border-radius: 8px;
+  padding: 0.38rem 0.7rem;
   font-size: 0.875rem;
   font-weight: 600;
   letter-spacing: -0.01em;
   transition:
-    transform 220ms var(--ease-out),
-    background-color 220ms var(--ease-soft),
-    color 220ms var(--ease-soft),
-    border-color 220ms ease,
-    opacity 220ms ease;
+    transform 140ms var(--ease-out),
+    background-color 140ms ease,
+    color 140ms ease,
+    border-color 140ms ease,
+    opacity 140ms ease;
   will-change: transform;
 }
 
@@ -2774,13 +2913,14 @@ a {
 }
 
 .button-primary {
-  background: #f7f7f8;
-  color: #171719;
+  border: 1px solid #18181b;
+  background: #18181b;
+  color: #ffffff;
 }
 
 .button-primary:hover {
-  background: #ffffff;
-  transform: translateY(-1px);
+  border-color: #2a2a2e;
+  background: #2a2a2e;
 }
 
 .button-nav {
@@ -2791,14 +2931,13 @@ a {
 }
 
 .button-secondary {
-  border: 0;
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--ink);
+  border: 1px solid var(--line);
+  background: #ffffff;
+  color: #18181b;
 }
 
 .button-secondary:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-1px);
+  background: var(--hovered);
 }
 
 .dashboard-theme .button-primary {
@@ -4877,7 +5016,7 @@ a {
 .site-nav-link:hover,
 .site-nav-link.site-nav-link--active,
 .site-nav-link[aria-current="page"] { color: #16181d; }
-.site-nav-link::after { bottom: -0.55rem; height: 1px; }
+.site-nav-link::after { bottom: -0.55rem; height: 1px; background: #16181d; }
 
 .site-nav-cta { transition: transform 140ms var(--ease-out), background-color 180ms ease, border-color 180ms ease; }
 .site-nav-cta:active { transform: scale(0.97); }
@@ -5529,6 +5668,15 @@ a {
 .creators-hero-quote-attribution { color: #111; }
 
 /* ---------- skeleton loading ---------- */
+.creators-page .creators-hero-content,
+.creators-page .creators-hero-inner {
+  background: transparent;
+}
+
+.creators-page .creators-hero-inner {
+  padding: 0;
+}
+
 /* Calm, matte, barely-visible shimmer. The sheen sweeps across the muted
    surface slowly (3s) so the layout settles quietly rather than flashing. */
 :root { --skeleton-sheen: #1c1e22; }

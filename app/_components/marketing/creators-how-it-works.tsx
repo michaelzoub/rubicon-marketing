@@ -58,12 +58,12 @@ export function CreatorsHowItWorks() {
           </ol>
 
           <div className="creators-how-cta">
-            <p className="creators-how-cta-lead">Ready to join the writer-agent economy?</p>
+            <p className="creators-how-cta-lead">Ready to join the creator-agent economy?</p>
             <p className="creators-how-cta-copy">
               List your work, set your per-word price, and start earning when agents read.
             </p>
             <Link href="/dashboard" className="button button-primary creators-how-cta-button">
-              List one article <ArrowRight size={16} aria-hidden="true" />
+              Start publishing <ArrowRight size={16} aria-hidden="true" />
             </Link>
           </div>
         </div>
