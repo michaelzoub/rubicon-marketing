@@ -1,14 +1,14 @@
 /* Route-scoped marketing corrections. Keep dashboard styling in globals.css untouched. */
 
 .landing-page .landing-hero {
-  min-height: calc(100dvh - 4rem);
+  min-height: auto;
   border-bottom: 0;
   background: #fff;
 }
 
 .landing-page .landing-hero-content {
   align-items: center;
-  padding-block: clamp(5rem, 14vh, 9rem);
+  padding-block: clamp(7rem, 13vh, 9rem) clamp(3rem, 6vh, 4.5rem);
 }
 
 .landing-page .landing-hero-copy {
@@ -35,6 +35,25 @@
 
 .landing-page .landing-hero-title-emphasis {
   color: #18181b;
+}
+
+.landing-page .landing-dashboard-showcase {
+  padding-top: clamp(0.75rem, 1.5vh, 1.25rem);
+}
+
+.landing-page .landing-dashboard-showcase-inner {
+  gap: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+.landing-page .landing-dashboard-showcase-panel {
+  padding: clamp(0.85rem, 2.6vw, 2.5rem);
+  background-image: url("/DB_BG.png");
+  background-position: center;
+  background-size: cover;
+}
+
+.landing-page .landing-dashboard-frame {
+  box-shadow: none;
 }
 
 .creators-page .creators-hero {
@@ -88,12 +107,12 @@
 
 @media (max-width: 767px) {
   .landing-page .landing-hero {
-    min-height: calc(100dvh - 4rem);
+    min-height: auto;
   }
 
   .landing-page .landing-hero-content {
     align-items: center;
-    padding-block: 5rem 3.5rem;
+    padding-block: 5rem 2.5rem;
   }
 
   .landing-page .landing-hero-title {
