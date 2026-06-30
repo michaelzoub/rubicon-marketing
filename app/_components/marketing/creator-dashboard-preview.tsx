@@ -83,11 +83,11 @@ export function CreatorDashboardPreview({ embedded = false }: { embedded?: boole
       },
       exportData: {
         username: "@previewwriter",
+        avatarUrl: null,
         totalEarned: 501.09,
         wordsRead: 50005,
         agentReads: 183,
         topArticle: "The Agent Economy Is Already Here",
-        walletAddress: "0x742d35cc6634c0532925a3b844bc9e7595f08f44",
         trendBars: earningsTrend,
       },
       activityCalendar: previewActivityCalendar,

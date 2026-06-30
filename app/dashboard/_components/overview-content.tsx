@@ -77,11 +77,11 @@ export interface DashboardOverviewWallet {
 
 export interface DashboardOverviewExport {
   username: string;
+  avatarUrl: string | null;
   totalEarned: number;
   wordsRead: number;
   agentReads: number;
   topArticle: string | null;
-  walletAddress: string | null;
   trendBars: TrendBar[];
 }
 
@@ -589,11 +589,11 @@ const PRESET_THUMB_SIZE = 44;
 
 function ExportButton({
   username,
+  avatarUrl,
   totalEarned,
   wordsRead,
   agentReads,
   topArticle,
-  walletAddress,
   trendBars,
 }: DashboardOverviewExport) {
   const reduceMotion = useReducedMotion();
@@ -626,12 +626,11 @@ function ExportButton({
     setPngUrl(null);
     renderExportPng({
       username,
+      avatarUrl,
       amount: formatUsdDisplay(totalEarned),
       reads: formatInt(agentReads),
       words: formatInt(wordsRead),
       topArticle: topArticle ?? "Not available yet",
-      wallet: shortWallet(walletAddress),
-      avgRead: formatUsdDisplay(agentReads > 0 ? totalEarned / agentReads : 0),
       trendBars,
       bgImage,
     }).then((url) => {
@@ -640,7 +639,7 @@ function ExportButton({
     return () => {
       cancelled = true;
     };
-  }, [agentReads, topArticle, totalEarned, trendBars, username, walletAddress, wordsRead, bgImage]);
+  }, [agentReads, avatarUrl, topArticle, totalEarned, trendBars, username, wordsRead, bgImage]);
 
   const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -861,22 +860,20 @@ function CopyCelebration() {
  */
 async function renderExportPng({
   username,
+  avatarUrl,
   amount,
   reads,
   words,
   topArticle,
-  wallet,
-  avgRead,
   trendBars,
   bgImage,
 }: {
   username: string;
+  avatarUrl: string | null;
   amount: string;
   reads: string;
   words: string;
   topArticle: string;
-  wallet: string;
-  avgRead: string;
   trendBars: TrendBar[];
   bgImage: string;
 }) {
@@ -894,14 +891,19 @@ async function renderExportPng({
   ctx.textBaseline = "alphabetic";
 
   const INK = "#0b0d12";
-  const BLUE = "#246bfd";
+  const SOFT_BLUE = "#b7caee";
+  const GRAPHITE = "#26303d";
+  const PATH = "#dbe4f2";
   const LABEL = "#9aa2af";
   const MUTE = "#6b7280";
-  const FRAC = "#c4cad4"; // greyed decimal part of two-tone numbers
   const GREEN_BG = "#e7f6ec";
   const GREEN = "#1f8f4e";
   const FONT = '"Helvetica Neue", Arial, sans-serif';
-  const painting = await loadImage(bgImage);
+  const [painting, logo, avatar] = await Promise.all([
+    loadImage(bgImage),
+    loadImage("/Header-logo_b.svg"),
+    avatarUrl ? loadImage(avatarUrl) : Promise.resolve(null),
+  ]);
   const trendValues = trendBars.map((bar) => bar.value);
 
   // letterSpacing lands on the 2d context in modern browsers but isn't yet in
@@ -931,91 +933,144 @@ async function renderExportPng({
     ctx.textAlign = "left";
   };
 
-  // ---- backdrop (frosted glass) ------------------------------------------
-  ctx.fillStyle = "#e5e7e8";
+  // ---- backdrop (darkened atmospheric glass) -----------------------------
+  ctx.fillStyle = "#13261f";
   ctx.fillRect(0, 0, W, H);
   if (painting) {
-    // Keep the blurred painting vivid — boosted saturation reads as colored
-    // glass rather than a washed-out grey.
-    drawBlurredCover(ctx, painting, -42, -42, W + 84, H + 84, { alpha: 1, saturate: 1.12 });
+    drawBlurredCover(ctx, painting, -52, -52, W + 104, H + 104, { alpha: 0.88, saturate: 0.88 });
   }
-  // A whisper-thin light tint only — enough to lift the dark corner text off
-  // the busy image without flattening the color into white.
-  ctx.fillStyle = "rgba(255,255,255,0.12)";
+  ctx.fillStyle = "rgba(5, 24, 18, 0.46)";
   ctx.fillRect(0, 0, W, H);
 
   // ---- top bar -----------------------------------------------------------
-  // White wordmark with a soft shadow so it stays legible over the vivid,
-  // unpredictable glass backdrop.
-  const logoY = 64;
-  ctx.save();
-  ctx.shadowColor = "rgba(0,0,0,0.3)";
-  ctx.shadowBlur = 14;
-  ctx.shadowOffsetY = 1;
-  ctx.fillStyle = "#ffffff";
-  ctx.font = `700 30px ${FONT}`;
-  ctx.fillText("Rubicon", 64, logoY + 30);
-  ctx.restore();
+  // The source SVG has a roomy square artboard. Crop to its horizontal lockup
+  // so the real white Rubicon mark sits cleanly in the original top-left spot.
+  if (logo) {
+    // drawImage uses the SVG's intrinsic 2000px dimensions, not its 1500-unit
+    // viewBox. These source coordinates account for that 4/3 scale.
+    ctx.drawImage(logo, 110, 760, 1740, 470, 64, 54, 210, 57);
+  }
 
   // ---- earn card ---------------------------------------------------------
-  const cardW = 744;
-  const cardX = (W - cardW) / 2;
-  const cardY = 210;
-  const cardH = 878;
-  const cardR = 58;
+  const cardW = 860;
+  const backOffset = 14;
+  // Center the combined silhouette: the backing extends left while the black
+  // card extends the same distance farther right.
+  const cardX = (W - cardW) / 2 + backOffset / 2;
+  const cardY = 190;
+  const cardH = 860;
+  const cardR = 48;
 
-  // back "stacked layer" lip peeking above the dark card
-  const backX = cardX + 30;
-  const backW = cardW - 60;
-  const backLip = ctx.createLinearGradient(0, cardY - 26, 0, cardY + 60);
-  backLip.addColorStop(0, "#cfe0ff");
-  backLip.addColorStop(1, "#eef4ff");
-  roundRect(ctx, backX, cardY - 24, backW, 118, 54);
-  ctx.fillStyle = backLip;
+  // A translucent pearlescent backing picks up the atmospheric colors beneath
+  // it while remaining a crisp, axis-aligned second sheet.
+  const glassX = cardX - backOffset;
+  const glassY = cardY - backOffset;
+  const glass = ctx.createLinearGradient(glassX, glassY, glassX + cardW, glassY + cardH);
+  glass.addColorStop(0, "rgba(255,255,255,0.28)");
+  glass.addColorStop(0.42, "rgba(226,239,235,0.1)");
+  glass.addColorStop(1, "rgba(255,255,255,0.16)");
+  ctx.fillStyle = glass;
+  roundRect(ctx, glassX, glassY, cardW, cardH, cardR);
   ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.42)";
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
 
   ctx.fillStyle = "#0b0d12";
   roundRect(ctx, cardX, cardY, cardW, cardH, cardR);
   ctx.fill();
 
-  // dark-card header
+  // The result is the character of the artifact: one large proof statement,
+  // with the amount shown only once rather than repeated inside the receipt.
   ctx.fillStyle = "#ffffff";
-  ctx.font = `700 38px ${FONT}`;
-  ctx.fillText("Earnings", cardX + 54, cardY + 96);
+  ctx.font = `700 66px ${FONT}`;
+  ctx.fillText(amount, cardX + 42, cardY + 92);
+  const amountW = ctx.measureText(amount).width;
+  ctx.font = `600 27px ${FONT}`;
+  ctx.fillText("earned from agent reads", cardX + 42 + amountW + 20, cardY + 92);
 
-  // ---- white inner card --------------------------------------------------
-  const innerX = cardX + 42;
-  const innerW = cardW - 84;
-  const innerY = cardY + 148;
-  const innerH = 594;
-  panel(innerX, innerY, innerW, innerH, 38, "#ffffff");
+  // ---- paid-read receipt -------------------------------------------------
+  const innerX = cardX + 32;
+  const innerW = cardW - 64;
+  const innerY = cardY + 142;
+  const innerH = 500;
+  panel(innerX, innerY, innerW, innerH, 32, "#ffffff");
 
   const pad = 40;
   const cx = innerX + pad;
   const cr = innerX + innerW - pad;
 
-  // total earned
-  drawLabel("TOTAL EARNED", cx, innerY + 72);
-  ctx.font = `800 64px ${FONT}`;
-  drawTwoTone(ctx, amount, cx, innerY + 138, INK, FRAC);
+  panel(cr - 106, innerY + 29, 106, 32, 10, "#f1f3f6");
+  ctx.fillStyle = GRAPHITE;
+  ctx.font = `700 14px ${FONT}`;
+  ctx.textAlign = "center";
+  ctx.fillText("14 days live", cr - 53, innerY + 50);
+  ctx.textAlign = "left";
 
-  // gain pill + context
+  // Positive growth is useful proof. Negative growth is intentionally omitted
+  // from a share artifact rather than turning it into a dashboard report.
   const delta = computeTrendDelta(trendValues);
-  ctx.font = `700 16px ${FONT}`;
-  const pillTextW = ctx.measureText(delta.label).width;
-  const pillH = 34;
-  const pillW = pillTextW + 26;
-  const pillTop = innerY + 170;
-  panel(cx, pillTop, pillW, pillH, 10, delta.up ? GREEN_BG : "#eef2f8");
-  ctx.fillStyle = delta.up ? GREEN : MUTE;
-  ctx.font = `700 16px ${FONT}`;
-  ctx.fillText(delta.label, cx + 13, pillTop + pillH / 2 + 5);
-  ctx.fillStyle = MUTE;
-  ctx.font = `500 16px ${FONT}`;
-  ctx.fillText(`${words} words · 14 days`, cx + pillW + 14, pillTop + pillH / 2 + 5);
+  if (delta.up) {
+    ctx.font = `700 14px ${FONT}`;
+    const pillTextW = ctx.measureText(delta.label).width;
+    const pillH = 32;
+    const pillW = pillTextW + 24;
+    const pillTop = innerY + 29;
+    const pillX = cr - 116 - pillW;
+    panel(pillX, pillTop, pillW, pillH, 10, GREEN_BG);
+    ctx.fillStyle = GREEN;
+    ctx.fillText(delta.label, pillX + 12, pillTop + pillH / 2 + 5);
+  }
+
+  // A literal transaction path gives the proof-of-earnings artifact its own
+  // visual language: the agent read becomes paid words, then creator earnings.
+  const pathY = innerY + 138;
+  const pathXs = [cx + 18, (cx + cr) / 2, cr - 18];
+  ctx.strokeStyle = PATH;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(pathXs[0], pathY);
+  ctx.lineTo(pathXs[2], pathY);
+  ctx.stroke();
+
+  // Small directional notches make the transaction sequence read left-to-right.
+  [
+    (pathXs[0] + pathXs[1]) / 2,
+    (pathXs[1] + pathXs[2]) / 2,
+  ].forEach((x) => {
+    ctx.fillStyle = "#aebed8";
+    ctx.beginPath();
+    ctx.moveTo(x - 4, pathY - 6);
+    ctx.lineTo(x + 5, pathY);
+    ctx.lineTo(x - 4, pathY + 6);
+    ctx.closePath();
+    ctx.fill();
+  });
+
+  const receiptSteps = [
+    { value: reads, label: `agent ${reads === "1" ? "read" : "reads"}` },
+    { value: words, label: "paid words" },
+    { value: amount, label: "earned" },
+  ];
+  receiptSteps.forEach((step, index) => {
+    const x = pathXs[index];
+    ctx.fillStyle = index === 1 ? SOFT_BLUE : GRAPHITE;
+    ctx.beginPath();
+    ctx.arc(x, pathY, 9, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = INK;
+    ctx.font = `800 30px ${FONT}`;
+    ctx.textAlign = "center";
+    ctx.fillText(step.value, x, pathY - 28);
+    ctx.fillStyle = MUTE;
+    ctx.font = `600 14px ${FONT}`;
+    ctx.fillText(step.label, x, pathY + 36);
+  });
+  ctx.textAlign = "left";
 
   // divider
-  const div1 = innerY + 248;
+  const div1 = innerY + 208;
   ctx.strokeStyle = "rgba(15,22,38,0.08)";
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -1024,69 +1079,86 @@ async function renderExportPng({
   ctx.stroke();
 
   // activity chart
-  const chartY = div1 + 44;
+  const chartY = div1 + 42;
   const chartH = innerY + innerH - chartY - 42;
   drawLabel("EARNINGS ACTIVITY", cx, chartY);
-  ctx.fillStyle = MUTE;
-  ctx.font = `600 13px ${FONT}`;
-  ctx.fillText(`${reads} reads · ${avgRead} avg / read`, cx, chartY + 28);
-  drawExportMoneyChart(ctx, cx, chartY + 58, cr - cx, chartH - 58, trendBars, BLUE);
+  drawExportMoneyChart(ctx, cx, chartY + 34, cr - cx, chartH - 34, trendBars, GRAPHITE);
 
-  // top article callout under the white panel
-  const articleY = innerY + innerH + 54;
-  ctx.fillStyle = "rgba(255,255,255,0.54)";
-  ctx.font = `700 13px ${FONT}`;
-  setSpacing("1.4px");
-  ctx.fillText("TOP ARTICLE", cardX + 54, articleY);
-  setSpacing("0px");
+  // Top article breaks out of the receipt into the dark creator-owned surface.
+  const articleY = innerY + innerH + 48;
+  ctx.fillStyle = SOFT_BLUE;
+  roundRect(ctx, cardX + 42, articleY - 14, 6, 88, 3);
+  ctx.fill();
+  ctx.fillStyle = "rgba(255,255,255,0.58)";
+  ctx.font = `600 15px ${FONT}`;
+  ctx.fillText("Top paid article", cardX + 66, articleY);
   ctx.fillStyle = "#ffffff";
-  ctx.font = `700 21px ${FONT}`;
-  ctx.fillText(truncateForCanvas(ctx, topArticle, cardW - 108), cardX + 54, articleY + 34);
+  ctx.font = `700 34px ${FONT}`;
+  ctx.fillText(truncateForCanvas(ctx, topArticle, cardW - 108), cardX + 66, articleY + 42);
+  ctx.fillStyle = "rgba(255,255,255,0.58)";
+  ctx.font = `500 15px ${FONT}`;
+  ctx.fillText(`${words} words accessed by agents`, cardX + 66, articleY + 72);
 
   // ---- footer ------------------------------------------------------------
-  // White corner text with a soft shadow, matching the wordmark, so the wallet
-  // and brand stay readable on the colored glass.
+  // Personal creator signature replaces the wallet address entirely.
   const footY = H - 70;
+  const avatarSize = 42;
+  const avatarX = 64;
+  const avatarY = footY - avatarSize + 10;
+  ctx.font = `700 17px ${FONT}`;
+  const usernameW = ctx.measureText(username).width;
+  const identityX = avatarX - 12;
+  const identityY = avatarY - 6;
+  const identityW = avatarSize + usernameW + 50;
+  const identityGlass = ctx.createLinearGradient(identityX, identityY, identityX + identityW, identityY + 54);
+  identityGlass.addColorStop(0, "rgba(255,255,255,0.22)");
+  identityGlass.addColorStop(1, "rgba(255,255,255,0.08)");
+  ctx.fillStyle = identityGlass;
+  roundRect(ctx, identityX, identityY, identityW, 54, 27);
+  ctx.fill();
+  ctx.strokeStyle = "rgba(255,255,255,0.32)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
   ctx.save();
-  ctx.shadowColor = "rgba(0,0,0,0.3)";
-  ctx.shadowBlur = 14;
-  ctx.shadowOffsetY = 1;
-  // bottom-left: wallet, subdued white
-  ctx.fillStyle = "rgba(255,255,255,0.8)";
-  ctx.font = `600 15px ${FONT}`;
-  ctx.fillText(wallet, 64, footY);
-  // bottom-right: "Built on Rubicon", brand emphasised
-  const lead = "Built on ";
+  ctx.beginPath();
+  ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
+  ctx.clip();
+  if (avatar) {
+    drawCoverImage(ctx, avatar, avatarX, avatarY, avatarSize, avatarSize);
+  } else {
+    ctx.fillStyle = "rgba(255,255,255,0.92)";
+    ctx.fillRect(avatarX, avatarY, avatarSize, avatarSize);
+    ctx.fillStyle = INK;
+    ctx.font = `700 17px ${FONT}`;
+    ctx.textAlign = "center";
+    ctx.fillText(username.replace(/^@/, "").slice(0, 1).toUpperCase(), avatarX + avatarSize / 2, avatarY + 27);
+  }
+  ctx.restore();
+  ctx.strokeStyle = "rgba(255,255,255,0.34)";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2 - 0.5, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.textAlign = "left";
+  ctx.fillStyle = "rgba(255,255,255,0.9)";
+  ctx.font = `700 17px ${FONT}`;
+  ctx.fillText(username, avatarX + avatarSize + 14, footY - 5);
+  // bottom-right: creator-first Rubicon attribution
+  const lead = "Creating on ";
   ctx.font = `500 18px ${FONT}`;
   const leadW = ctx.measureText(lead).width;
   ctx.font = `700 18px ${FONT}`;
   const brandW = ctx.measureText("Rubicon").width;
   const startX = W - 64 - leadW - brandW;
-  ctx.fillStyle = "rgba(255,255,255,0.82)";
+  ctx.fillStyle = "rgba(255,255,255,0.68)";
   ctx.font = `500 18px ${FONT}`;
   ctx.fillText(lead, startX, footY);
   ctx.fillStyle = "#ffffff";
   ctx.font = `700 18px ${FONT}`;
   ctx.fillText("Rubicon", startX + leadW, footY);
-  ctx.restore();
 
   return canvas.toDataURL("image/png");
-}
-
-/** Draws a number with a solid integer part and a lighter fractional part. */
-function drawTwoTone(ctx: CanvasRenderingContext2D, text: string, x: number, y: number, intColor: string, fracColor: string) {
-  const dot = text.lastIndexOf(".");
-  if (dot < 0) {
-    ctx.fillStyle = intColor;
-    ctx.fillText(text, x, y);
-    return;
-  }
-  const head = text.slice(0, dot);
-  const tail = text.slice(dot);
-  ctx.fillStyle = intColor;
-  ctx.fillText(head, x, y);
-  ctx.fillStyle = fracColor;
-  ctx.fillText(tail, x + ctx.measureText(head).width, y);
 }
 
 function drawExportMoneyChart(
@@ -1246,7 +1318,7 @@ function computeTrendDelta(values: number[]): { label: string; up: boolean } {
   const cur = values.slice(half).reduce((a, b) => a + b, 0);
   if (prev <= 0) return { label: cur > 0 ? "New" : "—", up: cur > 0 };
   const pct = Math.round(((cur - prev) / prev) * 1000) / 10;
-  return pct >= 0 ? { label: `+${pct.toFixed(1)}%`, up: true } : { label: `${pct.toFixed(1)}%`, up: false };
+  return pct > 0 ? { label: `+${pct.toFixed(1)}%`, up: true } : { label: `${pct.toFixed(1)}%`, up: false };
 }
 
 function truncateForCanvas(ctx: CanvasRenderingContext2D, text: string, maxWidth: number) {
@@ -1281,6 +1353,7 @@ function dataUrlToPngBlob(dataUrl: string) {
 function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const img = new window.Image();
+    if (/^https?:\/\//i.test(src)) img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
     img.onerror = () => resolve(null);
     img.src = src;
