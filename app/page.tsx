@@ -1,5 +1,6 @@
 "use client";
 
+import "./landing-9fdd2b3.css";
 import { motion } from "framer-motion";
 import { ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
@@ -49,7 +50,7 @@ function DashboardShowcase() {
               <div className="landing-dashboard-texture-border">
                 <div className="landing-dashboard-frame">
                   <img
-                    src="/Rubicon_Dashboard.png"
+                    src="/landing-dashboard-main.png"
                     alt="Rubicon creator dashboard showing earnings, agent reads, words read, and payout wallet"
                     className="landing-dashboard-image"
                     decoding="async"

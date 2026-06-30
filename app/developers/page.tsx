@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
+import { AgentsPaidReadingSection } from "../_components/marketing/agents-paid-reading-section";
 import { DevelopersSdkSection } from "../_components/marketing/developers-sdk-section";
-import { LandingAgentsSection } from "../_components/marketing/landing-agents-section";
 import { SiteFooter } from "../_components/marketing/site-footer";
 import { SiteHeader } from "../_components/site-header";
 
@@ -11,13 +11,11 @@ export const metadata: Metadata = {
 
 export default function DevelopersPage() {
   return (
-    <>
-      <div className="landing-page developers-page">
-        <SiteHeader overlay />
-        <LandingAgentsSection isPageLead showCta={false} />
-        <DevelopersSdkSection />
-      </div>
+    <div className="landing-page developers-page">
+      <SiteHeader overlay />
+      <AgentsPaidReadingSection />
+      <DevelopersSdkSection />
       <SiteFooter />
-    </>
+    </div>
   );
 }

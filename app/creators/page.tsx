@@ -6,20 +6,18 @@ import { SiteFooter } from "../_components/marketing/site-footer";
 import { SiteHeader } from "../_components/site-header";
 
 export const metadata: Metadata = {
-  title: "For creators · Rubicon",
+  title: "For writers · Rubicon",
   description: "Publish premium articles, set per-word pricing, and earn from AI agent traffic on your terms.",
 };
 
 export default function CreatorsPage() {
   return (
-    <>
-      <div className="landing-page creators-page">
-        <SiteHeader overlay />
-        <CreatorsHero />
-        <CreatorsBenefits />
-        <CreatorsHowItWorks />
-      </div>
+    <div className="landing-page creators-page">
+      <SiteHeader overlay />
+      <CreatorsHero />
+      <CreatorsBenefits />
+      <CreatorsHowItWorks />
       <SiteFooter />
-    </>
+    </div>
   );
 }
