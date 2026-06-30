@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function CreatorsPage() {
   return (
     <div className="landing-page creators-page">
-      <SiteHeader overlay />
+      <SiteHeader />
       <CreatorsHero />
       <CreatorsBenefits />
       <CreatorsHowItWorks />

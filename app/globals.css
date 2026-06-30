@@ -3949,8 +3949,8 @@ a {
   --explore-divider: rgba(20, 22, 28, 0.08);
   --explore-fill: #f3f4f7;
   --explore-fill-strong: #eceef2;
-  --explore-shadow: 0 1px 2px rgba(20, 22, 28, 0.05), 0 14px 38px rgba(20, 22, 28, 0.12);
-  --explore-shadow-soft: 0 1px 2px rgba(20, 22, 28, 0.04), 0 8px 22px rgba(20, 22, 28, 0.08);
+  --explore-shadow: 0 1px 2px rgba(18, 22, 34, 0.04), 0 10px 24px -14px rgba(18, 22, 34, 0.16);
+  --explore-shadow-soft: 0 1px 2px rgba(18, 22, 34, 0.04), 0 10px 24px -14px rgba(18, 22, 34, 0.16);
 
   min-height: 100vh;
   color: var(--ink);
@@ -3960,6 +3960,9 @@ a {
   position: relative;
   overflow: hidden;
   min-height: calc(100vh - 3.75rem);
+  /* Match the dashboard's flat radii: ~9px cards, 8px controls — no pills. */
+  --radius-card: 10px;
+  --radius-ui: 8px;
 }
 
 .explore-hero {
@@ -4085,11 +4088,15 @@ a {
   box-shadow: var(--explore-shadow-soft), 0 0 0 2px var(--river-line);
 }
 
-.explore-search input {
+/* Scoped above `.dashboard-theme input` so the search field stays a single
+   borderless pill instead of getting the dashboard input's hairline box. */
+.explore-page .explore-search input {
   min-width: 0;
   flex: 1;
   border: 0;
   outline: 0;
+  padding: 0;
+  border-radius: 0;
   background: transparent;
   color: var(--ink);
   font: inherit;
@@ -4115,26 +4122,29 @@ a {
 }
 
 .explore-sort button {
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.72);
+  border-radius: 8px;
+  background: rgba(18, 18, 22, 0.05);
   padding: 0.5rem 0.95rem;
   color: var(--muted);
   font-size: 0.75rem;
   font-weight: 550;
-  box-shadow: var(--explore-shadow-soft);
   transition:
     background-color 180ms var(--ease-soft),
     color 180ms var(--ease-soft);
 }
 
 .explore-sort button:hover {
-  background: #fff;
+  background: rgba(18, 18, 22, 0.08);
   color: var(--ink);
 }
 
 .explore-sort button.is-active {
-  background: #16181d;
+  background: var(--ink);
   color: #fff;
+}
+
+.explore-sort button.is-active:hover {
+  background: #2a2a2e;
 }
 
 .explore-room-grid {
@@ -4153,6 +4163,11 @@ a {
   border-radius: var(--radius-card);
   background: var(--explore-card);
   box-shadow: var(--explore-shadow);
+  transition: box-shadow 220ms var(--ease-out);
+}
+
+.explore-room:hover {
+  box-shadow: 0 1px 2px rgba(18, 22, 34, 0.05), 0 14px 30px -14px rgba(18, 22, 34, 0.2);
 }
 
 .explore-room-cover {
@@ -4180,7 +4195,7 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  border-radius: 999px;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.92);
   padding: 0.42rem 0.8rem;
   color: #16181d;
@@ -4247,10 +4262,10 @@ a {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  border-radius: 999px;
-  background: rgba(47, 125, 246, 0.1);
+  border-radius: 6px;
+  background: rgba(18, 18, 22, 0.06);
   padding: 0.2rem 0.5rem;
-  color: var(--river);
+  color: var(--muted);
   font-size: 0.58rem;
   font-weight: 700;
   line-height: 1;
@@ -4344,18 +4359,18 @@ a {
   gap: 0.4rem;
   align-self: end;
   justify-self: end;
-  border-radius: var(--radius-ui);
-  background: #16181d;
+  border-radius: 8px;
+  background: var(--ink);
   color: #fff;
   font-size: 0.72rem;
-  font-weight: 550;
+  font-weight: 600;
   transition:
     background-color 180ms var(--ease-soft),
     transform 220ms var(--ease-out);
 }
 
 .explore-row-action:hover {
-  background: #2a2d34;
+  background: #2a2a2e;
 }
 
 .explore-more-articles {
@@ -5016,7 +5031,8 @@ a {
 .site-nav-link:hover,
 .site-nav-link.site-nav-link--active,
 .site-nav-link[aria-current="page"] { color: #16181d; }
-.site-nav-link::after { bottom: -0.55rem; height: 1px; background: #16181d; }
+.site-nav-link::after { bottom: -0.55rem; left: 0.15rem; right: 0.15rem; height: 2.5px; border-radius: 2px; background: #16181d; }
+.site-nav-dropdown-trigger.site-nav-link::after { right: 1.25rem; }
 
 .site-nav-cta { transition: transform 140ms var(--ease-out), background-color 180ms ease, border-color 180ms ease; }
 .site-nav-cta:active { transform: scale(0.97); }

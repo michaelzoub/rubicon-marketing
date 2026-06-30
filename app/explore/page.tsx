@@ -41,7 +41,7 @@ export default async function ExplorePage() {
   return (
     <div className="landing-page explore-page">
       <SiteHeader variant="explore" />
-      <main className="explore-main">
+      <main className="explore-main dashboard-theme">
         <section className="landing-section-block explore-hero" aria-labelledby="explore-heading">
           <div className="container landing-copy-stack explore-hero-copy">
             <div className="landing-section-kicker">

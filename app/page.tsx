@@ -132,21 +132,8 @@ export default function Home() {
   return (
     <>
       <div className="landing-page">
-        <SiteHeader variant="home" overlay />
+        <SiteHeader variant="home" />
         <div className="landing-hero-stage">
-          <div className="landing-hero-bg" aria-hidden="true">
-            <video
-              className="landing-hero-video"
-              autoPlay
-              muted
-              loop
-              playsInline
-              poster="/HEROBG.png"
-              preload="metadata"
-            >
-              <source src="/HEROBGVIDEO.mp4" type="video/mp4" />
-            </video>
-          </div>
           <section className="landing-hero">
             <Hero />
           </section>
