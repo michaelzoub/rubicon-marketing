@@ -254,14 +254,14 @@ function StepReviewSections({ t }: { t: number }) {
             initial={{ opacity: 0, y: 10 }}
             animate={local > index * 220 + 120 ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="grid grid-cols-[auto_1fr] items-center gap-3 rounded-lg border border-[var(--line)] bg-white p-4"
+            className="grid gap-3 rounded-lg bg-[var(--surface-muted)] p-4 sm:grid-cols-[auto_1fr] sm:items-center"
           >
             <div className="flex flex-col text-[var(--muted)]">
               <ChevronUp size={16} aria-hidden="true" />
               <ChevronDown size={16} aria-hidden="true" />
             </div>
             <div className="min-w-0">
-              <div className="py-1 font-medium">{title}</div>
+              <div className="w-full rounded-md bg-transparent py-1 font-medium outline-none transition focus:bg-white focus:ring-2 focus:ring-[var(--river-line)]">{title}</div>
               <div className="mt-1 text-xs text-[var(--muted)]">{words} words</div>
             </div>
           </motion.li>

@@ -1,47 +1,11 @@
 {
   "version": 1,
   "skills": {
-    "12-principles-of-animation": {
-      "source": "raphaelsalaja/skill",
-      "sourceType": "github",
-      "skillPath": "skills/12-principles-of-animation/SKILL.md",
-      "computedHash": "fd8f83df6be0cebd89ac8c5e5345f7b5f4028a5e32f98f1699d52fa5008c7082"
-    },
-    "baseline-ui": {
-      "source": "ibelick/ui-skills",
-      "sourceType": "github",
-      "skillPath": "skills/baseline-ui/SKILL.md",
-      "computedHash": "dfcb3e778b57ad1cba92375689bb8265fa5aef78fba523a744f5220b3c619901"
-    },
-    "emil-design-eng": {
-      "source": "emilkowalski/skill",
-      "sourceType": "github",
-      "skillPath": "skills/emil-design-eng/SKILL.md",
-      "computedHash": "8bdf9e4e6de7a4969147bf4828a4ad2c5aacd9fba4b690b250a85e0467ca387d"
-    },
-    "make-interfaces-feel-better": {
-      "source": "jakubkrehel/make-interfaces-feel-better",
-      "sourceType": "github",
-      "skillPath": "skills/make-interfaces-feel-better/SKILL.md",
-      "computedHash": "54b6e221bbe4e2d1a8461c3f9ecabe69daf891f964e9ee5e699c323daa018f2e"
-    },
-    "review-animations": {
-      "source": "emilkowalski/skill",
-      "sourceType": "github",
-      "skillPath": "skills/review-animations/SKILL.md",
-      "computedHash": "ca04aaa0a815f05e0910ded8fedbfbdfe0acdec8f52dfbb88277890070d134d4"
-    },
     "sounds-on-the-web": {
       "source": "raphaelsalaja/skill",
       "sourceType": "github",
       "skillPath": "skills/sounds-on-the-web/SKILL.md",
       "computedHash": "caf809d1a9e33e01b4a0be68c9a6f1b789f5742d84d120abc09842e9ba859116"
-    },
-    "userinterface-wiki": {
-      "source": "raphaelsalaja/userinterface-wiki",
-      "sourceType": "github",
-      "skillPath": "skills/SKILL.md",
-      "computedHash": "7bd58aa2aaf874dd421b18700ee688b02ce72276612d7115ad6849d4878e115e"
     }
   }
 }

@@ -30,6 +30,7 @@ import { SubstackOnboardingDialog } from "../../dashboard/_components/substack-o
 import { Card, PageHeader } from "../../dashboard/_components/ui";
 import { CreatorPublishFlow } from "../marketing/creator-publish-flow";
 import { CreatorDashboardPreview } from "../marketing/creator-dashboard-preview";
+import { demoSounds, useDemoSoundEngine } from "./demo-sounds";
 
 /* ------------------------------------------------------------------ */
 /* Timeline                                                            */
@@ -50,6 +51,8 @@ const SCENES: Array<{ id: SceneId; ms: number }> = [
 
 /* Cinematic easing with a long, confident deceleration. */
 const CINE = [0.16, 1, 0.3, 1] as const;
+/* Mirror of CINE for exits: build momentum before departure (ease-in). */
+const CINE_IN = [0.7, 0, 0.84, 0] as const;
 
 const BEATS = ["Why", "Promise", "Sign in", "Publish", "Earn"] as const;
 const beatOf: Record<SceneId, number> = {
@@ -129,6 +132,8 @@ export function CreatorsDemo() {
   const [paused, setPaused] = useState(false);
   const [loop, setLoop] = useState(true);
   const [ready, setReady] = useState(false);
+  const [sound, setSound] = useState(true);
+  const [footer, setFooter] = useState(true);
 
   const safeIndex = Math.min(index, SCENES.length - 1);
   const scene = SCENES[safeIndex].id;
@@ -147,8 +152,26 @@ export function CreatorsDemo() {
     }
     setPaused(params.get("paused") === "true");
     if (params.has("loop")) setLoop(params.get("loop") === "true");
+    if (params.has("footer")) setFooter(params.get("footer") !== "false");
+    if (params.has("rail")) setFooter(params.get("rail") !== "false");
+    setSound(params.get("sound") !== "false");
     setReady(true);
   }, []);
+
+  // UI sound engine: synthesized click / pop / swipe. `?sound=false` disables.
+  useDemoSoundEngine({ enabled: sound });
+
+  // Occasional swipe whoosh on scene cuts — alternating, never on the
+  // contemplative kicker/end beats, so it stays a surprise, not a metronome.
+  const prevSceneRef = useRef<SceneId>(scene);
+  const swipeToggleRef = useRef(false);
+  useEffect(() => {
+    if (prevSceneRef.current === scene) return;
+    prevSceneRef.current = scene;
+    if (scene === "kicker" || scene === "end") return;
+    swipeToggleRef.current = !swipeToggleRef.current;
+    if (swipeToggleRef.current) demoSounds.play("swipe");
+  }, [scene]);
 
   // rAF playback. Advances sequentially; loops at the end.
   const ms = SCENES[safeIndex].ms;
@@ -178,7 +201,7 @@ export function CreatorsDemo() {
 
       <div className="cv-stage">
         {ready && <Stage scene={scene} progress={progress} />}
-        {ready && !minimal && !isEnd && (
+        {ready && footer && !minimal && !isEnd && (
           <footer className="cv-bottombar">
             <ProgressRail scene={scene} onSelect={setIndex} />
           </footer>
@@ -383,7 +406,7 @@ function SceneStage({ progress, segments }: { progress: number; segments: Segmen
             className={`cv-focal${segment.bleed ? " cv-focal-bleed" : ""}`}
             initial={{ opacity: 0, y: 28, scale: 0.97, filter: "blur(14px)" }}
             animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-            exit={{ opacity: 0, y: -22, scale: 0.99, filter: "blur(10px)", transition: { duration: 0.32, ease: CINE } }}
+            exit={{ opacity: 0, y: -22, scale: 0.99, filter: "blur(10px)", transition: { duration: 0.32, ease: CINE_IN } }}
             transition={{ duration: 0.6, ease: CINE }}
           >
             {segment.render(local)}
@@ -400,7 +423,7 @@ function TextCard({ text }: { text: string }) {
   return (
     <motion.div
       className="cv-textcard"
-      exit={{ opacity: 0, y: -18, filter: "blur(10px)", transition: { duration: 0.4, ease: CINE } }}
+      exit={{ opacity: 0, y: -18, filter: "blur(10px)", transition: { duration: 0.4, ease: CINE_IN } }}
     >
       <h2 className="cv-mainline">
         {words.map((word, index) => (
@@ -409,7 +432,7 @@ function TextCard({ text }: { text: string }) {
             className="cv-mainline-word"
             initial={{ opacity: 0, y: 16, filter: "blur(10px)" }}
             animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.6, ease: CINE, delay: 0.12 + index * 0.055 }}
+            transition={{ duration: 0.6, ease: CINE, delay: 0.12 + index * 0.045 }}
           >
             {word}
           </motion.span>
@@ -438,6 +461,13 @@ function ChatScene({ progress }: { progress: number }) {
   const next = CHAT[shown]; // the one currently being typed, if any
   // In Messages you only see the *other* person typing — your own messages just appear.
   const typingSide = next && next.from === "them" && progress >= next.at - 0.06 ? "them" : null;
+
+  // iMessage-style pop the moment a bubble lands.
+  const prevShownRef = useRef(0);
+  useEffect(() => {
+    if (shown > prevShownRef.current) demoSounds.play("pop");
+    prevShownRef.current = shown;
+  }, [shown]);
 
   return (
     <div className="cv-imsg">
@@ -572,6 +602,13 @@ function SubstackImportFlow({ phase }: { phase: number }) {
   const cursorVisible = phase >= 0.635 && phase < 0.69;
   const pressing = phase >= 0.66 && phase < 0.675;
   const imported = phase >= 0.69;
+
+  // Click the moment the cursor "presses" the import action.
+  const prevPressingRef = useRef(false);
+  useEffect(() => {
+    if (pressing && !prevPressingRef.current) demoSounds.play("click");
+    prevPressingRef.current = pressing;
+  }, [pressing]);
   return (
     <div className="grid gap-5">
       <PageHeader
@@ -733,7 +770,10 @@ function ProgressRail({ scene, onSelect }: { scene: SceneId; onSelect: (index: n
         <button
           key={label}
           type="button"
-          onClick={() => onSelect(beatTarget[i])}
+          onClick={() => {
+            demoSounds.play("click");
+            onSelect(beatTarget[i]);
+          }}
           aria-current={i === current ? "step" : undefined}
           className={`cv-beat${i === current ? " is-on" : ""}${i < current ? " is-done" : ""}`}
         >
@@ -937,7 +977,8 @@ function CreatorsDemoStyles() {
       /* progress rail */
       .cv-bottombar { position: relative; z-index: 3; display: flex; justify-content: center; padding-top: 6px; }
       .cv-rail { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 999px; background: rgba(255,255,255,0.82); border: 1px solid var(--line); box-shadow: 0 8px 24px -16px rgba(17,19,28,0.4); backdrop-filter: blur(10px); }
-      .cv-beat { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: transparent; border: 0; cursor: pointer; color: var(--muted); font-size: 0.74rem; font-weight: 600; transition: color 160ms var(--ease), background 160ms var(--ease); }
+      .cv-beat { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: transparent; border: 0; cursor: pointer; color: var(--muted); font-size: 0.74rem; font-weight: 600; transition: color 160ms var(--ease), background 160ms var(--ease), transform 140ms var(--ease); }
+      .cv-beat:active { transform: scale(0.97); }
       .cv-beat-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(17,19,28,0.18); transition: background 200ms var(--ease); }
       .cv-beat.is-done { color: var(--ink); }
       .cv-beat.is-done .cv-beat-dot { background: var(--green); }

@@ -1857,10 +1857,17 @@ a {
   transform: scale(1.08) translateZ(0);
 }
 
-/* Hold a steady height across steps so the section below doesn't jump as the
- * wizard advances. */
+/* Pin a steady height across every step so the section never reflows/animates
+ * its height as the wizard advances — the dashboard article composer above and
+ * content below stay put. Override the full-viewport min-heights the real
+ * /dashboard/articles/new compose surface uses, which only apply on the route. */
+.creator-publish-flow .article-compose-page,
+.creator-publish-flow .substack-compose {
+  min-height: 0 !important;
+}
 .creator-publish-flow .cpf-step {
-  min-height: clamp(440px, 52vw, 560px);
+  height: clamp(480px, 54vw, 600px);
+  overflow: hidden;
 }
 
 @media (max-width: 640px) {
@@ -1877,7 +1884,7 @@ a {
   }
 
   .creator-publish-flow .cpf-step {
-    min-height: clamp(520px, 145vw, 620px);
+    height: clamp(520px, 145vw, 640px);
   }
 
 }
