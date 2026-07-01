@@ -25,6 +25,7 @@ export function SubstackOnboardingDialog({
   const [step, setStep] = useState<"welcome" | "substack">("welcome");
   const [username, setUsername] = useState("");
   const [demoPressing, setDemoPressing] = useState(false);
+  const [demoCursorVisible, setDemoCursorVisible] = useState(true);
 
   useEffect(() => {
     const seen = window.localStorage.getItem("rubicon-substack-onboarding-seen") === "1";
@@ -36,7 +37,7 @@ export function SubstackOnboardingDialog({
 
   useEffect(() => {
     if (!open || step !== "welcome") return;
-    const timer = window.setTimeout(() => setStep("substack"), reduceMotion ? 500 : 2600);
+    const timer = window.setTimeout(() => setStep("substack"), reduceMotion ? 300 : 1500);
     return () => window.clearTimeout(timer);
   }, [open, reduceMotion, step]);
 
@@ -47,8 +48,11 @@ export function SubstackOnboardingDialog({
     const target = "marachen";
     setUsername("");
     setDemoPressing(false);
+    setDemoCursorVisible(true);
     let typer = 0;
     let pressTimer = 0;
+    let releaseTimer = 0;
+    let hideTimer = 0;
     let index = 0;
     const startTimer = window.setTimeout(() => {
       typer = window.setInterval(() => {
@@ -56,14 +60,20 @@ export function SubstackOnboardingDialog({
         setUsername(target.slice(0, index));
         if (index >= target.length) {
           window.clearInterval(typer);
-          pressTimer = window.setTimeout(() => setDemoPressing(true), 750);
+          pressTimer = window.setTimeout(() => {
+            setDemoPressing(true);
+            releaseTimer = window.setTimeout(() => setDemoPressing(false), 140);
+            hideTimer = window.setTimeout(() => setDemoCursorVisible(false), 320);
+          }, 300);
         }
-      }, 150);
-    }, 650);
+      }, 85);
+    }, 250);
     return () => {
       window.clearTimeout(startTimer);
       window.clearInterval(typer);
       window.clearTimeout(pressTimer);
+      window.clearTimeout(releaseTimer);
+      window.clearTimeout(hideTimer);
     };
   }, [demo, step]);
 
@@ -107,7 +117,6 @@ export function SubstackOnboardingDialog({
             transition={{ duration: reduceMotion ? 0.01 : 0.65, ease: EASE_OUT }}
           >
             <motion.div
-              className="drop-shadow-[0_6px_18px_rgba(18,18,22,0.18)]"
               initial={{ opacity: 0, scale: 0.94 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: reduceMotion ? 0.01 : 1.15, ease: EASE_OUT }}
@@ -178,10 +187,10 @@ export function SubstackOnboardingDialog({
               Continue <ArrowRight size={16} />
             </button>
 
-            {demo && (
+            {demo && demoCursorVisible && (
               <motion.span
                 aria-hidden="true"
-                className="pointer-events-none absolute z-20 drop-shadow-[0_2px_5px_rgba(0,0,0,0.35)]"
+                className="pointer-events-none absolute z-20"
                 initial={{ opacity: 0 }}
                 animate={{
                   opacity: 1,
@@ -189,7 +198,7 @@ export function SubstackOnboardingDialog({
                   top: demoPressing ? "88%" : "62%",
                   scale: demoPressing ? 0.86 : 1,
                 }}
-                transition={{ left: { duration: 0.55, ease: EASE_OUT }, top: { duration: 0.55, ease: EASE_OUT }, scale: { duration: 0.16 }, opacity: { duration: 0.3 } }}
+                transition={{ left: { duration: 0.24, ease: EASE_OUT }, top: { duration: 0.24, ease: EASE_OUT }, scale: { duration: 0.14 }, opacity: { duration: 0.16 } }}
               >
                 {/* shared macOS cursor: white arrow, dark outline */}
                 <MousePointer2 size={20} fill="#ffffff" stroke="#16181d" strokeWidth={1.5} />

@@ -13,7 +13,7 @@ import {
   PenLine,
   Puzzle,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { DashboardFrame } from "../../dashboard/_components/shell";
 import { Card, PageHeader } from "../../dashboard/_components/ui";
 
@@ -60,36 +60,81 @@ const sliceText = (text: string, p: number) => text.slice(0, Math.round(text.len
 const pressingAt = (t: number, start: number) => t >= start && t < start + 120;
 const cursorVisibleAt = (t: number, start: number) => t >= start - 180 && t < start + 140;
 
-export function CreatorPublishFlow() {
+export function CreatorPublishFlow({
+  compact = false,
+  onAction,
+  startAtStep = 0,
+  once = false,
+}: {
+  compact?: boolean;
+  onAction?: (step: number) => void;
+  /** Skip earlier wizard steps (e.g. the demo imports from Substack beforehand,
+   *  so it opens the wizard straight at "Review sections"). */
+  startAtStep?: number;
+  /** Play the flow a single time and hold on the final "Published" frame,
+   *  instead of looping (the demo scene owns its own looping). */
+  once?: boolean;
+}) {
   return (
-    <div className="creator-publish-flow" aria-hidden="true" tabIndex={-1}>
+    <div className="creator-publish-flow" data-compact={compact || undefined} aria-hidden="true" tabIndex={-1}>
       <DashboardFrame identity="@writer" activePath="/dashboard/articles">
-        <PublishWizard />
+        <PublishWizard compact={compact} onAction={onAction} startAtStep={startAtStep} once={once} />
       </DashboardFrame>
     </div>
   );
 }
 
-function PublishWizard() {
+/** The virtual-time offset at which each wizard step begins. */
+const STEP_START = [0, T.s1, T.s2, T.s3] as const;
+
+function PublishWizard({ compact, onAction, startAtStep = 0, once = false }: { compact: boolean; onAction?: (step: number) => void; startAtStep?: number; once?: boolean }) {
   const reduce = useReducedMotion();
-  const [t, setT] = useState(reduce ? T.published + 1200 : 0);
+  // Begin the timeline at the requested step so any earlier steps never render.
+  const startT = STEP_START[Math.max(0, Math.min(startAtStep, STEP_START.length - 1))];
+  const [t, setT] = useState(reduce ? T.published + 1200 : startT);
 
   useEffect(() => {
     if (reduce) return;
     let raf = 0;
     const start = performance.now();
+    // Play only the remaining span, keeping the same per-step pace as the full run.
+    const span = T.end - startT;
+    const loopDuration = (compact ? 9200 : T.end) * (span / T.end);
+    let lastFrame = start - 34;
+    let running = true;
     const tick = (now: number) => {
-      setT((now - start) % T.end);
+      if (!running) return;
+      if (now - lastFrame >= 1000 / 30) {
+        lastFrame = now;
+        const elapsed = now - start;
+        if (once) {
+          // Single pass, then freeze on the final "Published" frame.
+          const p = Math.min(1, elapsed / loopDuration);
+          setT(startT + p * span);
+          if (p >= 1) return;
+        } else {
+          setT(startT + ((elapsed % loopDuration) / loopDuration) * span);
+        }
+      }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [reduce]);
+    return () => {
+      running = false;
+      cancelAnimationFrame(raf);
+    };
+  }, [compact, reduce, startT, once]);
 
   const step = t < T.s1 ? 0 : t < T.s2 ? 1 : t < T.s3 ? 2 : t < T.published ? 3 : 4;
+  const lastActionStep = useRef(-1);
+
+  useEffect(() => {
+    if (step > 0 && step !== lastActionStep.current) onAction?.(step);
+    lastActionStep.current = step;
+  }, [onAction, step]);
 
   return (
-    <div className={step === 0 ? "article-compose-page" : "grid gap-6"}>
+    <div className={step === 0 ? "article-compose-page" : "cpf-wizard grid gap-6"}>
       {step > 0 && (
         <>
           <PageHeader title="New article" description="Saved as a draft first. Nothing goes live until you publish." />
@@ -101,9 +146,9 @@ function PublishWizard() {
         <motion.div
           key={step}
           className="cpf-step"
-          initial={{ opacity: 0, y: 18, filter: "blur(6px)" }}
-          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-          exit={{ opacity: 0, y: -14, filter: "blur(4px)", transition: { duration: 0.25 } }}
+          initial={{ opacity: 0, transform: "translateY(14px)" }}
+          animate={{ opacity: 1, transform: "translateY(0)" }}
+          exit={{ opacity: 0, transform: "translateY(-10px)", transition: { duration: 0.22 } }}
           transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
         >
           {step === 0 && <StepAddArticle t={t} />}
@@ -200,19 +245,24 @@ function StepAddArticle({ t }: { t: number }) {
       <header className="substack-compose-topbar">
         <span className="substack-compose-back"><ArrowLeft size={21} aria-hidden="true" /></span>
         <div className="substack-compose-status"><span aria-hidden="true" /> Draft</div>
-        <div className="substack-compose-actions">
+        <div className="substack-compose-actions relative">
           <span className="substack-compose-preview">Preview</span>
           <span className={`substack-compose-continue ${pressingAt(t, T.s1Click) ? "cpf-pressing" : ""}`}>Continue</span>
+          {cursorVisibleAt(t, T.s1Click) && (
+            <span className={`cpf-cursor ${pressingAt(t, T.s1Click) ? "is-click" : ""}`} aria-hidden="true">
+              <MousePointer2 size={20} fill="#ffffff" stroke="#16181d" strokeWidth={1.5} />
+            </span>
+          )}
         </div>
       </header>
 
       <main className="substack-compose-main">
-        <div className="substack-compose-meta">
+        <div className="cpf-compose-meta substack-compose-meta">
           <div className="substack-title-input">{titleText || "Title"}{focus === "title" && <Caret />}</div>
           <div className="substack-subtitle-input">{authorActive ? authorText : "Add author..."}{focus === "author" && <Caret />}</div>
         </div>
 
-        <section className="mb-7 mt-8 grid gap-3" aria-label="Import article">
+        <section className="cpf-import-options mb-7 mt-8 grid gap-3" aria-label="Import article">
           <div>
             <span className="text-sm font-semibold">Bring in an existing article</span>
             <p className="mt-1 text-sm text-[var(--muted)]">Import from URL, upload Markdown, or use the Chrome extension. Writing manually is below if nothing else works.</p>
@@ -224,7 +274,7 @@ function StepAddArticle({ t }: { t: number }) {
           </div>
         </section>
 
-        <div className="substack-manual-editor">
+        <div className="cpf-manual-editor substack-manual-editor">
           <div className="substack-manual-editor-label"><PenLine size={15} aria-hidden="true" /><span>Write manually</span></div>
           <div className="substack-editor min-h-[150px] text-sm leading-6 text-[var(--muted)]">
             <strong className="font-semibold text-[var(--ink)]">Consent Decree Language</strong>
@@ -303,7 +353,6 @@ function StepPricing({ t }: { t: number }) {
             <Row term="Price per word" value={priced ? "$0.00005" : "$0.00"} />
             <Row term="Estimated full-article price" value={priced ? "$0.1209" : "$0.00"} />
             <Row term="Earnings for 1,000 words" value={priced ? "$0.0500" : "$0.00"} />
-            <Row term="Rubicon platform fee" value="0%" />
           </dl>
         </div>
       </div>
@@ -320,29 +369,28 @@ function StepPricing({ t }: { t: number }) {
 
 function StepPublish({ t }: { t: number }) {
   return (
-    <Card className="p-6">
+    <Card className="cpf-review-card flex flex-col p-6">
       <h2 className="text-lg font-semibold">Review and publish</h2>
       <p className="mt-1 text-sm text-[var(--muted)]">Confirm the details below. You can save a draft or publish it live to agents.</p>
 
-      <dl className="mt-5 grid gap-3 rounded-lg border border-[var(--line)] bg-white p-5 text-sm">
+      <dl className="cpf-review-list mt-5 grid gap-3 rounded-lg border border-[var(--line)] bg-white p-5 text-sm">
         <Row term="Article title" value={TITLE} />
         <Row term="Word count" value="2,418" />
         <Row term="Sections" value="3" />
         <Row term="Price per word" value="$0.00005" />
         <Row term="Estimated full price" value="$0.1209" />
         <Row term="Receiving wallet" value={<span className="mono">0x8f2…91c ✓</span>} />
-        <Row term="Platform fee" value="0%" />
         <Row term="Article status" value="Draft until published" />
       </dl>
 
-      <div className="mt-6 flex flex-wrap items-center justify-between gap-3 pt-2">
+      <div className="cpf-review-actions mt-auto flex flex-wrap items-center justify-between gap-3 pt-6">
         <SecondaryButton label="Back" />
         <div className="flex flex-wrap items-center gap-3">
           <span className="button button-secondary">Save draft</span>
           <PrimaryAction label="Publish article" pressing={pressingAt(t, T.s4Click)} cursorVisible={cursorVisibleAt(t, T.s4Click)} icon="none" />
         </div>
       </div>
-      <p className="mt-3 text-right text-xs text-[var(--muted)]">
+      <p className="cpf-review-note mt-3 text-right text-xs text-[var(--muted)]">
         Agents can preview metadata, but paid content remains hidden until purchased.
       </p>
     </Card>
@@ -370,7 +418,7 @@ function StepPublished() {
         </motion.span>
         <h2 className="mt-5 text-xl font-semibold">Article published</h2>
         <p className="mt-2 max-w-sm text-sm leading-6 text-[var(--muted)]">
-          “{TITLE}” is live to agents — 3 navigable sections at $0.00005 per word, 0% platform fee.
+          “{TITLE}” is live to agents — 3 navigable sections at $0.00005 per word.
         </p>
         <span className="mt-6 button button-primary">
           View article <ArrowRight size={16} aria-hidden="true" />

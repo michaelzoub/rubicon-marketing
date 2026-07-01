@@ -110,13 +110,13 @@ export function WriterAuthScreen({ onLogin, demo = false }: { onLogin: () => voi
               <motion.span
                 aria-hidden="true"
                 className="pointer-events-none absolute left-1/2 top-7 z-20"
-                style={{ filter: "drop-shadow(0 2px 5px rgba(0,0,0,0.35))" }}
                 initial={{ opacity: 0, x: 120, y: 70 }}
-                animate={{ opacity: 1, x: -6, y: 0, scale: [1, 1, 0.86, 1] }}
+                animate={{ opacity: [0, 1, 1, 0], x: -6, y: 0, scale: [1, 1, 0.86, 1] }}
                 transition={{
-                  x: { duration: 0.85, ease: [0.16, 1, 0.3, 1], delay: 0.3 },
-                  y: { duration: 0.85, ease: [0.16, 1, 0.3, 1], delay: 0.3 },
-                  scale: { duration: 2.3, repeat: Infinity, times: [0, 0.5, 0.56, 0.64], delay: 1.2 },
+                  opacity: { duration: 1.35, times: [0, 0.12, 0.82, 1], delay: 0.12 },
+                  x: { duration: 0.42, ease: [0.23, 1, 0.32, 1], delay: 0.12 },
+                  y: { duration: 0.42, ease: [0.23, 1, 0.32, 1], delay: 0.12 },
+                  scale: { duration: 1.35, times: [0, 0.62, 0.72, 0.82], delay: 0.12 },
                 }}
               >
                 {/* shared macOS cursor: white arrow, dark outline (no ring) */}

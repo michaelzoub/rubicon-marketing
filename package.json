@@ -29,6 +29,7 @@
     "@tiptap/pm": "^3.27.1",
     "@tiptap/react": "^3.27.1",
     "@tiptap/starter-kit": "^3.27.1",
+    "@web-kits/audio": "^0.1.0",
     "cheerio": "^1.2.0",
     "clsx": "^2.1.1",
     "domhandler": "^6.0.1",

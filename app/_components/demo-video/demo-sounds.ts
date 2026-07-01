@@ -3,11 +3,11 @@
 /**
  * Self-contained UI sound effects for the scripted product demos.
  *
- * Sounds are synthesized with the Web Audio API (no asset files), following the
+ * Message cues use the native macOS Messages sounds; the remaining cues come
+ * from the professionally designed `@web-kits/audio` Core patch, following the
  * `sounds-on-the-web` rules:
  *  - subtle default volume (impl-default-subtle)
- *  - preloaded noise buffer + lazily-warmed context (impl-preload-audio)
- *  - exponential gain ramps for natural decay (easing-natural-decay)
+ *  - eager message-asset preload (impl-preload-audio)
  *  - respects prefers-reduced-motion as a proxy for sound sensitivity
  *    (a11y-reduced-motion-check)
  *  - respects an explicit `?sound=false` toggle wired from the page
@@ -18,136 +18,67 @@
  * listener resumes the context so the first real interaction unlocks playback.
  */
 
+import { definePatch, ensureReady, setMasterVolume } from "@web-kits/audio";
 import { useEffect } from "react";
+import { _patch as corePatch } from "../../../.web-kits/core";
 
-export type DemoSound = "click" | "pop" | "swipe";
+export type DemoSound = "click" | "receive" | "send" | "success" | "swipe";
 
-const DEFAULT_VOLUME = 0.2;
-
-let ctx: AudioContext | null = null;
-let master: GainNode | null = null;
-let noiseBuffer: AudioBuffer | null = null;
 let enabled = true;
 
-function ensureCtx(): AudioContext | null {
-  if (typeof window === "undefined") return null;
-  if (!ctx) {
-    const AC = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-    if (!AC) return null;
-    ctx = new AC();
-    master = ctx.createGain();
-    master.gain.value = DEFAULT_VOLUME;
-    master.connect(ctx.destination);
-  }
-  return ctx;
-}
+const patch = definePatch(corePatch);
+const messageSounds: Partial<Record<DemoSound, HTMLAudioElement>> | null =
+  typeof window === "undefined"
+    ? null
+    : {
+        send: new Audio("/sounds/message-sent.wav"),
+        receive: new Audio("/sounds/message-received.wav"),
+      };
 
-function getNoise(c: AudioContext): AudioBuffer {
-  if (!noiseBuffer) {
-    const len = Math.floor(c.sampleRate * 0.25);
-    noiseBuffer = c.createBuffer(1, len, c.sampleRate);
-    const data = noiseBuffer.getChannelData(0);
-    for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
-  }
-  return noiseBuffer;
-}
+messageSounds && Object.values(messageSounds).forEach((sound) => sound.load());
 
-function env(gain: GainNode, t: number, peak: number, attack: number, decay: number) {
-  gain.gain.setValueAtTime(0.0001, t);
-  gain.gain.exponentialRampToValueAtTime(peak, t + attack);
-  gain.gain.exponentialRampToValueAtTime(0.0001, t + attack + decay);
-}
-
-function playClick() {
-  const c = ensureCtx();
-  if (!c || !master) return;
-  const t = c.currentTime;
-  const o = c.createOscillator();
-  o.type = "triangle";
-  o.frequency.setValueAtTime(1400, t);
-  o.frequency.exponentialRampToValueAtTime(520, t + 0.045);
-  const g = c.createGain();
-  env(g, t, 0.5, 0.002, 0.05);
-  o.connect(g);
-  g.connect(master);
-  o.start(t);
-  o.stop(t + 0.07);
-  const src = c.createBufferSource();
-  src.buffer = getNoise(c);
-  const bp = c.createBiquadFilter();
-  bp.type = "bandpass";
-  bp.frequency.value = 2200;
-  bp.Q.value = 0.9;
-  const ng = c.createGain();
-  env(ng, t, 0.32, 0.001, 0.035);
-  src.connect(bp);
-  bp.connect(ng);
-  ng.connect(master);
-  src.start(t);
-  src.stop(t + 0.06);
-}
-
-function playPop() {
-  const c = ensureCtx();
-  if (!c || !master) return;
-  const t = c.currentTime;
-  const o = c.createOscillator();
-  o.type = "sine";
-  o.frequency.setValueAtTime(920, t);
-  o.frequency.exponentialRampToValueAtTime(360, t + 0.1);
-  const g = c.createGain();
-  env(g, t, 0.42, 0.006, 0.11);
-  o.connect(g);
-  g.connect(master);
-  o.start(t);
-  o.stop(t + 0.14);
-}
-
-function playSwipe() {
-  const c = ensureCtx();
-  if (!c || !master) return;
-  const t = c.currentTime;
-  const src = c.createBufferSource();
-  src.buffer = getNoise(c);
-  const bp = c.createBiquadFilter();
-  bp.type = "bandpass";
-  bp.Q.value = 0.8;
-  bp.frequency.setValueAtTime(420, t);
-  bp.frequency.exponentialRampToValueAtTime(2800, t + 0.2);
-  const g = c.createGain();
-  env(g, t, 0.26, 0.05, 0.24);
-  src.connect(bp);
-  bp.connect(g);
-  g.connect(master);
-  src.start(t);
-  src.stop(t + 0.32);
-}
+const PATCH_SOUND: Partial<Record<DemoSound, string>> = {
+  click: "click",
+  success: "success",
+  swipe: "swoosh",
+};
 
 export const demoSounds = {
   setEnabled(value: boolean) {
     enabled = value;
   },
+  setVolume(value: number) {
+    const volume = Math.max(0, Math.min(1, value));
+    setMasterVolume(volume * 0.72);
+    if (messageSounds) {
+      Object.values(messageSounds).forEach((sound) => {
+        sound.volume = volume * 0.28;
+      });
+    }
+  },
   play(name: DemoSound) {
     if (!enabled) return;
     if (typeof window === "undefined") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const c = ensureCtx();
-    if (!c) return;
-    if (c.state === "suspended") c.resume().catch(() => undefined);
-    if (name === "click") playClick();
-    else if (name === "pop") playPop();
-    else if (name === "swipe") playSwipe();
+    const messageSound = messageSounds?.[name];
+    if (messageSound) {
+      messageSound.currentTime = 0;
+      void messageSound.play().catch(() => undefined);
+      return;
+    }
+    const patchSound = PATCH_SOUND[name];
+    if (patchSound) patch.play(patchSound);
   },
 };
 
-export function useDemoSoundEngine(opts: { enabled: boolean }) {
+export function useDemoSoundEngine(opts: { enabled: boolean; volume?: number }) {
   useEffect(() => {
     demoSounds.setEnabled(opts.enabled);
+    demoSounds.setVolume(opts.volume ?? 1);
     if (!opts.enabled) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     const unlock = () => {
-      const c = ensureCtx();
-      if (c && c.state === "suspended") c.resume().catch(() => undefined);
+      void ensureReady();
     };
     window.addEventListener("pointerdown", unlock);
     window.addEventListener("keydown", unlock);
@@ -155,5 +86,5 @@ export function useDemoSoundEngine(opts: { enabled: boolean }) {
       window.removeEventListener("pointerdown", unlock);
       window.removeEventListener("keydown", unlock);
     };
-  }, [opts.enabled]);
+  }, [opts.enabled, opts.volume]);
 }

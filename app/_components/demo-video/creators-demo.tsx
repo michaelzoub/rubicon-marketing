@@ -39,20 +39,26 @@ import { demoSounds, useDemoSoundEngine } from "./demo-sounds";
 type SceneId = "chat" | "kicker" | "signin" | "onboard" | "import" | "publish" | "earn" | "end";
 
 const SCENES: Array<{ id: SceneId; ms: number }> = [
-  { id: "chat", ms: 16500 },
-  { id: "kicker", ms: 6000 },
-  { id: "signin", ms: 4800 },
-  { id: "onboard", ms: 9000 },
-  { id: "import", ms: 8000 },
-  { id: "publish", ms: 11000 },
-  { id: "earn", ms: 9500 },
-  { id: "end", ms: 4800 },
+  { id: "chat", ms: 13000 },
+  { id: "kicker", ms: 2400 },
+  { id: "signin", ms: 2400 },
+  { id: "onboard", ms: 4200 },
+  { id: "import", ms: 4500 },
+  { id: "publish", ms: 12000 },
+  { id: "earn", ms: 5500 },
+  { id: "end", ms: 3000 },
 ];
 
 /* Cinematic easing with a long, confident deceleration. */
 const CINE = [0.16, 1, 0.3, 1] as const;
 /* Mirror of CINE for exits: build momentum before departure (ease-in). */
 const CINE_IN = [0.7, 0, 0.84, 0] as const;
+/* One shared exit for every cut. With AnimatePresence mode="wait" the outgoing
+ * scene must fully clear before the next enters, so a slow exit reads as dead
+ * air between cuts — the single biggest drag on the video's cadence. A quick
+ * ease-in departure (principle: exits build momentum, then leave) snaps one
+ * beat into the next while entrances still arrive gently. */
+const CUT_EXIT: Transition = { duration: 0.34, ease: CINE_IN };
 
 const BEATS = ["Why", "Promise", "Sign in", "Publish", "Earn"] as const;
 const beatOf: Record<SceneId, number> = {
@@ -67,57 +73,66 @@ const beatOf: Record<SceneId, number> = {
 };
 /* The first scene index a rail beat should jump to. */
 const beatTarget = [0, 1, 2, 4, 6];
+const playPublishSound = (step: number) => demoSounds.play(step === 4 ? "success" : "click");
 
 /* Each section enters with its own camera move. */
 type Cut = { initial: TargetAndTransition; animate: TargetAndTransition; exit: TargetAndTransition; transition: Transition };
 const CUTS: Record<SceneId, Cut> = {
   chat: {
-    initial: { opacity: 0, y: 24, scale: 1.02, filter: "blur(12px)" },
-    animate: { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" },
-    exit: { opacity: 0, y: -18, filter: "blur(12px)" },
-    transition: { duration: 0.7, ease: CINE },
+    initial: { opacity: 0, transform: "translateY(18px) scale(1.01)" },
+    animate: { opacity: 1, transform: "translateY(0) scale(1)" },
+    exit: { opacity: 0, transform: "translateY(-14px) scale(1)" },
+    transition: { duration: 0.55, ease: CINE },
   },
+  // Beat change — snap in with a spring so the "promise" lands like a downbeat.
   kicker: {
-    initial: { opacity: 0, y: 64, scale: 0.93, filter: "blur(12px)" },
-    animate: { opacity: 1, y: 0, scale: 1, filter: "blur(0px)" },
-    exit: { opacity: 0, y: -38, scale: 1.02, filter: "blur(12px)" },
-    transition: { type: "spring", stiffness: 92, damping: 15 },
+    initial: { opacity: 0, transform: "translateY(42px) scale(0.95)" },
+    animate: { opacity: 1, transform: "translateY(0) scale(1)" },
+    exit: { opacity: 0, transform: "translateY(-28px) scale(1.01)" },
+    transition: { type: "spring", stiffness: 220, damping: 20 },
   },
+  // Quick, decisive lateral slide between the punch-beats.
   signin: {
-    initial: { opacity: 0, x: 80, filter: "blur(12px)" },
-    animate: { opacity: 1, x: 0, filter: "blur(0px)" },
-    exit: { opacity: 0, x: -54, filter: "blur(12px)" },
-    transition: { duration: 0.8, ease: CINE },
+    initial: { opacity: 0, transform: "translateX(56px)" },
+    animate: { opacity: 1, transform: "translateX(0)" },
+    exit: { opacity: 0, transform: "translateX(-38px)" },
+    transition: { duration: 0.5, ease: CINE },
   },
+  // Product reveal — a spring gives a subtle overshoot-and-settle so the real UI
+  // arrives with life rather than gliding flatly into place.
   onboard: {
-    initial: { opacity: 0, scale: 0.9, filter: "blur(20px)" },
-    animate: { opacity: 1, scale: 1, filter: "blur(0px)" },
-    exit: { opacity: 0, scale: 1.04, filter: "blur(14px)" },
-    transition: { duration: 0.9, ease: CINE },
+    initial: { opacity: 0, transform: "scale(0.95)" },
+    animate: { opacity: 1, transform: "scale(1)" },
+    exit: { opacity: 0, transform: "scale(1.02)" },
+    transition: { type: "spring", stiffness: 170, damping: 19 },
   },
   import: {
-    initial: { opacity: 0, x: 70, filter: "blur(12px)" },
-    animate: { opacity: 1, x: 0, filter: "blur(0px)" },
-    exit: { opacity: 0, x: -48, filter: "blur(12px)" },
-    transition: { duration: 0.8, ease: CINE },
+    initial: { opacity: 0, transform: "translateX(50px)" },
+    animate: { opacity: 1, transform: "translateX(0)" },
+    exit: { opacity: 0, transform: "translateX(-34px)" },
+    transition: { duration: 0.5, ease: CINE },
   },
   publish: {
-    initial: { opacity: 0, y: 66, filter: "blur(12px)" },
-    animate: { opacity: 1, y: 0, filter: "blur(0px)" },
-    exit: { opacity: 0, y: -28, filter: "blur(12px)" },
-    transition: { type: "spring", stiffness: 78, damping: 17 },
+    initial: { opacity: 0, transform: "translateY(46px)" },
+    animate: { opacity: 1, transform: "translateY(0)" },
+    exit: { opacity: 0, transform: "translateY(-22px)" },
+    transition: { type: "spring", stiffness: 180, damping: 18 },
   },
+  // The dashboard is a large, already-scaled surface — a scale/spring cut reads
+  // as a jarring "zoom" on it, so this beat gets a clean fade + tiny lift only.
   earn: {
-    initial: { opacity: 0, scale: 0.93, filter: "blur(16px)" },
-    animate: { opacity: 1, scale: 1, filter: "blur(0px)" },
-    exit: { opacity: 0, scale: 1.04, filter: "blur(12px)" },
-    transition: { duration: 0.9, ease: CINE },
+    initial: { opacity: 0, transform: "translateY(12px)" },
+    animate: { opacity: 1, transform: "translateY(0)" },
+    exit: { opacity: 0, transform: "translateY(0)" },
+    transition: { duration: 0.55, ease: CINE },
   },
+  // The finish crossfades in cleanly (no scale) so the dashboard→end handoff
+  // never looks like it zooms the dashboard as the end card appears.
   end: {
-    initial: { opacity: 0, scale: 1.02, filter: "blur(10px)" },
-    animate: { opacity: 1, scale: 1, filter: "blur(0px)" },
-    exit: { opacity: 0, filter: "blur(8px)" },
-    transition: { duration: 0.9, ease: CINE },
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    exit: { opacity: 0 },
+    transition: { duration: 0.6, ease: CINE },
   },
 };
 
@@ -133,6 +148,7 @@ export function CreatorsDemo() {
   const [loop, setLoop] = useState(true);
   const [ready, setReady] = useState(false);
   const [sound, setSound] = useState(true);
+  const [volume, setVolume] = useState(1);
   const [footer, setFooter] = useState(true);
 
   const safeIndex = Math.min(index, SCENES.length - 1);
@@ -155,11 +171,15 @@ export function CreatorsDemo() {
     if (params.has("footer")) setFooter(params.get("footer") !== "false");
     if (params.has("rail")) setFooter(params.get("rail") !== "false");
     setSound(params.get("sound") !== "false");
+    const requestedVolume = Number(params.get("volume"));
+    if (params.has("volume") && Number.isFinite(requestedVolume)) {
+      setVolume(Math.max(0, Math.min(1, requestedVolume)));
+    }
     setReady(true);
   }, []);
 
-  // UI sound engine: synthesized click / pop / swipe. `?sound=false` disables.
-  useDemoSoundEngine({ enabled: sound });
+  // Preloaded Howler sound engine. `?sound=false` disables; `?volume=0..1` trims.
+  useDemoSoundEngine({ enabled: sound, volume });
 
   // Occasional swipe whoosh on scene cuts — alternating, never on the
   // contemplative kicker/end beats, so it stays a surprise, not a metronome.
@@ -179,10 +199,16 @@ export function CreatorsDemo() {
     if (!ready || paused) return;
     let raf = 0;
     const start = performance.now();
+    let lastFrame = start - 34;
+    let running = true;
     setProgress(0);
     const tick = (now: number) => {
+      if (!running) return;
       const p = Math.min(1, (now - start) / ms);
-      setProgress(p);
+      if (now - lastFrame >= 1000 / 30 || p >= 1) {
+        lastFrame = now;
+        setProgress(p);
+      }
       if (p >= 1) {
         if (safeIndex < SCENES.length - 1) setIndex((i) => i + 1);
         else if (loop) setIndex(0);
@@ -191,21 +217,41 @@ export function CreatorsDemo() {
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      running = false;
+      cancelAnimationFrame(raf);
+    };
   }, [safeIndex, loop, ms, paused, ready]);
 
   return (
     <div className="cv-root">
       <CreatorsDemoStyles />
-      <AmbientField scene={scene} sceneIndex={safeIndex} />
-
       <div className="cv-stage">
         {ready && <Stage scene={scene} progress={progress} />}
-        {ready && footer && !minimal && !isEnd && (
-          <footer className="cv-bottombar">
-            <ProgressRail scene={scene} onSelect={setIndex} />
-          </footer>
-        )}
+        {/* Hitting "Hide" removes the whole bottom bar — rail and button — for the
+          * rest of the session; it only comes back on a page reload. */}
+        <AnimatePresence>
+          {ready && !minimal && !isEnd && footer && (
+            <motion.footer
+              key="bottombar"
+              className="cv-bottombar"
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.25, ease: CINE_IN }}
+            >
+              <ProgressRail scene={scene} onSelect={setIndex} />
+              <button
+                type="button"
+                className="cv-rail-toggle"
+                onClick={() => {
+                  demoSounds.play("click");
+                  setFooter(false);
+                }}
+              >
+                Hide
+              </button>
+            </motion.footer>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
@@ -223,7 +269,7 @@ function Stage({ scene, progress }: { scene: SceneId; progress: number }) {
           className="cv-cut"
           initial={cut.initial}
           animate={cut.animate}
-          exit={cut.exit}
+          exit={{ ...cut.exit, transition: CUT_EXIT }}
           transition={cut.transition}
         >
           <motion.div
@@ -256,7 +302,7 @@ function SceneSwitch({ scene, progress }: { scene: SceneId; progress: number }) 
     case "signin":
       return (
         <div className="cv-focal cv-focal-bleed">
-          <Fit width={1180} designHeight={720} label="rubicon.app · sign in">
+          <Fit width={1180} designHeight={720} label="app.rubiconpay.xyz · sign in">
             <WriterAuthScreen onLogin={() => undefined} demo />
           </Fit>
         </div>
@@ -264,7 +310,7 @@ function SceneSwitch({ scene, progress }: { scene: SceneId; progress: number }) 
     case "onboard":
       return (
         <div className="cv-focal cv-focal-bleed">
-          <Fit width={1040} designHeight={660} label="rubicon.app · get started">
+          <Fit width={1040} designHeight={660} label="app.rubiconpay.xyz · get started">
             <SubstackOnboardingDialog shouldOpen forceOpen demo />
           </Fit>
         </div>
@@ -272,7 +318,7 @@ function SceneSwitch({ scene, progress }: { scene: SceneId; progress: number }) 
     case "import":
       return (
         <div className="cv-focal cv-focal-bleed">
-          <Fit width={1280} designHeight={800} label="rubicon.app/dashboard/import/substack">
+          <Fit width={1280} designHeight={800} label="app.rubiconpay.xyz/dashboard/import/substack">
             <DashboardFrame identity="@marachen" activePath="/dashboard/articles">
               <SubstackImportFlow phase={progress} />
             </DashboardFrame>
@@ -284,8 +330,8 @@ function SceneSwitch({ scene, progress }: { scene: SceneId; progress: number }) 
         <SceneStage
           progress={progress}
           segments={[
-            { kind: "text", weight: 1.4, text: "List your writing. Price it per word." },
-            { kind: "ui", weight: 4, bleed: true, render: () => <Fit width={1280} designHeight={800} label="rubicon.app/dashboard/articles/new"><CreatorPublishFlow /></Fit> },
+            { kind: "text", weight: 1.55, text: "List your writing. Price it per word." },
+            { kind: "ui", weight: 6.45, bleed: true, render: () => <Fit width={1280} designHeight={720} label="app.rubiconpay.xyz/dashboard/articles/new"><CreatorPublishFlow compact startAtStep={1} once onAction={playPublishSound} /></Fit> },
           ]}
         />
       );
@@ -294,8 +340,8 @@ function SceneSwitch({ scene, progress }: { scene: SceneId; progress: number }) 
         <SceneStage
           progress={progress}
           segments={[
-            { kind: "text", weight: 1.4, text: "Agents read it. You get paid per word." },
-            { kind: "ui", weight: 3.6, bleed: true, render: () => <Fit width={1280} designHeight={800} label="rubicon.app/dashboard"><CreatorDashboardPreview embedded /></Fit> },
+            { kind: "text", weight: 2.2, text: "You decide what's discoverable. Agents read it. You get paid per word." },
+            { kind: "ui", weight: 3.6, bleed: true, flat: true, render: () => <Fit width={1280} designHeight={800} label="app.rubiconpay.xyz/dashboard"><CreatorDashboardPreview embedded /></Fit> },
           ]}
         />
       );
@@ -336,15 +382,23 @@ function Fit({
     const spotlight = hostEl.closest(".cv-spotlight") as HTMLElement | null;
     const measure = () => {
       const availW = hostEl.clientWidth;
-      // Leave room for the clip's chrome bar and a little breathing space.
-      const availH = (spotlight?.clientHeight ?? window.innerHeight) - 96;
+      // Leave room for the clip's chrome bar, a little breathing space, and the
+      // lower-third caption that stays pinned beneath the clip during a scene.
+      const availH = (spotlight?.clientHeight ?? window.innerHeight) - 128;
       setScale(Math.min(availW / width, availH / designHeight, 1));
     };
     measure();
+    // Only re-measure on genuine host-width / viewport changes. We deliberately
+    // do NOT observe the spotlight's height: it grows when the bottom bar hides
+    // (e.g. on the end scene, or via "Hide"), which would otherwise rescale an
+    // already-placed clip mid-scene and read as the dashboard "getting bigger".
     const ro = new ResizeObserver(measure);
     ro.observe(hostEl);
-    if (spotlight) ro.observe(spotlight);
-    return () => ro.disconnect();
+    window.addEventListener("resize", measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", measure);
+    };
   }, [width, designHeight]);
 
   const s = scale ?? Math.min(1, 0.6);
@@ -376,7 +430,9 @@ function Fit({
 
 type Segment =
   | { kind: "text"; weight: number; text: string }
-  | { kind: "ui"; weight: number; bleed?: boolean; render: (progress: number) => React.ReactNode };
+  // `flat` drops the scale from the entrance/exit — used for large already-scaled
+  // surfaces (the dashboard) where a scale cut reads as an unwanted "zoom".
+  | { kind: "ui"; weight: number; bleed?: boolean; flat?: boolean; render: (progress: number) => React.ReactNode };
 
 function SceneStage({ progress, segments }: { progress: number; segments: Segment[] }) {
   const total = segments.reduce((sum, segment) => sum + segment.weight, 0);
@@ -395,6 +451,9 @@ function SceneStage({ progress, segments }: { progress: number; segments: Segmen
   const { start, end } = bounds[activeIndex];
   const local = Math.max(0, Math.min(1, (progress - start) / (end - start || 1)));
 
+  // Text only ever plays on its own, full-stage card *between* the screens —
+  // never overlaid on the product UI. Once the UI is on stage, there is no
+  // caption; the narration already had its own beat before the cut.
   return (
     <section className="cv-scene">
       <AnimatePresence mode="wait">
@@ -404,9 +463,9 @@ function SceneStage({ progress, segments }: { progress: number; segments: Segmen
           <motion.div
             key={`u${activeIndex}`}
             className={`cv-focal${segment.bleed ? " cv-focal-bleed" : ""}`}
-            initial={{ opacity: 0, y: 28, scale: 0.97, filter: "blur(14px)" }}
-            animate={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-            exit={{ opacity: 0, y: -22, scale: 0.99, filter: "blur(10px)", transition: { duration: 0.32, ease: CINE_IN } }}
+            initial={{ opacity: 0, transform: segment.flat ? "translateY(16px)" : "translateY(22px) scale(0.98)" }}
+            animate={{ opacity: 1, transform: segment.flat ? "translateY(0)" : "translateY(0) scale(1)" }}
+            exit={{ opacity: 0, transform: segment.flat ? "translateY(-12px)" : "translateY(-16px) scale(0.99)", transition: { duration: 0.28, ease: CINE_IN } }}
             transition={{ duration: 0.6, ease: CINE }}
           >
             {segment.render(local)}
@@ -423,15 +482,15 @@ function TextCard({ text }: { text: string }) {
   return (
     <motion.div
       className="cv-textcard"
-      exit={{ opacity: 0, y: -18, filter: "blur(10px)", transition: { duration: 0.4, ease: CINE_IN } }}
+      exit={{ opacity: 0, transform: "translateY(-14px)", transition: { duration: 0.3, ease: CINE_IN } }}
     >
       <h2 className="cv-mainline">
         {words.map((word, index) => (
           <motion.span
             key={index}
             className="cv-mainline-word"
-            initial={{ opacity: 0, y: 16, filter: "blur(10px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            initial={{ opacity: 0, transform: "translateY(12px)" }}
+            animate={{ opacity: 1, transform: "translateY(0)" }}
             transition={{ duration: 0.6, ease: CINE, delay: 0.12 + index * 0.045 }}
           >
             {word}
@@ -449,10 +508,13 @@ function TextCard({ text }: { text: string }) {
 type ChatMsg = { from: "them" | "me"; text: string; at: number };
 
 const CHAT: ChatMsg[] = [
-  { from: "them", text: "bro i have so much fomo. the agentic economy is here and i’m not earning anything from agents...", at: 0.04 },
-  { from: "me", text: "really? i’ve been making passive income just by posting articles from other platforms. it’s pretty lit", at: 0.28 },
-  { from: "them", text: "how??", at: 0.54 },
-  { from: "me", text: "this: https://www.rubiconpay.xyz/", at: 0.68 },
+  // Bursty, real-texting rhythm rather than an even metronome: the opener holds,
+  // a considered reply, then a fast skeptical retort, then the closing line lands
+  // quickly — leaving a held rest at the end so the CTA punchline sits.
+  { from: "them", text: "everyone's shipping agent stuff and i'm just watching. money's moving and none of it's touching me", at: 0.03 },
+  { from: "me", text: "gate your old posts, agents pay per word to read them. made ~$30 first week off that january piece, the nerdy one nobody read lol", at: 0.24 },
+  { from: "them", text: "wait that's real? sounds fake", at: 0.52 },
+  { from: "me", text: "yea kind of nice getting paid for the stuff i actually cared about", at: 0.66 },
 ];
 
 function ChatScene({ progress }: { progress: number }) {
@@ -465,7 +527,9 @@ function ChatScene({ progress }: { progress: number }) {
   // iMessage-style pop the moment a bubble lands.
   const prevShownRef = useRef(0);
   useEffect(() => {
-    if (shown > prevShownRef.current) demoSounds.play("pop");
+    if (shown > prevShownRef.current) {
+      demoSounds.play(CHAT[shown - 1]?.from === "me" ? "send" : "receive");
+    }
     prevShownRef.current = shown;
   }, [shown]);
 
@@ -540,13 +604,6 @@ function ChatScene({ progress }: { progress: number }) {
 function KickerScene() {
   return (
     <div className="cv-kicker">
-      <motion.div
-        className="cv-kicker-glow"
-        aria-hidden="true"
-        initial={{ opacity: 0, scale: 0.6 }}
-        animate={{ opacity: [0, 0.7, 0.5], scale: 1.15 }}
-        transition={{ duration: 1.4, ease: CINE }}
-      />
       <motion.img
         src="/w_logo.png"
         alt=""
@@ -574,9 +631,9 @@ function KickerScene() {
           <motion.span
             key={index}
             className={chunk.hot ? "cv-kicker-hot" : undefined}
-            initial={{ opacity: 0, y: 22, filter: "blur(10px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.7, ease: CINE, delay: 0.32 + index * 0.12 }}
+            initial={{ opacity: 0, transform: "translateY(16px)" }}
+            animate={{ opacity: 1, transform: "translateY(0)" }}
+            transition={{ duration: 0.7, ease: CINE, delay: 0.32 + index * 0.05 }}
           >
             {chunk.t}
           </motion.span>
@@ -599,16 +656,21 @@ const SUBSTACK_POSTS = [
 
 function SubstackImportFlow({ phase }: { phase: number }) {
   const reduceMotion = useReducedMotion();
-  const cursorVisible = phase >= 0.635 && phase < 0.69;
-  const pressing = phase >= 0.66 && phase < 0.675;
-  const imported = phase >= 0.69;
+  const cursorVisible = phase >= 0.8 && phase < 0.86;
+  const pressing = phase >= 0.83 && phase < 0.85;
+  const imported = phase >= 0.86;
 
   // Click the moment the cursor "presses" the import action.
   const prevPressingRef = useRef(false);
+  const prevImportedRef = useRef(false);
   useEffect(() => {
     if (pressing && !prevPressingRef.current) demoSounds.play("click");
     prevPressingRef.current = pressing;
   }, [pressing]);
+  useEffect(() => {
+    if (imported && !prevImportedRef.current) demoSounds.play("success");
+    prevImportedRef.current = imported;
+  }, [imported]);
   return (
     <div className="grid gap-5">
       <PageHeader
@@ -719,13 +781,6 @@ function EndScene() {
   const headline = "Let agents discover and pay for your writing.".split(" ");
   return (
     <section className="cv-end">
-      <motion.div
-        className="cv-end-burst"
-        aria-hidden="true"
-        initial={{ opacity: 0, scale: 0.6 }}
-        animate={{ opacity: [0, 0.55, 0.35], scale: 1.2 }}
-        transition={{ duration: 1.6, ease: CINE }}
-      />
       <motion.img
         src="/w_logo.png"
         alt="Rubicon"
@@ -738,9 +793,9 @@ function EndScene() {
         {headline.map((word, index) => (
           <motion.span
             key={index}
-            initial={{ opacity: 0, y: 24, filter: "blur(10px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            transition={{ duration: 0.7, ease: CINE, delay: 0.25 + index * 0.065 }}
+            initial={{ opacity: 0, transform: "translateY(18px)" }}
+            animate={{ opacity: 1, transform: "translateY(0)" }}
+            transition={{ duration: 0.7, ease: CINE, delay: 0.25 + index * 0.05 }}
           >
             {word}{" "}
           </motion.span>
@@ -781,40 +836,6 @@ function ProgressRail({ scene, onSelect }: { scene: SceneId; onSelect: (index: n
           <span className="cv-beat-label">{label}</span>
         </button>
       ))}
-    </div>
-  );
-}
-
-const TONE: Record<SceneId, string> = {
-  chat: "rgba(18,18,22,0.05)",
-  kicker: "rgba(18,18,22,0.06)",
-  signin: "rgba(18,18,22,0.05)",
-  onboard: "rgba(18,18,22,0.05)",
-  import: "rgba(18,18,22,0.05)",
-  publish: "rgba(18,18,22,0.05)",
-  earn: "rgba(23,99,66,0.07)",
-  end: "rgba(18,18,22,0.06)",
-};
-
-function AmbientField({ scene, sceneIndex }: { scene: SceneId; sceneIndex: number }) {
-  const reduce = useReducedMotion();
-  const x = 26 + (sceneIndex % 5) * 13;
-  return (
-    <div className="cv-ambient" aria-hidden="true">
-      <motion.div
-        className="cv-ambient-glow"
-        animate={
-          reduce
-            ? { left: `${x}%`, backgroundColor: TONE[scene] }
-            : { left: `${x}%`, backgroundColor: TONE[scene], opacity: [0.6, 0.85, 0.6], scale: [1, 1.1, 1] }
-        }
-        transition={{
-          left: { duration: 1.6, ease: CINE },
-          backgroundColor: { duration: 1.4, ease: CINE },
-          opacity: { duration: 9, repeat: Infinity, ease: "easeInOut" },
-          scale: { duration: 9, repeat: Infinity, ease: "easeInOut" },
-        }}
-      />
     </div>
   );
 }
@@ -861,10 +882,6 @@ function CreatorsDemoStyles() {
         --river: #303034; --river-deep: #1d1d20; --river-pale: #ededee; --river-line: #dedee1; --river-rgb: 48,48,52;
       }
 
-      /* ambient — soft neutral wash only, no grid, no color */
-      .cv-ambient { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
-      .cv-ambient-glow { position: absolute; top: 8%; width: 78vh; height: 78vh; margin-left: -39vh; border-radius: 50%; background: rgba(18,18,22,0.05); filter: blur(150px); }
-
       .cv-stage {
         position: relative; z-index: 2; display: flex; flex-direction: column;
         width: min(1320px, 100%); height: 100%; margin-inline: auto;
@@ -875,7 +892,7 @@ function CreatorsDemoStyles() {
       .cv-cut, .cv-float { display: flex; width: 100%; align-items: center; justify-content: center; }
       .cv-sweep {
         position: absolute; inset-block: 0; left: 0; z-index: 6; width: 34%; transform: skewX(-12deg);
-        background: linear-gradient(90deg, transparent, rgba(18,18,22,0.05), transparent); filter: blur(28px); pointer-events: none;
+        background: linear-gradient(90deg, transparent, rgba(18,18,22,0.045), transparent); pointer-events: none;
       }
 
       .cv-scene { position: relative; width: 100%; min-height: 0; display: flex; align-items: center; justify-content: center; }
@@ -892,12 +909,11 @@ function CreatorsDemoStyles() {
 
       /* kicker — the promise */
       .cv-kicker { position: relative; display: grid; justify-items: center; text-align: center; gap: 14px; padding: 0 18px; max-width: 1040px; }
-      .cv-kicker-glow { position: absolute; top: 22%; width: 64vh; height: 64vh; border-radius: 50%; background: radial-gradient(circle, rgba(18,18,22,0.08), transparent 62%); filter: blur(46px); z-index: 0; }
-      .cv-kicker-logo { position: relative; z-index: 1; width: 54px; height: 54px; object-fit: contain; filter: drop-shadow(0 6px 16px rgba(18,18,22,0.18)); }
+      .cv-kicker-logo { position: relative; z-index: 1; width: 54px; height: 54px; object-fit: contain; }
       .cv-kicker-eyebrow { position: relative; z-index: 1; font-size: 0.72rem; letter-spacing: 0.22em; color: var(--muted); font-weight: 600; }
       .cv-kicker-line { position: relative; z-index: 1; font-size: clamp(1.6rem, 4vw, 3rem); line-height: 1.18; font-weight: 600; letter-spacing: -0.03em; max-width: 18ch; }
       .cv-kicker-line span { display: inline; }
-      .cv-kicker-hot { box-shadow: inset 0 -0.42em 0 var(--pale); border-radius: 2px; }
+      .cv-kicker-hot { background: linear-gradient(transparent 58%, var(--pale) 58%); border-radius: 2px; }
 
       .cv-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(18,18,22,0.13); }
 
@@ -906,7 +922,6 @@ function CreatorsDemoStyles() {
       .cv-clip {
         margin: 0; max-width: 100%; border-radius: 14px; overflow: hidden;
         border: 1px solid var(--line-strong); background: #fff;
-        box-shadow: 0 1px 0 rgba(18,18,22,0.04), 0 30px 80px -34px rgba(18,18,22,0.4);
       }
       .cv-clip-bar { display: flex; align-items: center; gap: 7px; height: 32px; padding: 0 13px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
       .cv-clip-url { margin-left: 10px; font-size: 0.66rem; color: var(--muted); }
@@ -918,6 +933,27 @@ function CreatorsDemoStyles() {
       .cv-clip-inner .dashboard-canvas { min-height: 100% !important; height: 100%; }
       .cv-clip-inner .creator-dashboard-preview-embed,
       .cv-clip-inner .creator-publish-flow { height: 100%; }
+      /* Fill the frame: the wizard and its active step stretch to the bottom so
+       * the review card reaches the bottom of the browser mock (as it used to). */
+      .cv-clip-inner .creator-publish-flow[data-compact="true"] .dashboard-main { display: flex; flex-direction: column; }
+      .cv-clip-inner .creator-publish-flow[data-compact="true"] .dashboard-main > div:last-child { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+      .cv-clip-inner .creator-publish-flow[data-compact="true"] .cpf-wizard { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+      .cv-clip-inner .creator-publish-flow[data-compact="true"] .cpf-step { flex: 1; min-height: 0; }
+      .cv-clip-inner .creator-publish-flow[data-compact="true"] .cpf-step > * { height: 100%; }
+      .cv-clip-inner .creator-publish-flow[data-compact="true"] .substack-compose-main { padding: 20px 20px 24px; }
+      .cv-clip-inner .creator-publish-flow[data-compact="true"] .substack-title-input { font-size: 2.15rem; line-height: 1.04; }
+      .cv-clip-inner .creator-publish-flow[data-compact="true"] .substack-subtitle-input { margin-top: 7px; font-size: 1.3rem; }
+      .cv-clip-inner .creator-publish-flow[data-compact="true"] .cpf-import-options { margin-block: 16px 12px; gap: 8px; }
+      .cv-clip-inner .creator-publish-flow[data-compact="true"] .cpf-import-options p { margin-top: 2px; }
+      .cv-clip-inner .creator-publish-flow[data-compact="true"] .cpf-manual-editor .substack-editor { min-height: 128px; }
+      .cv-clip-inner .creator-publish-flow[data-compact="true"] .cpf-review-card { padding: 16px; }
+      /* The review step is the tallest: tighten its rows/gaps so the whole card —
+       * including the bottom action buttons and note — fits inside the frame and
+       * never clips (the mt-auto action row then sits flush at the bottom). */
+      .cv-clip-inner .creator-publish-flow[data-compact="true"] .cpf-review-list { margin-top: 12px; padding: 10px 12px; gap: 2px; }
+      .cv-clip-inner .creator-publish-flow[data-compact="true"] .cpf-review-list > div { padding-top: 5px; padding-bottom: 5px; }
+      .cv-clip-inner .creator-publish-flow[data-compact="true"] .cpf-review-actions { margin-top: 12px; padding-top: 12px; }
+      .cv-clip-inner .creator-publish-flow[data-compact="true"] .cpf-review-note { margin-top: 6px; }
       .cv-clip-inner .dashboard-sidebar { height: 100% !important; }
       .cv-clip-inner .dashboard-main { min-height: 100%; }
       .cv-clip-inner .writer-auth-screen, .cv-clip-inner .writer-auth-card { min-height: 100% !important; height: 100%; }
@@ -937,7 +973,7 @@ function CreatorsDemoStyles() {
       .cv-imsg-contact strong { font-size: 0.78rem; font-weight: 600; letter-spacing: -0.01em; }
       .cv-imsg-facetime { margin-left: auto; color: #8aa0c4; opacity: 0.55; }
       .cv-imsg-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-      .cv-imsg-scroll { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: flex-start; gap: 4px; padding: 16px 20px 10px; overflow: hidden; }
+      .cv-imsg-scroll { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding: 16px 20px 10px; overflow: hidden; }
       .cv-imsg-stamp { text-align: center; font-size: 0.68rem; color: #9b9ba2; padding: 4px 0 10px; }
       .cv-imsg-stamp strong { font-weight: 600; color: #6f6f77; }
       .cv-bubble {
@@ -969,21 +1005,28 @@ function CreatorsDemoStyles() {
 
       /* end */
       .cv-end { position: relative; display: grid; justify-items: center; text-align: center; gap: 18px; padding: 0 20px; }
-      .cv-end-burst { position: absolute; top: 30%; width: 60vh; height: 60vh; border-radius: 50%; background: radial-gradient(circle, rgba(18,18,22,0.08), transparent 62%); filter: blur(40px); z-index: 0; }
-      .cv-end-logo { position: relative; z-index: 1; width: 64px; height: 64px; object-fit: contain; filter: drop-shadow(0 8px 20px rgba(18,18,22,0.18)); }
+      .cv-end-logo { position: relative; z-index: 1; width: 64px; height: 64px; object-fit: contain; }
       .cv-end-title { position: relative; z-index: 1; font-size: clamp(1.8rem,4.6vw,3.4rem); font-weight: 650; letter-spacing: -0.03em; line-height: 1.08; max-width: 16ch; }
       .cv-end-sub { position: relative; z-index: 1; font-size: clamp(0.95rem,1.6vw,1.2rem); color: var(--muted); }
 
       /* progress rail */
-      .cv-bottombar { position: relative; z-index: 3; display: flex; justify-content: center; padding-top: 6px; }
-      .cv-rail { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 999px; background: rgba(255,255,255,0.82); border: 1px solid var(--line); box-shadow: 0 8px 24px -16px rgba(17,19,28,0.4); backdrop-filter: blur(10px); }
+      .cv-bottombar { position: relative; z-index: 3; display: flex; flex-direction: column; align-items: center; gap: 8px; padding-top: 6px; }
+      .cv-rail-toggle {
+        display: inline-flex; align-items: center; padding: 4px 12px; border-radius: 999px;
+        background: rgba(255,255,255,0.94); border: 1px solid var(--line); cursor: pointer;
+        color: var(--muted); font-size: 0.66rem; font-weight: 600; letter-spacing: 0.02em;
+        transition: color 160ms var(--ease), transform 140ms var(--ease);
+      }
+      .cv-rail-toggle:hover { color: var(--ink); }
+      .cv-rail-toggle:active { transform: scale(0.97); }
+      .cv-rail { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border-radius: 999px; background: rgba(255,255,255,0.94); border: 1px solid var(--line); }
       .cv-beat { display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border-radius: 999px; background: transparent; border: 0; cursor: pointer; color: var(--muted); font-size: 0.74rem; font-weight: 600; transition: color 160ms var(--ease), background 160ms var(--ease), transform 140ms var(--ease); }
       .cv-beat:active { transform: scale(0.97); }
       .cv-beat-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(17,19,28,0.18); transition: background 200ms var(--ease); }
       .cv-beat.is-done { color: var(--ink); }
       .cv-beat.is-done .cv-beat-dot { background: var(--green); }
       .cv-beat.is-on { color: var(--ink); background: var(--accent-soft); }
-      .cv-beat.is-on .cv-beat-dot { background: var(--accent); box-shadow: 0 0 0 3px rgba(18,18,22,0.12); }
+      .cv-beat.is-on .cv-beat-dot { background: var(--accent); outline: 3px solid rgba(18,18,22,0.12); }
 
       @media (max-width: 720px) {
         .cv-beat-label { display: none; }
