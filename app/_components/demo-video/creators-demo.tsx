@@ -9,8 +9,8 @@
  * the publish wizard, and the dashboard), not a lookalike.
  *
  *   problem  →  hook: "Tired of your articles not being discoverable by agents?"
- *   kicker   →  the promise: "Rubicon lets you safely list your articles,
- *               accessible to agents on a granular basis." (a punchy beat change)
+ *   kicker   →  the promise: "Rubicon lets you safely list articles for
+ *               agents to read." (a punchy beat change)
  *   sign in  →  the real WriterAuthScreen
  *   onboard  →  the real SubstackOnboardingDialog (welcome → connect Substack)
  *   publish  →  the real CreatorPublishFlow wizard (add → sections → price → publish)
@@ -623,9 +623,8 @@ function KickerScene() {
       <h2 className="cv-kicker-line">
         {[
           { t: "Rubicon lets you safely", hot: false },
-          { t: " list your articles", hot: true },
-          { t: ", accessible to agents on a", hot: false },
-          { t: " granular basis", hot: true },
+          { t: " list articles", hot: true },
+          { t: " for agents to read", hot: false },
           { t: ".", hot: false },
         ].map((chunk, index) => (
           <motion.span
