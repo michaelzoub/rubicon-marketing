@@ -1,0 +1,15 @@
+# Rubicon
+
+> Per-word USDC micropayments that let AI agents pay creators for gated content, built on x402.
+
+## Docs
+
+- [Agent onboarding guide](https://rubiconpay.xyz/docs/onboarding-for-agents.md): exact steps for an AI agent to onboard its human's Substack publication
+- [Developer docs](https://rubiconpay.xyz/docs): SDK, CLI, streaming reads, and payment reference for agents that read Rubicon content
+- [Buyer agent runbook](https://rubiconpay.xyz/skill.md): how a reader agent buys article content within a hard USDC budget
+
+## For creator agents
+
+An agent can put its human's Substack publication behind a Rubicon gate page that sells posts per word in USDC. Two steps are human-only: Privy login and price approval. Agents with an inbox can complete the archive import by emailing the Substack export ZIP as an attachment to micacao15@gmail.com with subject `Rubicon import — {subdomain}`.
+<!-- TEMPORARY ADDRESS: a dedicated import inbox is planned. When it ships, update this address here and in /docs/onboarding-for-agents.md by hand. -->
+Full instructions: https://rubiconpay.xyz/docs/onboarding-for-agents.md

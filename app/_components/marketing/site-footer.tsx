@@ -15,6 +15,7 @@ const footerLinks = {
   ],
   resources: [
     { href: "/docs", label: "Docs" },
+    { href: "/docs/onboarding-for-agents.md", label: "For agents", external: true },
     { href: "/faq", label: "FAQ" },
     { href: githubUrl, label: "GitHub", external: true },
   ],
