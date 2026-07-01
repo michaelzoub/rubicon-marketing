@@ -116,8 +116,8 @@
   color: #756d61;
   font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 .stream-simple-footer strong {
@@ -138,7 +138,7 @@
 /* Warm neutrals replace cold gray across the light marketing and app surfaces. */
 .landing-dashboard-showcase,
 .landing-agents-section,
-.landing-product-frame { background: #f5efe3; }
+.landing-product-frame { background: #fff; }
 
 .site-footer,
 .landing-page .site-footer {
@@ -284,10 +284,10 @@
 
 @media (prefers-color-scheme: light) {
   .landing-dashboard-showcase,
-  .landing-agents-section { background: #f5efe3; }
+  .landing-agents-section { background: #fff; }
   .landing-product-frame,
   .landing-dashboard-showcase-panel,
-  .landing-dashboard-frame { background: #f2eadc; }
+  .landing-dashboard-frame { background: #fff; }
 }
 
 /* White dashboard pass. Cool gray is reserved for quiet controls and grouped data. */
@@ -377,15 +377,14 @@ html {
   font-size: clamp(15px, 0.9375rem + 0.22vw, 18px);
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
+  background: #fff;
 }
 
 body {
   margin: 0;
   overflow-x: clip;
   min-width: 0;
-  background:
-    radial-gradient(circle at 50% -12%, rgba(37, 80, 117, 0.18), transparent 34rem),
-    var(--background);
+  background: #fff;
   color: var(--ink);
   font-family:
     var(--font-sans),
@@ -740,8 +739,8 @@ a {
   color: var(--river-deep);
   font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  text-transform: none;
 }
 
 .section-title {
@@ -833,7 +832,13 @@ a {
     background-color 320ms var(--ease-soft),
     border-color 320ms var(--ease-soft),
     box-shadow 320ms var(--ease-soft),
-    backdrop-filter 320ms var(--ease-soft);
+    backdrop-filter 320ms var(--ease-soft),
+    transform 280ms var(--ease-soft);
+}
+
+.site-header--hidden {
+  transform: translateY(-100%);
+  pointer-events: none;
 }
 
 .site-header--scrolled {
@@ -864,7 +869,7 @@ a {
   --landing-copy-gap: 1.25rem;
   --landing-section-y: clamp(3rem, 6vh, 5rem);
   --landing-stack-gap: clamp(2rem, 4vw, 3rem);
-  --landing-bg: #060607;
+  --landing-bg: #fff;
   --landing-eyebrow-title-gap: 0.35rem;
   --landing-section-title-size: clamp(1.75rem, 3.2vw, 2.5rem);
   --landing-section-lead-size: clamp(0.9rem, 1.45vw, 1.05rem);
@@ -2042,8 +2047,8 @@ a {
   color: var(--river-deep);
   font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  text-transform: none;
 }
 
 .creators-benefit-title {
@@ -2069,8 +2074,8 @@ a {
   padding-top: 1.5rem;
   color: var(--quiet);
   font-size: 0.72rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  text-transform: none;
 }
 
 /* Developers page */
@@ -2196,8 +2201,8 @@ a {
   color: var(--river-deep);
   font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  text-transform: none;
 }
 
 .developers-agent-card-title {
@@ -2852,9 +2857,9 @@ a {
   color: #2d91ed;
   font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: -0.01em;
   line-height: 1.2;
-  text-transform: uppercase;
+  text-transform: none;
 }
 
 .site-footer-links {
@@ -4060,8 +4065,8 @@ a {
   color: var(--quiet);
   font-size: 0.66rem;
   font-weight: 650;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  text-transform: none;
 }
 
 .explore-author-link {
@@ -4569,13 +4574,13 @@ a {
 .docs-sidebar a { display: flex; align-items: center; gap: 9px; border-radius: 7px; padding: 8px 10px; color: var(--docs-muted); font-size: 0.84rem; }
 .docs-sidebar a:hover { color: var(--docs-ink); background: #eef0f3; }
 .docs-sidebar .docs-nav-active { color: var(--docs-accent); background: #eaf0f5; font-weight: 700; }
-.docs-nav-label { margin: 23px 10px 7px; color: #9398a1; font-size: 0.68rem; font-weight: 750; letter-spacing: 0.1em; text-transform: uppercase; }
+.docs-nav-label { margin: 23px 10px 7px; color: #9398a1; font-size: 0.68rem; font-weight: 750; letter-spacing: -0.01em; text-transform: none; }
 .docs-nav-label:first-child { margin-top: 0; }
 
 .docs-content { min-width: 0; padding: 70px 0 90px; }
 .docs-anchor { scroll-margin-top: 96px; }
 .docs-hero h1 { max-width: 720px; margin-top: 14px; font-size: clamp(2.5rem, 5.5vw, 4.35rem); line-height: 0.98; letter-spacing: -0.045em; font-weight: 790; }
-.docs-kicker { color: var(--docs-accent) !important; font-size: 0.72rem !important; font-weight: 750; letter-spacing: 0.13em; text-transform: uppercase; }
+.docs-kicker { color: var(--docs-accent) !important; font-size: 0.72rem !important; font-weight: 750; letter-spacing: -0.01em; text-transform: none; }
 .docs-lead { max-width: 700px; margin-top: 24px; color: var(--docs-muted); font-size: 1.15rem; line-height: 1.72; }
 .docs-packages { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 36px; }
 .docs-package { display: flex; min-height: 210px; flex-direction: column; border: 1px solid var(--docs-line); border-radius: 12px; background: white; padding: 18px; transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease; }
@@ -5177,21 +5182,21 @@ a {
 .site-nav-cta--sales:hover { background: #f3f4f6; color: #16181d; transform: none; }
 
 .landing-page {
-  --landing-bg: #fafafb;
+  --landing-bg: #fff;
   --ink: #16181d;
   --muted: #646973;
   --line: rgba(20, 22, 28, 0.12);
   --surface: #fff;
-  --surface-muted: #fafafa;
+  --surface-muted: #fff;
   color-scheme: light;
   color: var(--ink);
-  background: var(--landing-bg);
+  background: #fff;
 }
 
 .landing-hero {
   min-height: 100dvh;
   border-bottom-color: var(--line);
-  background-color: var(--l-hero-bg, #fbfbfc);
+  background-color: #fff;
 }
 .landing-hero::after,
 .landing-dashboard-showcase::after { display: none; }
@@ -5252,8 +5257,8 @@ a {
   font-family: var(--font-mono), monospace;
   font-size: 0.67rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  text-transform: none;
 }
 .landing-hero-kicker span { width: 1.5rem; height: 1px; background: #16181d; }
 .landing-hero-title { max-width: 11ch; color: #111316; font-size: clamp(3.1rem, 6vw, 6rem); line-height: 0.98; }
@@ -5303,11 +5308,11 @@ a {
 .landing-workspace-actionbar button:active { transform: scale(.97); }
 .landing-workspace-actionbar > span { display: inline-flex; align-items: center; gap: .3rem; color: #868b94; font: .58rem var(--font-mono), monospace; }
 
-.landing-section-block { border-bottom: 1px solid var(--line); background: #f6f7f8; }
+.landing-section-block { border-bottom: 1px solid var(--line); background: #fff; }
 .landing-dashboard-showcase { background: #fff; }
 .landing-dashboard-showcase-inner,
 .landing-product-showcase-inner { gap: 2.5rem; }
-.landing-section-eyebrow { color: #767b85; font: 600 .68rem var(--font-mono), monospace; letter-spacing: .08em; text-transform: uppercase; }
+.landing-section-eyebrow { color: #767b85; font-size: clamp(0.875rem, 1.35vw, 0.9375rem); font-weight: 500; letter-spacing: -0.01em; text-transform: none; }
 .landing-section-title { color: #16181d; }
 .landing-section-lead,
 .landing-product-points { color: #646973; }
@@ -5524,16 +5529,11 @@ a {
    scopes every rule below to `.dark …`. Keeps colors to white + blue + black. */
 .dark {
   .landing-page {
-    --landing-bg: #060607;
-    --ink: #f5f6f8;
-    --muted: #9aa1ac;
-    --line: rgba(255, 255, 255, 0.14);
-    --surface: #15171b;
-    --surface-muted: #101114;
-    --l-hero-bg: #060607;
+    --landing-bg: #fff;
+    --l-hero-bg: #fff;
     --l-grid: rgba(255, 255, 255, 0.05);
     --l-art-opacity: 0.42;
-    color-scheme: dark;
+    color-scheme: light;
   }
 
   /* Restore the original dark art treatment (overlays + cinematic masks). */
@@ -5563,10 +5563,10 @@ a {
   .landing-hero-lead { color: #aab2c0; }
   .landing-hero-benefits { color: #8b93a3 !important; }
 
-  .landing-section-block { background: #08090b; }
+  .landing-section-block { background: #fff; }
   .landing-dashboard-showcase,
-  .landing-product-section { background: #060607; }
-  .landing-agents-section { background: #0a0b0e; }
+  .landing-product-section { background: #fff; }
+  .landing-agents-section { background: #fff; }
   .landing-section-eyebrow { color: #c7ccd6; }
   .landing-section-title { color: #f4f7fb; }
   .landing-section-lead,

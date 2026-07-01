@@ -133,12 +133,15 @@ function SolutionsPanel({
 }
 
 export function SiteHeader({
+  variant = "marketing",
   overlay = false,
 }: {
   variant?: "home" | "explore" | "marketing";
   overlay?: boolean;
 }) {
   const pathname = usePathname();
+  const isHome = variant === "home";
+  const logoSrc = "/Header-logo_w.svg";
   const [scrolled, setScrolled] = useState(false);
   const [headerHidden, setHeaderHidden] = useState(false);
   const [solutionsOpen, setSolutionsOpen] = useState(false);
@@ -205,11 +208,11 @@ export function SiteHeader({
 
   return (
     <header
-      className={`site-header${overlay ? " site-header--overlay" : ""}${scrolled ? " site-header--scrolled" : ""}${headerHidden ? " site-header--hidden" : ""}${solutionsOpen ? " site-header--solutions-open" : ""}`}
+      className={`site-header${isHome ? " site-header--home" : ""}${overlay ? " site-header--overlay" : ""}${scrolled ? " site-header--scrolled" : ""}${headerHidden ? " site-header--hidden" : ""}${solutionsOpen ? " site-header--solutions-open" : ""}`}
     >
       <nav className="container site-header-inner" aria-label="Main navigation">
         <Link href="/" className="site-header-logo" aria-label="Rubicon home" onClick={() => trackClick("nav_logo_clicked")}>
-          <RubiconBrand className="site-header-brand site-header-brand--new" src="/Header-logo_w.svg" />
+          <RubiconBrand className="site-header-brand site-header-brand--new" src={logoSrc} />
         </Link>
 
         <div className="site-header-links">

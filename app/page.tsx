@@ -8,7 +8,8 @@ import { fade } from "./_components/marketing/motion";
 import { SiteFooter } from "./_components/marketing/site-footer";
 import { SiteHeader } from "./_components/site-header";
 import { LandingAgentsSection } from "./_components/marketing/landing-agents-section";
-import { StreamTheater } from "./_components/stream-theater";
+import { DashboardAppPreview } from "./_components/marketing/dashboard-app-preview";
+import { LiveReadingAppPreview } from "./_components/marketing/live-reading-app-preview";
 
 function Hero() {
   return (
@@ -16,10 +17,11 @@ function Hero() {
       <div className="container">
         <motion.div {...fade} className="landing-copy-stack landing-hero-copy">
           <h1 className="landing-hero-title">
-            <span className="landing-hero-title-muted">Rubicon enables creators to</span>
+            <span className="landing-hero-title-emphasis">Sell your writing to AI</span>
             <br />
-            <span className="landing-hero-title-emphasis">sell their writings</span>
-            <span className="landing-hero-title-muted"> on a per word basis to AI agents.</span>
+            <span className="landing-hero-title-muted">
+              Agents pay for words read. You set the price, you stay in control.
+            </span>
           </h1>
           <div className="landing-hero-cta">
             <div className="landing-hero-actions">
@@ -47,54 +49,10 @@ function Hero() {
 
 function DashboardShowcase() {
   return (
-    <section
-      className="landing-section-block landing-dashboard-showcase"
-      aria-labelledby="dashboard-showcase-heading"
-    >
+    <section className="landing-section-block landing-dashboard-showcase" aria-label="Creator dashboard preview">
       <motion.div {...fade} className="container landing-dashboard-showcase-inner">
         <div className="landing-dashboard-showcase-column">
-          <div className="landing-dashboard-showcase-panel">
-            <div className="landing-dashboard-showcase-visual hero-visual">
-              <div className="landing-dashboard-texture-border">
-                <div className="landing-dashboard-frame">
-                  <img
-                    src="/dashboard-preview.png"
-                    alt="Rubicon creator dashboard showing earnings, agent reads, words read, and payout wallet"
-                    className="landing-dashboard-image"
-                    decoding="async"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="landing-copy-stack landing-dashboard-showcase-header">
-          <div className="landing-section-kicker">
-            <p className="landing-section-eyebrow">For writers</p>
-            <h2 id="dashboard-showcase-heading" className="landing-section-title">
-              <Link
-                href="/creators"
-                className="landing-section-title-link"
-                onClick={() => trackClick("dashboard_showcase_clicked", { location: "home_creators_link" })}
-              >
-                The dashboard creators get.
-              </Link>
-            </h2>
-          </div>
-          <p className="landing-section-lead landing-dashboard-showcase-lead">
-            Publish once, then watch words read, agent traffic, and USDC payouts update in the dashboard you actually
-            ship with.
-          </p>
-          <div className="landing-dashboard-showcase-actions">
-            <Link
-              href="/dashboard"
-              className="button button-primary landing-dashboard-cta"
-              onClick={() => trackClick("start_publishing_clicked", { location: "dashboard_showcase" })}
-            >
-              List an article <ArrowRight size={14} aria-hidden="true" />
-            </Link>
-          </div>
+          <DashboardAppPreview />
         </div>
       </motion.div>
     </section>
@@ -107,14 +65,14 @@ function ProductSection() {
       <motion.div {...fade} className="container landing-product-showcase-inner">
         <div className="landing-copy-stack landing-product-showcase-header">
           <div className="landing-section-kicker">
-            <p className="landing-section-eyebrow">Our product</p>
             <h2 id="product-heading" className="landing-section-title">
-              How agents pay creators, word by word.
+              <span className="landing-section-title-emphasis">How agents pay creators, word by word.</span>
+              <br />
+              <span className="landing-section-title-muted">
+                Agents read only the sections they need and pay per word. Creators earn for exactly what&apos;s read.
+              </span>
             </h2>
           </div>
-          <p className="landing-section-lead landing-product-showcase-lead">
-            Agents read only the sections they need and pay per word. Creators earn for exactly what&apos;s read.
-          </p>
           <ul className="landing-product-points">
             <li>
               <Check size={14} className="text-[var(--muted)]" aria-hidden="true" />
@@ -132,12 +90,7 @@ function ProductSection() {
         </div>
 
         <div className="landing-product-showcase-column">
-          <div className="landing-product-showcase-visual hero-visual">
-            <div className="landing-product-glow" aria-hidden="true" />
-            <div className="landing-product-frame">
-              <StreamTheater embedded />
-            </div>
-          </div>
+          <LiveReadingAppPreview />
         </div>
       </motion.div>
     </section>

@@ -68,7 +68,6 @@ export function HowItWorks({ tone = "default" }: { tone?: "default" | "hero" | "
         {isLanding ? (
           <div className="landing-copy-stack creators-how-header">
             <div className="landing-section-kicker">
-              <p className="landing-section-eyebrow">How it works</p>
               <h2 className="landing-section-title">From publish to paid, one word at a time.</h2>
             </div>
             <p className="landing-section-lead creators-how-lead">
@@ -77,8 +76,7 @@ export function HowItWorks({ tone = "default" }: { tone?: "default" | "hero" | "
           </div>
         ) : (
           <>
-            <p className="eyebrow">How it works</p>
-            <h2 className="mt-4 section-title">From publish to paid, one word at a time.</h2>
+            <h2 className="section-title">From publish to paid, one word at a time.</h2>
           </>
         )}
 
@@ -130,7 +128,7 @@ export function HowItWorks({ tone = "default" }: { tone?: "default" | "hero" | "
                         >
                           {step.title}
                         </h3>
-                        <span className="mono text-[0.66rem] uppercase tracking-[0.12em] text-[var(--quiet)]">
+                        <span className="mono text-[0.66rem] tracking-[0.12em] text-[var(--quiet)]">
                           {step.tag}
                         </span>
                       </div>
@@ -153,7 +151,7 @@ function Stage({ label, children }: { label: string; children: React.ReactNode }
   return (
     <div className="hiw-panel flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-[var(--faint)] px-5 py-3.5">
-        <span className="mono text-[0.66rem] uppercase tracking-[0.18em] text-[var(--muted)]">{label}</span>
+        <span className="mono text-[0.66rem] tracking-[0.18em] text-[var(--muted)]">{label}</span>
       </div>
       <div className="flex flex-1 flex-col gap-4 p-5">{children}</div>
     </div>
@@ -166,14 +164,14 @@ function PublishVisual() {
     <Stage label="Publish · new article">
       <div className="flex flex-1 flex-col gap-4">
         <div>
-          <div className="mono mb-1.5 text-[0.62rem] uppercase tracking-[0.12em] text-[var(--quiet)]">Article title</div>
+          <div className="mono mb-1.5 text-[0.62rem] tracking-[0.12em] text-[var(--quiet)]">Article title</div>
           <div className="rounded-lg bg-[#20242b] px-3.5 py-3 text-sm font-medium text-[var(--ink)]">
             The Self-Attention Mechanism
           </div>
         </div>
 
         <div className="flex flex-1 flex-col">
-          <div className="mono mb-2 text-[0.62rem] uppercase tracking-[0.12em] text-[var(--quiet)]">Sections detected</div>
+          <div className="mono mb-2 text-[0.62rem] tracking-[0.12em] text-[var(--quiet)]">Sections detected</div>
           <div className="grid flex-1 content-start gap-2">
             {sections.map((s, i) => (
               <div
@@ -220,7 +218,7 @@ function ReadVisual() {
         <div className="flex flex-1 flex-col rounded-xl bg-[#20242b] p-4">
           <div className="mb-3 flex items-center justify-between">
             <span className="text-[0.82rem] font-semibold text-[var(--ink)]">Self-Attention Mechanism</span>
-            <span className="mono flex items-center gap-1.5 rounded-full bg-[rgba(var(--river-rgb),0.18)] px-2 py-0.5 text-[0.56rem] uppercase tracking-[0.1em] text-[var(--river-deep)]">
+            <span className="mono flex items-center gap-1.5 rounded-full bg-[rgba(var(--river-rgb),0.18)] px-2 py-0.5 text-[0.56rem] tracking-[0.1em] text-[var(--river-deep)]">
               <span className="status-dot h-1.5 w-1.5 rounded-full bg-[var(--river-deep)]" /> streaming
             </span>
           </div>
@@ -264,11 +262,11 @@ function EarnVisual() {
       <div className="flex flex-1 flex-col gap-4">
         <div className="flex items-center justify-between rounded-xl bg-[var(--river-pale)] px-5 py-5">
           <div>
-            <span className="mono text-[0.6rem] uppercase tracking-[0.12em] text-[var(--muted)]">Earned this session</span>
+            <span className="mono text-[0.6rem] tracking-[0.12em] text-[var(--muted)]">Earned this session</span>
             <div className="mono mt-1.5 text-3xl font-bold tracking-[-0.02em] text-[var(--river-deep)]">$0.00095</div>
             <div className="mt-1 text-[0.7rem] text-[var(--muted)]">95 words delivered · 0% platform fee</div>
           </div>
-          <span className="mono flex items-center gap-1.5 rounded-full bg-[rgba(88,213,155,0.16)] px-2.5 py-1 text-[0.56rem] uppercase tracking-[0.1em] text-[var(--green)]">
+          <span className="mono flex items-center gap-1.5 rounded-full bg-[rgba(88,213,155,0.16)] px-2.5 py-1 text-[0.56rem] tracking-[0.1em] text-[var(--green)]">
             <span className="status-dot h-1.5 w-1.5 rounded-full bg-[var(--green)]" /> live
           </span>
         </div>
@@ -291,7 +289,7 @@ function EarnVisual() {
         <div className="flex items-center gap-2.5 rounded-lg bg-[#20242b] px-3.5 py-3">
           <Wallet size={15} className="text-[var(--muted)]" aria-hidden="true" />
           <span className="mono text-[0.72rem] text-[var(--ink)]">0x9f4c…2a18</span>
-          <span className="mono ml-auto text-[0.62rem] uppercase tracking-[0.1em] text-[var(--quiet)]">
+          <span className="mono ml-auto text-[0.62rem] tracking-[0.1em] text-[var(--quiet)]">
             receiving wallet
           </span>
         </div>
