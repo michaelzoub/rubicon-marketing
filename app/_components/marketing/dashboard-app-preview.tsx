@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { trackClick } from "../analytics-links";
+import { trackClick, APP_URL } from "../analytics-links";
 import { LandingDashboardUI } from "./landing-dashboard-ui";
 import { MacWindowFrame } from "./mac-window-frame";
 import { SubstackAppOverlay } from "./substack-app-overlay";
@@ -42,7 +42,7 @@ export function DashboardAppPreview({
             <LandingDashboardUI />
             {showHoverCta ? (
               <Link
-                href="/dashboard"
+                href={APP_URL}
                 className="landing-dashboard-hover-cta"
                 aria-label="Visit the dashboard"
                 onClick={() => trackClick("dashboard_showcase_clicked", { location: "dashboard_hover_cta" })}

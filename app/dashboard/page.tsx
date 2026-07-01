@@ -77,9 +77,6 @@ export default function OverviewPage() {
     (earnings.data?.agentReads ?? 0) > 0
       ? atomicToUsd(earnings.data?.settledEarnings) / (earnings.data?.agentReads ?? 1)
       : 0;
-  const wordsAvailable = (articles.data ?? [])
-    .filter((a) => a.state === "live")
-    .reduce((sum, a) => sum + a.totalWords, 0);
   const totalEarned = atomicToUsd(earnings.data?.settledEarnings);
 
   const weeklyDeltas = useMemo(() => buildWeeklyDeltas(activity.data ?? []), [activity.data]);
@@ -147,7 +144,6 @@ export default function OverviewPage() {
       breakdown: earningsSlices.length > 0
         ? {
             avgPerRead,
-            wordsAvailable,
             totalEarned: formatUsdAtomicDisplay(earnings.data.settledEarnings),
             slices: earningsSlices,
           }
@@ -181,7 +177,6 @@ export default function OverviewPage() {
     wallet.data,
     weeklyDeltas.earnings,
     weeklyDeltas.words,
-    wordsAvailable,
   ]);
 
   const copyWallet = async () => {
@@ -1122,7 +1117,7 @@ function buildTrend(activity: PaymentActivity[], metric: "earnings" | "words", d
   });
 }
 
-/** Top-earning articles as donut slices, with the remainder folded into "Other". */
+/** Top-earning articles as a compact three-segment donut, with the remainder folded into "Other". */
 function buildEarningsSlices(articles: Article[]): DonutSlice[] {
   const earners = articles
     .map((a) => ({ title: a.title, value: atomicToUsd(a.usage.earnings) }))
@@ -1130,14 +1125,14 @@ function buildEarningsSlices(articles: Article[]): DonutSlice[] {
     .sort((a, b) => b.value - a.value);
   if (earners.length === 0) return [];
 
-  const top = earners.slice(0, 4);
-  const rest = earners.slice(4);
+  const top = earners.slice(0, 2);
+  const rest = earners.slice(2);
   const slices: DonutSlice[] = top.map((a, i) => ({ label: a.title, value: a.value, color: DONUT_COLORS[i] }));
   if (rest.length > 0) {
     slices.push({
       label: `${rest.length} more`,
       value: rest.reduce((sum, a) => sum + a.value, 0),
-      color: DONUT_COLORS[4],
+      color: DONUT_COLORS[2],
     });
   }
   return slices;

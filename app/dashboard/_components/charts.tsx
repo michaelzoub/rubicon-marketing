@@ -164,8 +164,8 @@ export interface DonutSlice {
   color: string;
 }
 
-/** Single-hue accent-blue ramp, deep → pale, so slices read as one family. */
-export const DONUT_COLORS = ["#18181b", "#3f3f46", "#71717a", "#a1a1aa", "#d4d4d8"];
+/** Single-hue accent-blue ramp, deep → pale, matching the overview reference. */
+export const DONUT_COLORS = ["#2f7df4", "#6da8f7", "#b7d4fb", "#d4e5fd", "#e6f0fe"];
 
 /**
  * Ring chart with a centered headline. Slices sweep in clockwise on mount and
@@ -175,12 +175,14 @@ export function Donut({
   slices,
   centerValue,
   centerLabel,
+  showCenter = true,
   size = 168,
   stroke = 22,
 }: {
   slices: DonutSlice[];
   centerValue: string;
   centerLabel: string;
+  showCenter?: boolean;
   size?: number;
   stroke?: number;
 }) {
@@ -201,10 +203,7 @@ export function Donut({
           {total > 0 &&
             slices.map((slice, i) => {
               const fraction = slice.value / total;
-              // Clean butt-capped arcs with a small visual gap between slices, so
-              // the ring reads as distinct segments instead of overlapping blobs.
-              const gapFraction = slices.length > 1 ? Math.min(0.02, fraction * 0.5) : 0;
-              const dash = Math.max((fraction - gapFraction) * circumference, 0.0001);
+              const dash = Math.max(fraction * circumference, 0.0001);
               const gap = circumference - dash;
               const dashOffset = -offsetAcc * circumference;
               offsetAcc += fraction;
@@ -232,10 +231,12 @@ export function Donut({
               );
             })}
         </svg>
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-          <div className="text-xl font-semibold tracking-[-0.01em]">{centerValue}</div>
-          <div className="mono text-[0.58rem] uppercase tracking-[0.12em] text-[var(--muted)]">{centerLabel}</div>
-        </div>
+        {showCenter && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+            <div className="text-xl font-semibold tracking-[-0.01em]">{centerValue}</div>
+            <div className="mono text-[0.58rem] uppercase tracking-[0.12em] text-[var(--muted)]">{centerLabel}</div>
+          </div>
+        )}
       </div>
 
       {/* legend */}
@@ -245,7 +246,7 @@ export function Donut({
           return (
             <li
               key={i}
-              className={`flex items-center gap-2.5 rounded-md px-2 py-1 transition-colors ${active === i ? "bg-[var(--surface-muted)]" : ""}`}
+              className={`flex items-center gap-2.5 rounded-md px-2 py-1 transition-colors ${active === i ? "bg-[var(--river-pale)]" : ""}`}
               onMouseEnter={() => setActive(i)}
               onMouseLeave={() => setActive((cur) => (cur === i ? null : cur))}
             >
@@ -273,7 +274,7 @@ export function InsightTile({
   className?: string;
 }) {
   return (
-    <div className={`flex flex-col justify-between rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-4 ${className}`}>
+    <div className={`flex flex-col justify-between rounded-lg border border-[var(--line)] bg-white p-4 ${className}`}>
       <div className="text-2xl font-semibold tracking-[-0.02em] sm:text-[1.8rem]">{value}</div>
       <div className="mt-1.5 text-xs text-[var(--muted)]">{caption}</div>
     </div>

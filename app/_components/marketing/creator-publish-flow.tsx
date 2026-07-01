@@ -57,8 +57,8 @@ const T = {
 
 const clamp = (v: number) => Math.max(0, Math.min(1, v));
 const sliceText = (text: string, p: number) => text.slice(0, Math.round(text.length * clamp(p)));
-const pressingAt = (t: number, start: number) => t >= start && t < start + 220;
-const cursorVisibleAt = (t: number, start: number) => t >= start - 520 && t < start + 260;
+const pressingAt = (t: number, start: number) => t >= start && t < start + 120;
+const cursorVisibleAt = (t: number, start: number) => t >= start - 180 && t < start + 140;
 
 export function CreatorPublishFlow() {
   return (
@@ -254,7 +254,7 @@ function StepReviewSections({ t }: { t: number }) {
             initial={{ opacity: 0, y: 10 }}
             animate={local > index * 220 + 120 ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
             transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-            className="grid grid-cols-[auto_1fr] items-center gap-3 rounded-lg bg-[var(--surface-muted)] p-4"
+            className="grid grid-cols-[auto_1fr] items-center gap-3 rounded-lg border border-[var(--line)] bg-white p-4"
           >
             <div className="flex flex-col text-[var(--muted)]">
               <ChevronUp size={16} aria-hidden="true" />
@@ -289,7 +289,7 @@ function StepPricing({ t }: { t: number }) {
       <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_320px]">
         <div className="grid gap-5">
           <Field label="Price per word" hint="Agents pay only for the words they reveal. You can update pricing anytime.">
-            <div className="flex h-11 items-center gap-2 rounded-lg bg-[var(--surface-muted)] px-3 cpf-input-focus">
+            <div className="cpf-input-focus flex h-11 items-center gap-2 rounded-lg border border-[var(--line)] bg-white px-3">
               <span className="shrink-0 text-[var(--muted)]">$</span>
               <span>{priceText || <span className="text-[var(--muted)]">0.0001</span>}</span>
               <Caret />
@@ -297,7 +297,7 @@ function StepPricing({ t }: { t: number }) {
           </Field>
         </div>
 
-        <div className="rounded-xl bg-[var(--surface-muted)] p-5">
+        <div className="rounded-lg border border-[var(--line)] bg-white p-5">
           <div className="mono text-[0.66rem] tracking-[0.02em] text-[var(--muted)]">Pricing preview</div>
           <dl className="mt-4 grid gap-3 text-sm">
             <Row term="Price per word" value={priced ? "$0.00005" : "$0.00"} />
@@ -324,7 +324,7 @@ function StepPublish({ t }: { t: number }) {
       <h2 className="text-lg font-semibold">Review and publish</h2>
       <p className="mt-1 text-sm text-[var(--muted)]">Confirm the details below. You can save a draft or publish it live to agents.</p>
 
-      <dl className="mt-5 grid gap-3 rounded-xl bg-[var(--surface-muted)] p-5 text-sm">
+      <dl className="mt-5 grid gap-3 rounded-lg border border-[var(--line)] bg-white p-5 text-sm">
         <Row term="Article title" value={TITLE} />
         <Row term="Word count" value="2,418" />
         <Row term="Sections" value="3" />

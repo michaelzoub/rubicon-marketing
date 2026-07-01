@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Eye, FileText, Link2, Pause, Pencil, Play } from "lucide-react";
+import { Eye, FileText, Link2, Pause, Pencil, Play, Trash2 } from "lucide-react";
 import type { Article } from "@/lib/rubicon/types";
 import { useRubiconMutation, useRubiconQuery } from "@/lib/rubicon/hooks";
 import { formatUsd } from "@/lib/rubicon/pricing";
@@ -24,6 +24,7 @@ export default function ArticlesPage() {
   const creator = useRubiconQuery((c) => c.getCreator(), [], { queryKey: ["creator"] });
   const publish = useRubiconMutation((c, id: string) => c.publishArticle(id));
   const pause = useRubiconMutation((c, id: string) => c.pauseArticle(id));
+  const remove = useRubiconMutation((c, id: string) => c.deleteArticle(id));
   const [busyId, setBusyId] = useState<string | null>(null);
   const [previewArticle, setPreviewArticle] = useState<Article | null>(null);
 
@@ -41,6 +42,23 @@ export default function ArticlesPage() {
     try {
       if (article.state === "live") await pause.run(article.id);
       else await publish.run(article.id);
+      articles.refetch();
+    } catch {
+      /* surfaced via mutation error below */
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function deleteArticle(article: Article) {
+    const confirmed = window.confirm(
+      `Delete “${article.title}” permanently? This removes the article and its Supabase data and cannot be undone.`,
+    );
+    if (!confirmed) return;
+
+    setBusyId(article.id);
+    try {
+      await remove.run(article.id);
       articles.refetch();
     } catch {
       /* surfaced via mutation error below */
@@ -89,9 +107,9 @@ export default function ArticlesPage() {
         />
       )}
 
-      {(publish.error || pause.error) && (
+      {(publish.error || pause.error || remove.error) && (
         <div className="rounded-lg bg-[#fff1f0] px-4 py-3 text-sm text-[#8d2f2d]">
-          {(publish.error ?? pause.error)?.message}
+          {(publish.error ?? pause.error ?? remove.error)?.message}
         </div>
       )}
 
@@ -150,6 +168,14 @@ export default function ArticlesPage() {
                     )}
                   </button>
                 )}
+                <button
+                  type="button"
+                  onClick={() => deleteArticle(article)}
+                  disabled={busyId === article.id}
+                  className="button button-secondary justify-center whitespace-nowrap text-sm text-[#8d2f2d] disabled:opacity-50"
+                >
+                  <Trash2 size={15} aria-hidden="true" /> Delete
+                </button>
               </div>
             </li>
             );

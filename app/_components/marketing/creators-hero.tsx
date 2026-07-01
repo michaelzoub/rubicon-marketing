@@ -5,6 +5,7 @@ import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { DashboardAppPreview } from "./dashboard-app-preview";
 import { fade } from "./motion";
+import { APP_URL } from "../analytics-links";
 
 export function CreatorsHero() {
   return (
@@ -16,7 +17,7 @@ export function CreatorsHero() {
             <span className="landing-section-title-muted">deserve credit and compensation</span>
           </h1>
           <div className="creators-hero-cta">
-            <Link href="/dashboard" className="button button-primary">
+            <Link href={APP_URL} className="button button-primary">
               Start publishing <ArrowRight size={16} aria-hidden="true" />
             </Link>
           </div>

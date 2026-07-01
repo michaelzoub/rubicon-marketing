@@ -1899,7 +1899,7 @@ a {
 
 .cpf-input-focus {
   background: #fff;
-  box-shadow: 0 0 0 2px var(--river-line);
+  border-color: var(--river-line) !important;
 }
 
 /* Hovering cursor + click feedback on the active primary action. */
@@ -1907,7 +1907,6 @@ a {
   position: absolute;
   right: -10px;
   bottom: -12px;
-  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.35));
   animation: cpf-cursor-arrive 180ms cubic-bezier(0.2, 0, 0, 1) both;
   transition: transform 100ms cubic-bezier(0.2, 0, 0, 1);
 }
@@ -1925,13 +1924,11 @@ a {
   height: 24px;
   border: 2px solid rgba(255, 255, 255, 0.95);
   border-radius: 50%;
-  box-shadow: 0 0 0 1px rgba(22, 24, 29, 0.3);
   animation: cpf-click-ring 220ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
 .cpf-pressing {
   transform: scale(0.96);
-  box-shadow: 0 0 0 4px var(--river-line);
 }
 
 @keyframes cpf-cursor-arrive {
@@ -5760,15 +5757,16 @@ a {
 .dashboard-theme button { border: 0 !important; }
 .dashboard-theme .button:active { transform: scale(.97); }
 .dashboard-nav { padding: 0.25rem 0.45rem 0.75rem; }
-.dashboard-nav-group { margin-top: 1rem; }
+.dashboard-nav-group { display: grid; gap: 0.2rem; margin-top: 1rem; }
 .dashboard-nav-link {
   min-height: 2rem;
   gap: 0.55rem;
   padding-inline: 0.55rem;
   border-radius: 8px !important;
   font-size: 0.875rem;
+  transition: transform 140ms var(--ease-out), background-color 140ms ease, color 140ms ease;
 }
-.dashboard-nav-section-title { padding-inline: 0.55rem; margin-bottom: 0.25rem; font-size: 0.75rem; }
+.dashboard-nav-section-title { padding-inline: 0.55rem; margin-bottom: 0.05rem; font-size: 0.75rem; }
 .dashboard-sidebar-foot { padding: 0.35rem 0.45rem 0.55rem; }
 .dashboard-icon-button { width: 2rem; height: 2rem; min-width: 2rem; min-height: 2rem; border-radius: 8px; }
 .dashboard-main button svg,
@@ -5777,9 +5775,15 @@ a {
   --river: #246bfd;
   --river-deep: #1646a0;
 }
-.dashboard-nav-link:hover { background: rgba(255,255,255,.42); }
+.dashboard-nav-link:hover { background: rgba(18,18,22,.075); }
+.dashboard-nav-link:active { transform: scale(.98); }
 .dashboard-nav-link.is-active,
 .dashboard-nav-icon-link.is-active { background: rgba(255,255,255,.58); }
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-nav-link { transition: background-color 140ms ease, color 140ms ease; }
+  .dashboard-nav-link:active { transform: none; }
+}
 
 .dashboard-theme .button-secondary,
 .dashboard-theme input,

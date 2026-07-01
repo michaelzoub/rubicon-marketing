@@ -109,20 +109,18 @@ export function LandingDashboardUI() {
           <div className="landing-dashboard-ui-content">
             <div className="landing-dashboard-ui-stats">
               <MetricCard
-                tone="mint"
                 label="Total earnings"
                 value="$501.09"
                 hint="+14% from last period"
                 sparkline={earningsSpark}
               />
               <MetricCard
-                tone="rose"
                 label="Words read"
                 value="50,005"
                 hint="+9% from last period"
                 sparkline={wordsSpark}
               />
-              <MetricCard tone="glass" label="Live articles" value="3" compact />
+              <MetricCard label="Live articles" value="3" compact />
             </div>
 
             <section className="landing-dashboard-ui-card landing-dashboard-ui-chart-card">
@@ -249,18 +247,16 @@ function MetricCard({
   value,
   hint,
   sparkline,
-  tone,
   compact = false,
 }: {
   label: string;
   value: string;
   hint?: string;
   sparkline?: number[];
-  tone: "mint" | "rose" | "glass";
   compact?: boolean;
 }) {
   return (
-    <article className={`landing-dashboard-ui-metric is-${tone}${compact ? " is-compact" : ""}`}>
+    <article className={`landing-dashboard-ui-metric${compact ? " is-compact" : ""}`}>
       <div className="landing-dashboard-ui-metric-copy">
         <p className="landing-dashboard-ui-metric-label">{label}</p>
         <p className="landing-dashboard-ui-metric-value">{value}</p>

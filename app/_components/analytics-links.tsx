@@ -9,6 +9,13 @@ import type { AnchorHTMLAttributes, MouseEvent } from "react";
 // Helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * Canonical URL of the creator app. The dashboard now lives in the separate
+ * `rubicon-app` deployment (root redirects to /dashboard), so marketing CTAs
+ * that used to point at the local `/dashboard` route link out to here.
+ */
+export const APP_URL = "https://app.rubiconpay.xyz";
+
 function currentPathname() {
   return typeof window === "undefined" ? "" : window.location.pathname;
 }

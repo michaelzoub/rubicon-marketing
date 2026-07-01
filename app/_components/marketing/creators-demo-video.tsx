@@ -1,8 +1,13 @@
+import { APP_URL } from "../analytics-links";
+
 interface CreatorsDemoVideoProps {
   className?: string;
 }
 
-const DEMO_VIDEO_SRC = "/creators-how-it-works.mp4";
+// The creator demo video now lives in the `rubicon-app` deployment (single
+// source of truth). Drop `creators-how-it-works.mp4` into
+// rubicon-app/public/ to make this play on the marketing site.
+const DEMO_VIDEO_SRC = `${APP_URL}/creators-how-it-works.mp4`;
 const DEMO_VIDEO_POSTER = "/Rubicon_Dashboard.png";
 
 export function CreatorsDemoVideo({ className }: CreatorsDemoVideoProps) {

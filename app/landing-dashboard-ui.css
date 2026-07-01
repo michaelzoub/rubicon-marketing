@@ -1,12 +1,11 @@
-/* Landing dashboard UI — glass sidebar + white canvas (Rubicon content) */
+/* Landing dashboard UI — flat white cards matching the product dashboard. */
 
 .landing-page .landing-dashboard-app-screen {
   background: transparent;
 }
 
 .landing-page .landing-dashboard-ui {
-  --ld-glass: rgba(255, 255, 255, 0.88);
-  --ld-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+  --ld-glass: #fff;
   --ld-radius: 1rem;
 
   display: grid;
@@ -33,9 +32,6 @@
   border-radius: 0 0 0 var(--dashboard-mac-content-radius);
   background: rgba(255, 255, 255, 0.34);
   padding: 0.7rem 0.55rem 0.75rem;
-  backdrop-filter: blur(16px) saturate(1.15);
-  -webkit-backdrop-filter: blur(16px) saturate(1.15);
-  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.35);
   overflow: hidden;
 }
 
@@ -59,7 +55,6 @@
   border: 0;
   border-radius: 0.45rem;
   background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
   color: #52525b;
 }
 
@@ -115,10 +110,7 @@
 
 .landing-page .landing-dashboard-ui-nav-item.is-active {
   background: rgba(255, 255, 255, 0.48);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(18, 18, 22, 0.08);
   color: #18181b;
   font-weight: 600;
 }
@@ -165,11 +157,10 @@
 }
 
 .landing-page .landing-dashboard-ui-pill {
-  border: 1px solid rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(18, 18, 22, 0.08);
   border-radius: 999px;
   padding: 0.24rem 0.55rem;
-  background: rgba(255, 255, 255, 0.78);
-  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+  background: #fff;
   color: #52525b;
   font-size: 0.82em;
   font-weight: 600;
@@ -178,7 +169,6 @@
 .landing-page .landing-dashboard-ui-pill--dark {
   border-color: #18181b;
   background: #18181b;
-  box-shadow: 0 8px 20px rgba(24, 24, 27, 0.18);
   color: #fff;
 }
 
@@ -208,23 +198,10 @@
   flex-direction: column;
   justify-content: space-between;
   min-height: 5.4rem;
-  border: 1px solid rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(18, 18, 22, 0.08);
   border-radius: var(--ld-radius);
   padding: 0.5rem 0.55rem;
-  box-shadow: var(--ld-shadow);
-}
-
-.landing-page .landing-dashboard-ui-metric.is-mint {
-  background: linear-gradient(145deg, #f4f6f8 0%, #fafbfc 48%, #fff 100%);
-}
-
-.landing-page .landing-dashboard-ui-metric.is-rose {
-  background: linear-gradient(145deg, #f6f5f4 0%, #fafafa 48%, #fff 100%);
-}
-
-.landing-page .landing-dashboard-ui-metric.is-glass {
-  background: var(--ld-glass);
-  backdrop-filter: blur(10px);
+  background: #fff;
 }
 
 .landing-page .landing-dashboard-ui-metric-label {
@@ -247,8 +224,7 @@
   font-weight: 600;
 }
 
-.landing-page .landing-dashboard-ui-metric.is-mint .landing-dashboard-ui-metric-hint,
-.landing-page .landing-dashboard-ui-metric.is-rose .landing-dashboard-ui-metric-hint {
+.landing-page .landing-dashboard-ui-metric-hint {
   color: #6d7280;
 }
 
@@ -261,18 +237,15 @@
   opacity: 0.55;
 }
 
-.landing-page .landing-dashboard-ui-metric.is-mint .landing-dashboard-ui-sparkline,
-.landing-page .landing-dashboard-ui-metric.is-rose .landing-dashboard-ui-sparkline {
+.landing-page .landing-dashboard-ui-sparkline {
   color: #a1a1aa;
 }
 
 .landing-page .landing-dashboard-ui-card {
-  border: 1px solid rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(18, 18, 22, 0.08);
   border-radius: var(--ld-radius);
   background: var(--ld-glass);
   padding: 0.5rem 0.55rem 0.55rem;
-  box-shadow: var(--ld-shadow);
-  backdrop-filter: blur(12px);
 }
 
 .landing-page .landing-dashboard-ui-chart-card {
@@ -344,7 +317,6 @@
   min-height: 0.45rem;
   border-radius: 0.35rem 0.35rem 0.2rem 0.2rem;
   background: linear-gradient(180deg, #8ec0ff 0%, #4f97f8 48%, #2f7df6 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .landing-page .landing-dashboard-ui-stage-label {
@@ -395,7 +367,7 @@
   min-height: 5.4rem;
   border-radius: 0.75rem;
   padding: 0.65rem 0.7rem;
-  background: rgba(255, 255, 255, 0.55);
+  background: #fff;
   border: 1px solid rgba(15, 23, 42, 0.05);
 }
 
@@ -420,7 +392,7 @@
   min-height: 5.4rem;
   border-radius: 0.75rem;
   padding: 0.55rem 0.65rem;
-  background: rgba(255, 255, 255, 0.55);
+  background: #fff;
   border: 1px solid rgba(15, 23, 42, 0.05);
 }
 
@@ -492,8 +464,9 @@
   height: 1rem;
   flex-shrink: 0;
   border-radius: 999px;
-  background: #eef2ff;
-  color: #4f46e5;
+  border: 1px solid rgba(18, 18, 22, 0.08);
+  background: #fff;
+  color: #18181b;
   font-size: 0.75em;
   font-weight: 700;
 }
@@ -512,7 +485,7 @@
 .landing-page .landing-dashboard-ui-podium-copy span {
   display: block;
   margin-top: 0.08rem;
-  color: #2f7df6;
+  color: #18181b;
   font-size: 0.82em;
   font-weight: 600;
 }
@@ -532,7 +505,7 @@
   gap: 0.45rem;
   border-radius: 0.65rem;
   padding: 0.42rem 0.4rem;
-  background: rgba(255, 255, 255, 0.45);
+  background: #fff;
 }
 
 .landing-page .landing-dashboard-ui-payment-title {
@@ -576,7 +549,7 @@
 }
 
 .landing-page .landing-dashboard-ui-wallet-card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(248, 250, 252, 0.88) 100%);
+  background: #fff;
 }
 
 .landing-page .landing-dashboard-ui-icon-btn {
@@ -586,9 +559,9 @@
   height: 1.45rem;
   border: 0;
   border-radius: 0.45rem;
-  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(18, 18, 22, 0.08);
+  background: #fff;
   color: #6b7280;
-  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
 }
 
 .landing-page .landing-dashboard-ui-wallet-body {
@@ -621,12 +594,11 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.35rem;
-  border: 1px solid rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(18, 18, 22, 0.08);
   border-radius: 0.55rem;
   padding: 0.3rem 0.38rem;
-  background: rgba(255, 255, 255, 0.72);
+  background: #fff;
   color: #52525b;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
 .landing-page .landing-dashboard-ui-wallet-address code {
@@ -639,7 +611,6 @@
   border-radius: 999px;
   padding: 0.4rem 0.5rem;
   background: #18181b;
-  box-shadow: 0 8px 18px rgba(24, 24, 27, 0.16);
   color: #fff;
   font-size: 0.86em;
   font-weight: 600;

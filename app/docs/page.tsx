@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { RubiconBrand } from "../_components/rubicon-brand";
+import { APP_URL } from "../_components/analytics-links";
 
 const npmBase = "https://www.npmjs.com/package";
 const githubUrl = "https://github.com/michaelzoub/rubicon";
@@ -83,7 +84,7 @@ export default function DocsPage() {
             <a href={githubUrl} target="_blank" rel="noreferrer" className="docs-header-link">
               <Github size={16} aria-hidden="true" /> <span className="hidden sm:inline">GitHub</span>
             </a>
-            <Link href="/dashboard" className="docs-header-cta">
+            <Link href={APP_URL} className="docs-header-cta">
               Publish <ArrowRight size={14} aria-hidden="true" />
             </Link>
           </div>

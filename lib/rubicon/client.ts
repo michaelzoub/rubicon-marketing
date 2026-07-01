@@ -745,6 +745,44 @@ export function createRubiconClient({ supabaseUrl, supabaseAnonKey, getToken, ge
       );
     },
 
+    async deleteArticle(articleId: string): Promise<void> {
+      const identity = requireIdentity(getIdentity);
+
+      // Remove dependent records before the article. The indirect RLS policies
+      // for sections and revisions rely on the parent article still existing.
+      await Promise.all([
+        must(supabase.from("article_sections").delete().eq("article_id", articleId).select("id").returns<Array<{ id: string }>>()),
+        must(supabase.from("article_revisions").delete().eq("article_id", articleId).select("id").returns<Array<{ id: string }>>()),
+        must(
+          supabase
+            .from("word_payments")
+            .delete()
+            .eq("article_id", articleId)
+            .eq("creator_id", identity.id)
+            .select("id")
+            .returns<Array<{ id: string }>>(),
+        ),
+      ]);
+      await must(
+        supabase
+          .from("stream_sessions")
+          .delete()
+          .eq("article_id", articleId)
+          .eq("creator_id", identity.id)
+          .select("id")
+          .returns<Array<{ id: string }>>(),
+      );
+      await must(
+        supabase
+          .from("articles")
+          .delete()
+          .eq("id", articleId)
+          .eq("creator_id", identity.id)
+          .select("id")
+          .single<{ id: string }>(),
+      );
+    },
+
     async getEarnings(): Promise<EarningsSummary> {
       const identity = requireIdentity(getIdentity);
       // Settled earnings / words paid come from the Circle Gateway settlement

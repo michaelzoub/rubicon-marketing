@@ -65,19 +65,6 @@ const beatOf: Record<SceneId, number> = {
 /* The first scene index a rail beat should jump to. */
 const beatTarget = [0, 1, 2, 4, 6];
 
-/* Scenes that render a full real-product surface — no perpetual float, and a
- * device frame instead of a content card. */
-const REAL_SCENE: Record<SceneId, boolean> = {
-  chat: false,
-  kicker: false,
-  signin: true,
-  onboard: true,
-  import: true,
-  publish: true,
-  earn: true,
-  end: false,
-};
-
 /* Each section enters with its own camera move. */
 type Cut = { initial: TargetAndTransition; animate: TargetAndTransition; exit: TargetAndTransition; transition: Transition };
 const CUTS: Record<SceneId, Cut> = {
@@ -205,7 +192,6 @@ export function CreatorsDemo() {
 function Stage({ scene, progress }: { scene: SceneId; progress: number }) {
   const reduce = useReducedMotion();
   const cut = CUTS[scene];
-  const floats = !REAL_SCENE[scene] && !reduce;
   return (
     <div className="cv-spotlight">
       <AnimatePresence mode="wait">
@@ -219,8 +205,6 @@ function Stage({ scene, progress }: { scene: SceneId; progress: number }) {
         >
           <motion.div
             className="cv-float"
-            animate={floats ? { y: [0, -6, 0] } : undefined}
-            transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
           >
             <SceneSwitch scene={scene} progress={progress} />
           </motion.div>
@@ -585,9 +569,9 @@ const SUBSTACK_POSTS = [
 
 function SubstackImportFlow({ phase }: { phase: number }) {
   const reduceMotion = useReducedMotion();
-  const cursorVisible = phase >= 0.59 && phase < 0.72;
-  const pressing = phase >= 0.66 && phase < 0.7;
-  const imported = phase >= 0.72;
+  const cursorVisible = phase >= 0.635 && phase < 0.69;
+  const pressing = phase >= 0.66 && phase < 0.675;
+  const imported = phase >= 0.69;
   return (
     <div className="grid gap-5">
       <PageHeader
@@ -913,7 +897,7 @@ function CreatorsDemoStyles() {
       .cv-imsg-contact strong { font-size: 0.78rem; font-weight: 600; letter-spacing: -0.01em; }
       .cv-imsg-facetime { margin-left: auto; color: #8aa0c4; opacity: 0.55; }
       .cv-imsg-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
-      .cv-imsg-scroll { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: flex-end; gap: 4px; padding: 16px 20px 10px; overflow: hidden; }
+      .cv-imsg-scroll { flex: 1; min-height: 0; display: flex; flex-direction: column; justify-content: flex-start; gap: 4px; padding: 16px 20px 10px; overflow: hidden; }
       .cv-imsg-stamp { text-align: center; font-size: 0.68rem; color: #9b9ba2; padding: 4px 0 10px; }
       .cv-imsg-stamp strong { font-weight: 600; color: #6f6f77; }
       .cv-bubble {

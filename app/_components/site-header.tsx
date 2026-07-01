@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { trackClick } from "./analytics-links";
+import { trackClick, APP_URL } from "./analytics-links";
 import { RubiconBrand } from "./rubicon-brand";
 
 interface NavItem {
@@ -225,7 +225,7 @@ export function SiteHeader({
 
         <div className="site-header-actions">
           <Link
-            href="/dashboard"
+            href={APP_URL}
             className="site-nav-cta site-nav-cta--creator"
             onClick={() => trackClick("nav_list_article_clicked")}
           >

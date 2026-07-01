@@ -35,11 +35,18 @@ const previewArticles = [
   { id: "article_autonomous_readers", title: "Designing for Autonomous Readers", words: 7280, reads: 21, earnings: "$64.25", state: "paused" as const },
 ];
 
-const earningsSlices: DonutSlice[] = previewArticles.map((article, index) => ({
-  label: article.title,
-  value: Number(article.earnings.replace("$", "")),
-  color: DONUT_COLORS[index],
-}));
+const earningsSlices: DonutSlice[] = [
+  ...previewArticles.slice(0, 2).map((article, index) => ({
+    label: article.title,
+    value: Number(article.earnings.replace("$", "")),
+    color: DONUT_COLORS[index],
+  })),
+  {
+    label: "2 more",
+    value: previewArticles.slice(2).reduce((sum, article) => sum + Number(article.earnings.replace("$", "")), 0),
+    color: DONUT_COLORS[2],
+  },
+];
 
 // Anchor the heatmap to "today" and show only the recent weeks that fit the
 // card width, so nothing overflows/clips (the card isn't scrollable).
@@ -107,7 +114,6 @@ export function CreatorDashboardPreview({ embedded = false }: { embedded?: boole
       })),
       breakdown: {
         avgPerRead: 2.73,
-        wordsAvailable: 41080,
         totalEarned: "$501.09",
         slices: earningsSlices,
       },

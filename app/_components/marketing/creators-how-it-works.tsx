@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { trackClick } from "../analytics-links";
+import { trackClick, APP_URL } from "../analytics-links";
 import { CreatorPublishFlow } from "./creator-publish-flow";
 import { fade } from "./motion";
 
@@ -67,7 +67,7 @@ export function CreatorsHowItWorks() {
               List your work, set your per-word price, and start earning when agents read.
             </p>
             <Link
-              href="/dashboard"
+              href={APP_URL}
               className="button button-primary creators-how-cta-button"
               onClick={() => trackClick("start_publishing_clicked", { location: "creators_how_it_works" })}
             >

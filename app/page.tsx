@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
-import { trackClick } from "./_components/analytics-links";
+import { trackClick, APP_URL } from "./_components/analytics-links";
 import { fade } from "./_components/marketing/motion";
 import { SiteFooter } from "./_components/marketing/site-footer";
 import { SiteHeader } from "./_components/site-header";
@@ -26,7 +26,7 @@ function Hero() {
           <div className="landing-hero-cta">
             <div className="landing-hero-actions">
               <Link
-                href="/dashboard"
+                href={APP_URL}
                 className="button button-primary"
                 onClick={() => trackClick("start_publishing_clicked", { location: "hero" })}
               >

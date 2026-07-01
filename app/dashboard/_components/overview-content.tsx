@@ -104,7 +104,6 @@ export interface DashboardOverviewProps {
   }>;
   breakdown?: {
     avgPerRead: number;
-    wordsAvailable: number;
     totalEarned: string;
     slices: DonutSlice[];
   } | null;
@@ -173,13 +172,10 @@ export function DashboardOverviewContent({
                 <div>
                   <h2 className="text-base font-semibold">Earnings breakdown</h2>
                 </div>
-                <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.35fr)]">
-                  <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-1">
-                    <InsightTile value={<CountUp value={breakdown.avgPerRead} format={formatUsdDisplay} />} caption="Average earned per agent read" />
-                    <InsightTile value={<CountUp value={breakdown.wordsAvailable} format={formatInt} />} caption="Words live and available to agents" />
-                  </div>
-                  <div className="flex min-w-0 items-center overflow-hidden rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-3.5">
-                    <Donut slices={breakdown.slices} centerValue={breakdown.totalEarned} centerLabel="Total earned" size={142} stroke={18} />
+                <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,0.65fr)_minmax(0,1.35fr)]">
+                  <InsightTile value={<CountUp value={breakdown.avgPerRead} format={formatUsdDisplay} />} caption="Average earned per agent read" />
+                  <div className="flex min-w-0 items-center overflow-hidden rounded-lg border border-[var(--line)] bg-white p-3.5">
+                    <Donut slices={breakdown.slices} centerValue={breakdown.totalEarned} centerLabel="Total earned" showCenter={false} size={142} stroke={18} />
                   </div>
                 </div>
               </Card>
@@ -307,7 +303,7 @@ function TopArticlesPodium({ articles }: { articles: NonNullable<DashboardOvervi
           );
 
           const height = rank === 0 ? "min-h-[10.75rem]" : rank === 1 ? "min-h-[9.75rem]" : "min-h-[9rem]";
-          const className = `flex min-w-0 flex-col rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-3 ${height}`;
+          const className = `flex min-w-0 flex-col rounded-lg border border-[var(--line)] bg-white p-3 ${height}`;
           return article.href ? (
             <Link key={article.id ?? article.title} href={article.href} className={className}>
               {content}
@@ -538,7 +534,7 @@ function WalletCard({ wallet }: { wallet: DashboardOverviewWallet }) {
         <div className="grid gap-2.5 p-3">
           <p className="px-2 text-xs text-[var(--muted)]">Withdrawable earnings are sent through your confirmed payout connection.</p>
           <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
-            <div className="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-3.5">
+            <div className="rounded-lg border border-[var(--line)] bg-white p-3.5">
               <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Wallet address</div>
               <div className="mt-2 flex items-center gap-2">
                 <span className="mono text-sm font-medium">{wallet.addressLabel ?? shortWallet(wallet.address)}</span>
@@ -561,7 +557,7 @@ function WalletCard({ wallet }: { wallet: DashboardOverviewWallet }) {
               )}
             </div>
 
-            <div className="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-3.5">
+            <div className="rounded-lg border border-[var(--line)] bg-white p-3.5">
               <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Network</div>
               <div className="mt-2 flex items-center gap-2 text-sm font-medium">
                 <Link2 size={14} className="text-[var(--muted)]" aria-hidden="true" /> {wallet.networkName ?? "Not connected"}
@@ -569,7 +565,7 @@ function WalletCard({ wallet }: { wallet: DashboardOverviewWallet }) {
               {wallet.chainId && <div className="mt-2 text-xs text-[var(--muted)]">Chain ID {wallet.chainId}</div>}
             </div>
 
-            <div className="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-3.5">
+            <div className="rounded-lg border border-[var(--line)] bg-white p-3.5">
               <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Balance</div>
               <div className="mt-2 text-2xl font-semibold tracking-[-0.01em]">{wallet.balanceLabel ?? <span className="text-base font-normal text-[var(--muted)]">Loading...</span>}</div>
               {wallet.balanceError && <div className="mt-1 text-xs text-[var(--muted)]">{wallet.balanceError}</div>}
