@@ -1,6 +1,7 @@
 "use client";
 
 import { usePrivy } from "@privy-io/react-auth";
+import { motion } from "framer-motion";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import posthog from "posthog-js";
@@ -9,6 +10,7 @@ import {
   FileText,
   LayoutDashboard,
   LogOut,
+  MousePointer2,
   PanelLeft,
   Plus,
   Settings,
@@ -54,7 +56,7 @@ function AuthGate({ children }: { children: ReactNode }) {
     // a black spinner flash.
     return (
       <DashboardFrame identity="Writer">
-        {pathname === "/dashboard" ? <OverviewSkeleton /> : <DashboardPageSkeleton />}
+        {pathname === "/dashboard" || pathname === "/dashboard-newuser" ? <OverviewSkeleton /> : <DashboardPageSkeleton />}
       </DashboardFrame>
     );
   }
@@ -66,7 +68,7 @@ function AuthGate({ children }: { children: ReactNode }) {
   return <Layout>{children}</Layout>;
 }
 
-function WriterAuthScreen({ onLogin }: { onLogin: () => void }) {
+export function WriterAuthScreen({ onLogin, demo = false }: { onLogin: () => void; demo?: boolean }) {
   return (
     <div className="writer-auth-screen">
       <div className="writer-auth-card">
@@ -88,7 +90,7 @@ function WriterAuthScreen({ onLogin }: { onLogin: () => void }) {
             </blockquote>
             <figcaption>Jack Conte, CEO of Patreon</figcaption>
           </figure>
-          <div className="writer-auth-actions">
+          <div className="writer-auth-actions relative">
             <button
               type="button"
               onClick={() => {
@@ -104,6 +106,23 @@ function WriterAuthScreen({ onLogin }: { onLogin: () => void }) {
               Sign in
             </button>
             <p className="writer-auth-privy">Powered by Privy</p>
+            {demo && (
+              <motion.span
+                aria-hidden="true"
+                className="pointer-events-none absolute left-1/2 top-7 z-20"
+                style={{ filter: "drop-shadow(0 2px 5px rgba(0,0,0,0.35))" }}
+                initial={{ opacity: 0, x: 120, y: 70 }}
+                animate={{ opacity: 1, x: -6, y: 0, scale: [1, 1, 0.86, 1] }}
+                transition={{
+                  x: { duration: 0.85, ease: [0.16, 1, 0.3, 1], delay: 0.3 },
+                  y: { duration: 0.85, ease: [0.16, 1, 0.3, 1], delay: 0.3 },
+                  scale: { duration: 2.3, repeat: Infinity, times: [0, 0.5, 0.56, 0.64], delay: 1.2 },
+                }}
+              >
+                {/* shared macOS cursor: white arrow, dark outline (no ring) */}
+                <MousePointer2 size={20} fill="#ffffff" stroke="#16181d" strokeWidth={1.5} />
+              </motion.span>
+            )}
           </div>
         </section>
       </div>

@@ -1,19 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
+  AlertTriangle,
   ArrowRight,
+  Check,
   Copy,
   Download,
   ExternalLink,
   FileText,
-  Eye,
   Link2,
-  MousePointerClick,
   RefreshCw,
-  Wallet2,
   X,
 } from "lucide-react";
 import { usePrivy } from "@privy-io/react-auth";
@@ -23,9 +23,9 @@ import type { Article, PaymentActivity } from "@/lib/rubicon/types";
 import { ACTIVE_CHAIN } from "@/lib/chain";
 import { explorerAddressUrl, formatBalance, useNativeBalance } from "@/lib/onchain";
 import { WithdrawDialog } from "./_components/withdraw-dialog";
-import { AgentPreviewDialog, AGENT_PREVIEW_EVENT, hasSeenAgentPreview } from "./articles/_components/agent-preview-dialog";
 import { CountUp, Donut, DONUT_COLORS, InsightTile, Reveal, type DonutSlice, type TrendBar } from "./_components/charts";
 import { ContentProtectionPolicy, DashboardOverviewContent, OverviewSkeleton, type DashboardOverviewProps } from "./_components/overview-content";
+import { SubstackOnboardingDialog } from "./_components/substack-onboarding-dialog";
 import {
   ArticleStatePill,
   Card,
@@ -43,6 +43,7 @@ import {
 } from "./_components/ui";
 
 export default function OverviewPage() {
+  const forceNewUser = usePathname() === "/dashboard-newuser";
   const { user } = usePrivy();
   const articles = useRubiconQuery((c) => c.listArticles(), [], { queryKey: ["articles"] });
   const wallet = useRubiconQuery((c) => c.getWallet(), [], { queryKey: ["wallet"] });
@@ -63,9 +64,7 @@ export default function OverviewPage() {
   const hasArticles = (articles.data?.length ?? 0) > 0;
   const hasPricedArticle = (articles.data ?? []).some((a) => Number(a.pricePerWordAtomic) > 0);
   const hasLive = (articles.data ?? []).some((a) => a.state === "live");
-  const onboardingComplete = walletConnected && hasLive && hasPricedArticle;
-  const [previewSeen, setPreviewSeen] = useState(false);
-  const [previewArticle, setPreviewArticle] = useState<Article | null>(null);
+  const onboardingComplete = !forceNewUser && walletConnected && hasLive && hasPricedArticle;
 
   const trendBars = useMemo(
     () => buildTrend(activity.data ?? [], "earnings"),
@@ -185,15 +184,6 @@ export default function OverviewPage() {
     wordsAvailable,
   ]);
 
-  useEffect(() => {
-    setPreviewSeen(hasSeenAgentPreview());
-    function onPreviewSeen() {
-      setPreviewSeen(true);
-    }
-    window.addEventListener(AGENT_PREVIEW_EVENT, onPreviewSeen);
-    return () => window.removeEventListener(AGENT_PREVIEW_EVENT, onPreviewSeen);
-  }, []);
-
   const copyWallet = async () => {
     if (!wallet.data?.address) return;
     await navigator.clipboard.writeText(wallet.data.address);
@@ -229,15 +219,14 @@ export default function OverviewPage() {
                   </div>
                 }
               />
+              <SubstackOnboardingDialog forceOpen={forceNewUser} shouldOpen={forceNewUser || (!hasArticles && !walletConnected)} />
               <OnboardingChecklistCard
-                articles={articles.data ?? []}
-                walletConnected={walletConnected}
-                previewSeen={previewSeen}
-                onPreview={() => setPreviewArticle((articles.data ?? [])[0] ?? null)}
+                articles={forceNewUser ? [] : articles.data ?? []}
+                walletConnected={forceNewUser ? false : walletConnected}
               />
-              <OnchainCard address={wallet.data?.address ?? null} />
-              <PaymentActivityCard activity={activity} />
-              <ArticlesCard articles={articles.data ?? []} hasArticles={hasArticles} />
+              <OnchainCard address={forceNewUser ? null : wallet.data?.address ?? null} />
+              <PaymentActivityCard activity={forceNewUser ? { status: "success", data: [], error: null, refetch: () => {} } : activity} />
+              <ArticlesCard articles={forceNewUser ? [] : articles.data ?? []} hasArticles={forceNewUser ? false : hasArticles} />
             </>
           )}
 
@@ -259,80 +248,119 @@ export default function OverviewPage() {
               />
             </>
           )}
-
-          <AgentPreviewDialog article={previewArticle} open={Boolean(previewArticle)} onClose={() => setPreviewArticle(null)} />
         </>
       )}
     </div>
   );
 }
 
+const ONBOARDING_DISMISSED_KEY = "rubicon-onboarding-dismissed";
+
+interface OnboardingStep {
+  title: string;
+  description: string;
+  complete: boolean;
+  actions: Array<{ label: string; href: string }>;
+}
+
 function OnboardingChecklistCard({
   articles,
   walletConnected,
-  previewSeen,
-  onPreview,
 }: {
   articles: Article[];
   walletConnected: boolean;
-  previewSeen: boolean;
-  onPreview: () => void;
 }) {
+  const [dismissed, setDismissed] = useState(false);
+  useEffect(() => {
+    setDismissed(window.localStorage.getItem(ONBOARDING_DISMISSED_KEY) === "1");
+  }, []);
+
   const hasArticles = articles.length > 0;
   const hasPricedArticle = articles.some((article) => Number(article.pricePerWordAtomic) > 0);
   const hasLive = articles.some((article) => article.state === "live");
-  const hasDraftOnly = hasArticles && !hasLive;
-  const firstUnpriced = articles.find((article) => Number(article.pricePerWordAtomic) <= 0);
-  const firstDraft = articles.find((article) => article.state !== "live");
+  const hasSections = articles.some((article) => article.sections.length > 0);
+  const firstArticleHref = hasArticles ? `/dashboard/articles/${articles.find((article) => article.state !== "live")?.id ?? articles[0].id}` : "/dashboard/articles/new";
 
-  let guideTitle = "Create or import an article";
-  let guideDescription = "Start with one draft or a supported URL. Agents need a listed article before paid reads can begin.";
-  let cta: React.ReactNode = <PrimaryLink href="/dashboard/articles/new">Create article</PrimaryLink>;
-  if (hasArticles && !hasPricedArticle) {
-    guideTitle = "Set a price per word";
-    guideDescription = "Choose what agents pay for each delivered word before you publish.";
-    cta = <PrimaryLink href={`/dashboard/articles/${firstUnpriced?.id ?? articles[0].id}`}>Set pricing</PrimaryLink>;
-  } else if (hasArticles && !previewSeen) {
-    guideTitle = "Preview what agents see";
-    guideDescription = "Check the outline-only agent view before publishing the article.";
-    cta = (
-      <button type="button" onClick={onPreview} className="button button-primary text-sm">
-        <Eye size={15} aria-hidden="true" /> Preview as agent
-      </button>
-    );
-  } else if (hasDraftOnly) {
-    guideTitle = "Publish the article";
-    guideDescription = "Make one priced article available so agents can start paid reads.";
-    cta = <PrimaryLink href={`/dashboard/articles/${firstDraft?.id ?? articles[0].id}`}>Publish article</PrimaryLink>;
-  } else if (!walletConnected) {
-    guideTitle = "Confirm your connection";
-    guideDescription = "Confirm the secure account connection Rubicon uses for payouts. No crypto setup language needed.";
-    cta = <PrimaryLink href="/dashboard/settings">Confirm connection</PrimaryLink>;
+  // The first task is an OR — import a whole Substack archive *or* add one
+  // article — so it's a single step with two entry points, not steps 1 and 2.
+  const steps: OnboardingStep[] = [
+    {
+      title: "Add your first article",
+      description: "Import your Substack archive, or add a single article to start.",
+      complete: hasArticles,
+      actions: [
+        { label: "Import Substack", href: "/dashboard/import/substack" },
+        { label: "Add article", href: "/dashboard/articles/new" },
+      ],
+    },
+    { title: "Review the sections", description: "Check the structure agents use to find relevant passages.", complete: hasSections, actions: [{ label: "Review sections", href: firstArticleHref }] },
+    { title: "Choose a price per word", description: "Set the rate agents pay for delivered words.", complete: hasPricedArticle, actions: [{ label: "Set pricing", href: firstArticleHref }] },
+    { title: "Finish creator settings", description: "Confirm the account used for payouts.", complete: walletConnected, actions: [{ label: "Open settings", href: "/dashboard/settings" }] },
+    { title: "Publish", description: "Make the reviewed article available to agents.", complete: hasLive, actions: [{ label: "Review and publish", href: firstArticleHref }] },
+    { title: "Track reads and earnings", description: "See paid interactions after your article is live.", complete: false, actions: [{ label: "View earnings", href: "/dashboard/earnings" }] },
+  ];
+  const activeIndex = Math.max(0, steps.findIndex((step) => !step.complete));
+
+  if (dismissed) return null;
+
+  function dismiss() {
+    window.localStorage.setItem(ONBOARDING_DISMISSED_KEY, "1");
+    setDismissed(true);
   }
 
   return (
     <Card className="p-5 sm:p-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-lg font-semibold">Start earning from agent reads</h2>
-          <p className="mt-1 text-sm text-[var(--muted)]">Follow the next guided action to make your first article readable by agents.</p>
-        </div>
-        <div className="guided-action-target shrink-0">
-          <span className="guided-action-cue" aria-hidden="true">
-            <MousePointerClick size={16} />
-          </span>
-          {cta}
+      <div className="flex items-start justify-between gap-4">
+        <div><p className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--muted)]">Creator setup</p><h2 className="mt-1 text-lg font-semibold">Publish your first agent-readable article</h2></div>
+        <div className="flex shrink-0 items-center gap-3">
+          <span className="text-sm tabular-nums text-[var(--muted)]">{Math.min(activeIndex + 1, steps.length)} / {steps.length}</span>
+          <button type="button" onClick={dismiss} className="text-xs font-medium text-[var(--muted)] transition-colors hover:text-[var(--ink)]">Skip setup</button>
         </div>
       </div>
-      <div className="guided-action-panel mt-5">
-        <div className="guided-action-icon" aria-hidden="true">
-          <MousePointerClick size={18} />
-        </div>
-        <div>
-          <div className="text-sm font-semibold">{guideTitle}</div>
-          <p className="mt-1 text-sm leading-6 text-[var(--muted)]">{guideDescription}</p>
-        </div>
-      </div>
+      <ol className="mt-5 grid gap-1">
+        {steps.map((step, index) => {
+          const isComplete = step.complete;
+          const isActive = index === activeIndex;
+          const marker = (
+            <span className={`grid size-7 shrink-0 place-items-center rounded-full border text-xs font-semibold ${isComplete ? "border-[#9bcab4] bg-[#edf8f2] text-[#165c3e]" : isActive ? "border-[var(--river-deep)] bg-white text-[var(--river-deep)]" : "border-[var(--line)] text-[var(--muted)]"}`}>
+              {isComplete ? <Check size={14} aria-hidden="true" /> : index + 1}
+            </span>
+          );
+          const label = (
+            <span className="min-w-0 flex-1"><span className={`block text-sm font-medium ${!isActive && !isComplete ? "text-[var(--muted)]" : ""}`}>{step.title}</span><span className="mt-0.5 block text-xs leading-5 text-[var(--muted)]">{step.description}</span></span>
+          );
+
+          // Single-action steps stay one big clickable row. The first step has
+          // two entry points, so it can't be one <Link> — show both as buttons.
+          if (step.actions.length === 1) {
+            const action = step.actions[0];
+            return (
+              <li key={step.title}>
+                <Link href={action.href} className={`group flex items-center gap-3 rounded-lg px-3 py-3 transition-colors ${isActive ? "bg-[var(--surface-muted)]" : "hover:bg-[var(--surface-muted)]"}`}>
+                  {marker}
+                  {label}
+                  <span className={`hidden items-center gap-1 text-xs font-medium sm:inline-flex ${isActive ? "text-[var(--river-deep)]" : "text-[var(--muted)] group-hover:text-[var(--ink)]"}`}>{action.label} <ArrowRight size={13} /></span>
+                </Link>
+              </li>
+            );
+          }
+
+          return (
+            <li key={step.title}>
+              <div className={`flex flex-col gap-3 rounded-lg px-3 py-3 sm:flex-row sm:items-center ${isActive ? "bg-[var(--surface-muted)]" : ""}`}>
+                <div className="flex items-center gap-3">{marker}{label}</div>
+                <div className="flex shrink-0 flex-wrap gap-2 pl-10 sm:pl-0">
+                  {step.actions.map((action, actionIndex) => (
+                    <Link key={action.href} href={action.href} className={`text-sm ${actionIndex === 0 ? "button button-primary" : "button button-secondary"}`}>
+                      {action.label} <ArrowRight size={13} />
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
     </Card>
   );
 }
@@ -890,13 +918,21 @@ function OnchainCard({ address }: { address: string | null }) {
         }
       />
       {!address ? (
-        <div className="p-5">
-          <EmptyState
-            icon={<Wallet2 size={22} aria-hidden="true" />}
-            title="Connection not confirmed"
-            description="Confirm the secure Privy connection Rubicon uses for payouts."
-            action={<PrimaryLink href="/dashboard/settings">Confirm connection</PrimaryLink>}
-          />
+        <div className="p-4 sm:p-5">
+          <div role="alert" className="flex flex-col gap-3 rounded-[10px] border border-[#f0ddbf] bg-[#fdf6ec] px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-[#f6e6cf] text-[#9a6516]">
+                <AlertTriangle size={18} aria-hidden="true" />
+              </span>
+              <div>
+                <div className="text-sm font-semibold text-[#7b4e12]">You can’t receive payments yet</div>
+                <p className="mt-1 text-sm leading-6 text-[#8a6326]">Confirm the secure Privy connection Rubicon uses for payouts to start earning from agent reads.</p>
+              </div>
+            </div>
+            <Link href="/dashboard/settings" className="button button-primary shrink-0 self-start text-sm sm:self-center">
+              Confirm connection <ArrowRight size={14} aria-hidden="true" />
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="grid gap-3 px-3 pb-3">

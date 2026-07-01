@@ -57,7 +57,8 @@ const T = {
 
 const clamp = (v: number) => Math.max(0, Math.min(1, v));
 const sliceText = (text: string, p: number) => text.slice(0, Math.round(text.length * clamp(p)));
-const pressingAt = (t: number, start: number) => t >= start && t < start + 460;
+const pressingAt = (t: number, start: number) => t >= start && t < start + 220;
+const cursorVisibleAt = (t: number, start: number) => t >= start - 520 && t < start + 260;
 
 export function CreatorPublishFlow() {
   return (
@@ -159,16 +160,19 @@ function Caret() {
 }
 
 /** A primary action button with a hovering cursor that "clicks" on press. */
-function PrimaryAction({ label, pressing, icon = "next" }: { label: string; pressing: boolean; icon?: "next" | "none" }) {
+function PrimaryAction({ label, pressing, cursorVisible, icon = "next" }: { label: string; pressing: boolean; cursorVisible: boolean; icon?: "next" | "none" }) {
   return (
     <span className="relative inline-flex">
       <span className={`button button-primary ${pressing ? "cpf-pressing" : ""}`}>
         {label}
         {icon === "next" && <ArrowRight size={16} aria-hidden="true" />}
       </span>
-      <span className={`cpf-cursor ${pressing ? "is-click" : ""}`} aria-hidden="true">
-        <MousePointer2 size={18} fill="currentColor" />
-      </span>
+      {cursorVisible && (
+        <span className={`cpf-cursor ${pressing ? "is-click" : ""}`} aria-hidden="true">
+          {/* shared macOS cursor: white arrow, dark outline */}
+          <MousePointer2 size={20} fill="#ffffff" stroke="#16181d" strokeWidth={1.5} />
+        </span>
+      )}
     </span>
   );
 }
@@ -265,7 +269,7 @@ function StepReviewSections({ t }: { t: number }) {
       </ul>
       <div className="mt-6 flex justify-between pt-2">
         <SecondaryButton label="Back" />
-        <PrimaryAction label="Choose pricing" pressing={pressingAt(t, T.s2Click)} />
+        <PrimaryAction label="Choose pricing" pressing={pressingAt(t, T.s2Click)} cursorVisible={cursorVisibleAt(t, T.s2Click)} />
       </div>
     </Card>
   );
@@ -297,7 +301,7 @@ function StepPricing({ t }: { t: number }) {
           <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Pricing preview</div>
           <dl className="mt-4 grid gap-3 text-sm">
             <Row term="Price per word" value={priced ? "$0.00005" : "$0.00"} />
-            <Row term="Estimated full-article price" value={priced ? "$0.1209" : "$0.00"} hint="2,418 words" />
+            <Row term="Estimated full-article price" value={priced ? "$0.1209" : "$0.00"} />
             <Row term="Earnings for 1,000 words" value={priced ? "$0.0500" : "$0.00"} />
             <Row term="Rubicon platform fee" value="0%" />
           </dl>
@@ -306,7 +310,7 @@ function StepPricing({ t }: { t: number }) {
 
       <div className="mt-6 flex justify-between pt-2">
         <SecondaryButton label="Back" />
-        <PrimaryAction label="Review" pressing={pressingAt(t, T.s3Click)} />
+        <PrimaryAction label="Review" pressing={pressingAt(t, T.s3Click)} cursorVisible={cursorVisibleAt(t, T.s3Click)} />
       </div>
     </Card>
   );
@@ -335,7 +339,7 @@ function StepPublish({ t }: { t: number }) {
         <SecondaryButton label="Back" />
         <div className="flex flex-wrap items-center gap-3">
           <span className="button button-secondary">Save draft</span>
-          <PrimaryAction label="Publish article" pressing={pressingAt(t, T.s4Click)} icon="none" />
+          <PrimaryAction label="Publish article" pressing={pressingAt(t, T.s4Click)} cursorVisible={cursorVisibleAt(t, T.s4Click)} icon="none" />
         </div>
       </div>
       <p className="mt-3 text-right text-xs text-[var(--muted)]">

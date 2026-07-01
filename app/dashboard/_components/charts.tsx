@@ -165,7 +165,7 @@ export interface DonutSlice {
 }
 
 /** Single-hue accent-blue ramp, deep → pale, so slices read as one family. */
-export const DONUT_COLORS = ["#1646a0", "#246bfd", "#2f87ff", "#6cb8ff", "#b9daff"];
+export const DONUT_COLORS = ["#18181b", "#3f3f46", "#71717a", "#a1a1aa", "#d4d4d8"];
 
 /**
  * Ring chart with a centered headline. Slices sweep in clockwise on mount and

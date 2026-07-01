@@ -608,7 +608,7 @@ function StepPricing({
           <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Pricing preview</div>
           <dl className="mt-4 grid gap-3 text-sm">
             <Row term="Price per word" value={formatUsd(atomicPerWord)} />
-            <Row term="Estimated full-article price" value={`${formatUsd(estFullPrice)}`} hint={`${includedWords.toLocaleString()} words`} />
+            <Row term="Estimated full-article price" value={`${formatUsd(estFullPrice)}`} />
             <Row term="Earnings for 100 words" value={formatUsd(atomicForWords(atomicPerWord, 100))} />
             <Row term="Earnings for 1,000 words" value={formatUsd(atomicForWords(atomicPerWord, 1000))} />
             <Row term="Rubicon platform fee" value="0%" />
