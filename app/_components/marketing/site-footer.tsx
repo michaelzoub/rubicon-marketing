@@ -54,19 +54,22 @@ function FooterLink({
   );
 }
 
+const footerLogoSrc = "/Header-logo_w.svg";
+
 export function SiteFooter() {
   return (
     <footer className="site-footer">
       <div className="container site-footer-main">
         <div className="site-footer-brand">
-          <RubiconBrand className="h-7" />
+          <Link
+            href="/"
+            className="site-footer-logo site-header-logo"
+            aria-label="Rubicon home"
+            onClick={() => trackClick("nav_logo_clicked", { location: "footer" })}
+          >
+            <RubiconBrand className="site-header-brand site-header-brand--new" src={footerLogoSrc} />
+          </Link>
           <p className="site-footer-tagline">Pay-per-word, between agents and creators.</p>
-          <div className="site-footer-caliga">
-            <span className="site-footer-caliga-logo">
-              <img src="/caliga-logo.png" alt="" className="site-footer-caliga-image" />
-            </span>
-            <span>Built and maintained by Caliga</span>
-          </div>
         </div>
 
         <div className="site-footer-columns">
@@ -104,7 +107,7 @@ export function SiteFooter() {
 
       <div className="site-footer-bar">
         <div className="container site-footer-bar-inner">
-          <p className="site-footer-bar-copy">© 2026 Rubicon · Built by Caliga</p>
+          <p className="site-footer-bar-copy">© 2026 Rubicon</p>
         </div>
       </div>
     </footer>

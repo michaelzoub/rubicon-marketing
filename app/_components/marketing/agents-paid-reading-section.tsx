@@ -29,14 +29,15 @@ export function AgentsPaidReadingSection() {
       <motion.div {...fade} className="container">
         <div className="landing-copy-stack developers-agents-header">
           <div className="landing-section-kicker">
-            <h1 id="developers-agents-heading" className="landing-section-title developers-agents-title">
-              Add paid reading to your agent.
+            <h1 id="developers-agents-heading" className="landing-section-title">
+              <span className="landing-section-title-emphasis">Add paid reading to your agent.</span>
+              <br />
+              <span className="landing-section-title-muted">
+                Use Rubicon from the agent you already work with. It can discover articles, pay from a capped wallet,
+                and stop as soon as it has the answer.
+              </span>
             </h1>
           </div>
-          <p className="landing-section-lead developers-agents-lead">
-            Use Rubicon from the agent you already work with. It can discover articles, pay from a capped wallet, and
-            stop as soon as it has the answer.
-          </p>
         </div>
 
         <div className="developers-agents-skill">

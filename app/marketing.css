@@ -30,18 +30,19 @@
   pointer-events: none;
 }
 
-.landing-page .site-header-links .site-nav-link,
-.landing-page .site-header-links .site-nav-dropdown-trigger {
+.landing-page .site-header-links .site-nav-link {
   color: #34363b;
   font-size: 0.875rem;
   font-weight: 500;
   line-height: 1;
 }
 
-.landing-page .site-header-links .site-nav-link:hover,
+.landing-page .site-header-links .site-nav-link:hover {
+  color: #8b919a;
+}
+
 .landing-page .site-header-links .site-nav-link.site-nav-link--active,
-.landing-page .site-header-links .site-nav-link[aria-current="page"],
-.landing-page .site-header-links .site-nav-dropdown-trigger:hover {
+.landing-page .site-header-links .site-nav-link[aria-current="page"] {
   color: #34363b;
 }
 
@@ -115,11 +116,20 @@
 .landing-page .landing-dashboard-showcase-header .landing-section-title,
 .landing-page .landing-product-showcase-header .landing-section-title,
 .landing-page .landing-agents-header .landing-section-title,
+.landing-page .developers-agents-header .landing-section-title,
+.landing-page .developers-sdk-copy .landing-section-title,
 .landing-page .creators-benefits-header .landing-section-title,
 .landing-page .creators-how-header .landing-section-title {
   max-width: 44rem;
   text-wrap: pretty;
   white-space: normal;
+}
+
+/* Developers page — hero-scale title for the page lead only. */
+.developers-page .developers-agents-header .landing-section-title {
+  font-size: clamp(2.25rem, 3vw, 2.6rem);
+  line-height: 1.3;
+  letter-spacing: -0.025em;
 }
 
 .landing-page .landing-dashboard-showcase {
@@ -661,7 +671,7 @@
   padding:
     clamp(5rem, 10vh, 6.5rem)
     clamp(1.5rem, 4vw, 3rem)
-    clamp(3rem, 6vh, 4.5rem);
+    clamp(2.5rem, 5vh, 4rem);
 }
 
 .creators-page .creators-hero-copy {
@@ -689,7 +699,7 @@
 
 .creators-page .creators-hero-dashboard-panel {
   --dashboard-app-max-width: 760px;
-  --dashboard-app-image-height: clamp(380px, 48vh, 540px);
+  --dashboard-app-image-height: clamp(380px, min(48vh, 32rem), 540px);
   --dashboard-ui-scale: 0.82;
   --dashboard-hover-scale: 1.06;
   --dashboard-hover-shift-x: clamp(-1.75rem, -3.8vw, -3.25rem);
@@ -762,40 +772,27 @@
 
 .creators-page .creators-scroll-quote {
   position: relative;
-  height: clamp(145vh, 155vh, 165vh);
-  overflow: visible;
+  padding-block: clamp(5.5rem, 12vh, 8rem) clamp(3.5rem, 7vh, 5rem);
+  overflow-x: clip;
   background: #fff;
-}
-
-.creators-page .creators-scroll-quote-sticky {
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  display: flex;
-  min-height: 100vh;
-  align-items: center;
-  justify-content: center;
-  padding: clamp(3rem, 8vh, 5rem) clamp(1.5rem, 4vw, 3rem);
-  background: #fff;
-}
-
-.creators-page .creators-scroll-quote-inner {
-  width: min(76rem, 100%);
 }
 
 .creators-page .creators-scroll-quote-block {
   margin: 0;
-  max-width: none;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .creators-page .creators-scroll-quote-text {
   margin: 0;
+  max-width: 100%;
   font-family: "Caslon 540", Georgia, "Times New Roman", serif;
   font-size: clamp(1.85rem, 4.2vw, 3.35rem);
   font-weight: 400;
   line-height: 1.18;
   letter-spacing: -0.025em;
-  text-wrap: balance;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
 }
 
 .creators-page .creators-scroll-quote-char.is-pending {
@@ -834,11 +831,112 @@
 
 @media (max-width: 767px) {
   .creators-page .creators-scroll-quote {
-    height: clamp(140vh, 150vh, 160vh);
+    padding-top: clamp(4rem, 10vh, 6rem);
+    padding-bottom: clamp(2.75rem, 7vh, 4rem);
   }
 
   .creators-page .creators-scroll-quote-text {
     font-size: clamp(1.5rem, 7vw, 2rem);
     line-height: 1.28;
+  }
+}
+
+.creators-page .creators-benefits.landing-section-block {
+  padding-top: clamp(1.25rem, 2.5vw, 2rem);
+}
+
+/* Creators publish demo — mac window over painting6 (see creators-publish-demo-preview.tsx) */
+.creators-page .creators-publish-demo-panel {
+  --creators-demo-max-width: 960px;
+  --creators-demo-height: 36rem;
+  --creators-demo-mac-radius: clamp(10px, 1.2vw, 14px);
+  --creators-demo-mac-content-radius: clamp(9px, 1.1vw, 13px);
+
+  padding: clamp(1.25rem, 3.5vw, 3rem);
+  min-height: calc(var(--creators-demo-height) + clamp(2.5rem, 6vw, 4rem));
+  background-image: url("/painting6.png");
+  background-position: center 42%;
+  background-size: cover;
+  border-radius: clamp(14px, 1.6vw, 22px);
+  overflow: hidden;
+}
+
+.creators-page .creators-publish-demo-app {
+  position: relative;
+  width: min(100%, var(--creators-demo-max-width));
+  margin-inline: auto;
+  overflow: visible;
+}
+
+.creators-page .creators-publish-demo-app .landing-mac-window {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: var(--creators-demo-mac-radius);
+  background: transparent;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.75) inset,
+    0 28px 60px rgba(15, 23, 42, 0.2),
+    0 10px 24px rgba(15, 23, 42, 0.1);
+}
+
+.creators-page .creators-publish-demo-app .landing-mac-titlebar {
+  border-radius: var(--creators-demo-mac-radius) var(--creators-demo-mac-radius) 0 0;
+}
+
+.creators-page .creators-publish-demo-app .landing-mac-content {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0 0 var(--creators-demo-mac-content-radius) var(--creators-demo-mac-content-radius);
+  background: #fcfcfc;
+}
+
+.creators-page .creators-publish-demo-screen {
+  position: relative;
+  overflow: hidden;
+  height: var(--creators-demo-height);
+  max-height: var(--creators-demo-height);
+  border-radius: 0 0 var(--creators-demo-mac-content-radius) var(--creators-demo-mac-content-radius);
+  background: #fcfcfc;
+}
+
+@media (max-width: 640px) {
+  .creators-page .creators-publish-demo-panel {
+    --creators-demo-height: 28rem;
+  }
+}
+
+/* SDK terminal demo — painting7 backdrop (see developers-sdk-section.tsx) */
+.developers-page .sdk-demo-panel {
+  --sdk-demo-terminal-height: 27rem;
+
+  padding: clamp(1.25rem, 3.5vw, 3rem);
+  min-height: calc(var(--sdk-demo-terminal-height) + clamp(2.5rem, 6vw, 4rem));
+  background-image: url("/painting7.png");
+  background-position: center 42%;
+  background-size: cover;
+  border-radius: clamp(14px, 1.6vw, 22px);
+  overflow: hidden;
+}
+
+.developers-page .sdk-demo-visual {
+  position: relative;
+  width: 100%;
+  margin-inline: auto;
+}
+
+.developers-page .sdk-demo-visual .landing-agents-terminal {
+  max-width: none;
+  margin-inline: 0;
+  border-color: rgba(15, 23, 42, 0.14);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.08) inset,
+    0 28px 60px rgba(15, 23, 42, 0.22),
+    0 10px 24px rgba(15, 23, 42, 0.12);
+}
+
+@media (max-width: 899px) {
+  .developers-page .sdk-demo-panel {
+    --sdk-demo-terminal-height: 24rem;
   }
 }

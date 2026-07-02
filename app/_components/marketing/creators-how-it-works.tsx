@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { trackClick, APP_URL } from "../analytics-links";
-import { CreatorPublishFlow } from "./creator-publish-flow";
+import { CreatorsPublishDemoPreview } from "./creators-publish-demo-preview";
 import { fade } from "./motion";
 
 const STEPS = [
@@ -44,9 +44,7 @@ export function CreatorsHowItWorks() {
 
         <div className="creators-how-layout">
           <div className="creators-how-video">
-            <div className="creators-how-demo-frame">
-              <CreatorPublishFlow />
-            </div>
+            <CreatorsPublishDemoPreview />
           </div>
 
           <ol className="creators-how-steps">

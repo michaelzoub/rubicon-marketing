@@ -76,15 +76,15 @@ function ProductSection() {
           <ul className="landing-product-points">
             <li>
               <Check size={14} className="text-[var(--muted)]" aria-hidden="true" />
-              Per-word pricing — no subscriptions, no paywalls
+              Per-word pricing: no subscriptions, no paywalls
             </li>
             <li>
               <Check size={14} className="text-[var(--muted)]" aria-hidden="true" />
-              Creators earn for every word read
+              You set your price and keep 100% — 0% platform fee
             </li>
             <li>
               <Check size={14} className="text-[var(--muted)]" aria-hidden="true" />
-              Agents pay only for what they use
+              Unpaid words stay locked until they&apos;re paid for
             </li>
           </ul>
         </div>

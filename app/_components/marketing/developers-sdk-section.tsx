@@ -1,100 +1,373 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { BookOpen, Check, Copy, Github } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { BookOpen, Github, MousePointer2 } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { trackClick } from "../analytics-links";
 import { fade } from "./motion";
 
 const githubUrl = "https://github.com/michaelzoub/rubicon";
 
-const developerCode = {
-  sdk: `import Rubicon from "@rubicon-caliga/agent-sdk";
+const INSTALL_CMD = "npm install @rubicon-caliga/agent-sdk";
+const RUN_CMD = "node find-clause.mjs";
 
-const rubicon = new Rubicon({
-  baseUrl: process.env.RUBICON_GATEWAY_URL,
-});
+/**
+ * Looping demo for the SDK section: a fake cursor copies the install command,
+ * pastes it into the terminal, npm installs the SDK, then a capped agent read
+ * streams paid words Claude-style until the agent has its answer and closes
+ * the stream early.
+ */
 
-const receipt = await rubicon.run({
-  articleId: "rubicon-streaming-001",
-  goal: "Find the resale-fee clause",
-  maxSpendAtomic: "20000",
-});
+const PHASES = [
+  "idle",
+  "move-copy",
+  "click-copy",
+  "move-terminal",
+  "paste",
+  "install",
+  "run",
+  "stream",
+  "enough",
+  "receipt",
+] as const;
 
-console.log(receipt);`,
-  stream: `const receipt = await rubicon.run({
-  articleId: "rubicon-streaming-001",
-  goal: "Find the resale-fee clause",
-  maxSpendAtomic: "20000",
-  onWord: (word) => {
-    process.stdout.write(\`\${word} \`);
-  },
-});`,
-} as const;
+type Phase = (typeof PHASES)[number];
 
-function CodeShowcase() {
-  const [active, setActive] = useState<keyof typeof developerCode>("sdk");
-  const [copied, setCopied] = useState(false);
-  const tabs: Array<{ id: keyof typeof developerCode; label: string }> = [
-    { id: "sdk", label: "sdk" },
-    { id: "stream", label: "stream" },
-  ];
-  const copyCode = async () => {
-    await navigator.clipboard.writeText(developerCode[active]);
-    setCopied(true);
-    trackClick("copy_code_clicked", { tab: active });
-    window.setTimeout(() => setCopied(false), 1400);
-  };
+const PHASE_MS: Record<Phase, number> = {
+  idle: 1200,
+  "move-copy": 1000,
+  "click-copy": 800,
+  "move-terminal": 1000,
+  paste: 900,
+  install: 2100,
+  run: 1600,
+  stream: 4900,
+  enough: 1500,
+  receipt: 4200,
+};
+
+const EASE = [0.16, 1, 0.3, 1] as const;
+
+/** The paid excerpt the agent streams word by word before stopping. */
+const STREAM_WORDS =
+  "The resale fee applies only to transfers executed through covered secondary-market venues. It is assessed against the realized sale price, not appraised value, and the seller of record remains liable until settlement clears.".split(
+    " ",
+  );
+
+const PRICE_PER_WORD = 0.00005;
+const STREAM_WORD_MS = 125;
+const STREAM_START_DELAY_MS = 500;
+
+function formatSpend(words: number) {
+  return `$${(words * PRICE_PER_WORD).toFixed(4)}`;
+}
+
+interface CursorPoint {
+  x: number;
+  y: number;
+}
+
+function SdkTerminalDemo({
+  phase,
+  cycle,
+  wordCount,
+  reduce,
+  atLeast,
+  promptLineRef,
+}: {
+  phase: Phase;
+  cycle: number;
+  wordCount: number;
+  reduce: boolean;
+  atLeast: (p: Phase) => boolean;
+  promptLineRef: React.RefObject<HTMLDivElement | null>;
+}) {
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const body = bodyRef.current;
+    if (!body) return;
+
+    function scrollToBottom() {
+      body.scrollTop = body.scrollHeight;
+    }
+
+    scrollToBottom();
+    const observer = new ResizeObserver(scrollToBottom);
+    observer.observe(body);
+    return () => observer.disconnect();
+  }, [phase, cycle]);
+
+  const streaming = phase === "stream";
+  const streamDone = atLeast("enough");
+  const shownWords = streamDone ? STREAM_WORDS.length : wordCount;
 
   return (
-    <div className="code-showcase min-w-0">
-      <div className="flex items-center gap-7 border-b border-[var(--faint)] px-1">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => {
-              setActive(tab.id);
-              trackClick("sdk_tab_clicked", { tab: tab.id });
-            }}
-            className={`mono border-b-2 px-2 pb-3 pt-1 text-sm transition-colors ${
-              active === tab.id
-                ? "border-[var(--ink)] text-[var(--ink)]"
-                : "border-transparent text-[var(--quiet)] hover:text-[var(--muted)]"
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
+    <div className="landing-agents-terminal agents-onboarding-terminal" aria-hidden="true">
+      <div className="landing-agents-terminal-bar">
+        <span className="landing-agents-terminal-dot landing-agents-terminal-dot-r" />
+        <span className="landing-agents-terminal-dot landing-agents-terminal-dot-y" />
+        <span className="landing-agents-terminal-dot landing-agents-terminal-dot-g" />
+        <span className="landing-agents-terminal-name mono">zsh — rubicon agent sdk</span>
       </div>
-      <div className="mt-6 overflow-hidden rounded-[10px] bg-[#1d1d1f]">
-        <div className="flex items-center justify-between border-b border-[rgba(255,255,255,0.06)] px-5 py-3">
-          <div className="flex items-center gap-3">
-            <span className="h-2.5 w-2.5 rounded-full bg-[#f58bb2]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#f2d18f]" />
-            <span className="h-2.5 w-2.5 rounded-full bg-[#8fdc9b]" />
-            <span className="mono ml-4 text-sm text-[var(--quiet)]">ts</span>
+
+      <div key={cycle} ref={bodyRef} className="landing-agents-terminal-body mono agents-onboarding-body">
+        {/* $ npm install … */}
+        <div ref={promptLineRef} className="agents-onboarding-cmd">
+          <span className="landing-agents-terminal-prompt agents-onboarding-cmd-mark">$</span>
+          <div className="agents-onboarding-cmd-text-wrap">
+            {atLeast("paste") ? (
+              <motion.div
+                className="agents-onboarding-cmd-text"
+                initial={reduce ? false : { opacity: 0, backgroundColor: "rgba(110,165,255,0.28)" }}
+                animate={{ opacity: 1, backgroundColor: "rgba(110,165,255,0)" }}
+                transition={{ opacity: { duration: 0.12 }, backgroundColor: { duration: 0.9, ease: "easeOut" } }}
+              >
+                {INSTALL_CMD}
+              </motion.div>
+            ) : (
+              <span className="agents-onboarding-caret" />
+            )}
           </div>
-          <button
-            type="button"
-            onClick={copyCode}
-            className="mono flex items-center gap-2 text-sm text-[var(--quiet)] transition-colors hover:text-[var(--ink)]"
-            aria-label="Copy code"
-          >
-            {copied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />}{" "}
-            {copied ? "copied" : "copy"}
-          </button>
         </div>
-        <pre className="mono max-h-[420px] max-w-full overflow-auto p-5 text-[0.82rem] leading-6 text-[#d6d6d9] md:p-7 md:text-[0.9rem] md:leading-7">
-          <code>{developerCode[active]}</code>
-        </pre>
+
+        <div className="agents-onboarding-log">
+          {phase === "install" && (
+            <motion.div
+              className="agents-onboarding-line agents-onboarding-line-quiet"
+              initial={reduce ? false : { opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.35, ease: EASE }}
+            >
+              <span className="agents-onboarding-spin">▸</span>
+              <span>
+                installing @rubicon-caliga/agent-sdk
+                <span className="agents-onboarding-dots" />
+              </span>
+            </motion.div>
+          )}
+
+          {atLeast("run") && (
+            <motion.div
+              className="agents-onboarding-line agents-onboarding-line-ok"
+              initial={reduce ? false : { opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4, ease: EASE }}
+            >
+              <span>✓</span>
+              <span>added 14 packages in 1.2s</span>
+            </motion.div>
+          )}
+
+          {/* $ node find-clause.mjs */}
+          {atLeast("run") && (
+            <motion.div
+              className="agents-onboarding-cmd"
+              initial={reduce ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, ease: EASE, delay: reduce ? 0 : 0.5 }}
+            >
+              <span className="landing-agents-terminal-prompt agents-onboarding-cmd-mark">$</span>
+              <div className="agents-onboarding-cmd-text-wrap">
+                <span className="agents-onboarding-cmd-text">{RUN_CMD}</span>
+              </div>
+            </motion.div>
+          )}
+
+          {atLeast("stream") && (
+            <>
+              <motion.div
+                className="agents-onboarding-line agents-onboarding-line-quiet"
+                initial={reduce ? false : { opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, ease: EASE }}
+              >
+                <span className="agents-onboarding-spin">→</span>
+                <span>session opened · goal “find the resale-fee clause” · cap $0.0100</span>
+              </motion.div>
+
+              <motion.div
+                className="agents-onboarding-line agents-onboarding-line-quiet"
+                initial={reduce ? false : { opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, ease: EASE, delay: reduce ? 0 : 0.2 }}
+              >
+                <span className="agents-onboarding-spin">▸</span>
+                <span>streaming §2 · fee mechanics</span>
+                <span className="sdk-demo-ticker">
+                  {shownWords} words · {formatSpend(shownWords)}
+                </span>
+              </motion.div>
+
+              <motion.div
+                className="sdk-demo-stream"
+                initial={reduce ? false : { opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, ease: EASE, delay: reduce ? 0 : 0.35 }}
+              >
+                {STREAM_WORDS.slice(0, shownWords).map((word, i) => (
+                  <motion.span
+                    key={`${cycle}-${i}`}
+                    initial={reduce ? false : { opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.22, ease: "easeOut" }}
+                  >
+                    {word}{" "}
+                  </motion.span>
+                ))}
+                {streaming && <span className="agents-onboarding-caret" />}
+              </motion.div>
+            </>
+          )}
+
+          {atLeast("enough") && (
+            <motion.div
+              className="agents-onboarding-line agents-onboarding-line-ok"
+              initial={reduce ? false : { opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4, ease: EASE, delay: reduce ? 0 : 0.2 }}
+            >
+              <span>✓</span>
+              <span>agent has the answer — ending stream early</span>
+            </motion.div>
+          )}
+
+          {atLeast("receipt") && (
+            <>
+              <motion.div
+                className="agents-onboarding-line agents-onboarding-line-quiet"
+                initial={reduce ? false : { opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4, ease: EASE }}
+              >
+                <span className="agents-onboarding-spin">→</span>
+                <span>stream closed · {STREAM_WORDS.length} of 2,418 words purchased</span>
+              </motion.div>
+
+              <motion.div
+                className="agents-onboarding-receipt"
+                initial={reduce ? false : { opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, ease: EASE, delay: reduce ? 0 : 0.5 }}
+              >
+                <div>
+                  <span>words read</span>
+                  <strong>{STREAM_WORDS.length}</strong>
+                </div>
+                <div className="is-spent">
+                  <span>spent</span>
+                  <strong>{formatSpend(STREAM_WORDS.length)}</strong>
+                </div>
+                <div>
+                  <span>budget cap</span>
+                  <strong>$0.0100</strong>
+                </div>
+              </motion.div>
+
+              <motion.div
+                className="agents-onboarding-line agents-onboarding-line-ok"
+                initial={reduce ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.4, ease: EASE, delay: reduce ? 0 : 1.2 }}
+              >
+                <span>✓</span>
+                <span>done — settled in USDC, receipt attributed per word</span>
+              </motion.div>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
 export function DevelopersSdkSection() {
+  const reduce = useReducedMotion() ?? false;
+  const [stageIndex, setStageIndex] = useState(0);
+  const [cycle, setCycle] = useState(0);
+  const [wordCount, setWordCount] = useState(0);
+  const [cursor, setCursor] = useState<CursorPoint | null>(null);
+  const [realCopied, setRealCopied] = useState(false);
+
+  const stageRef = useRef<HTMLDivElement>(null);
+  const installPillRef = useRef<HTMLButtonElement>(null);
+  const promptLineRef = useRef<HTMLDivElement>(null);
+
+  // With reduced motion, skip the choreography and show the finished run.
+  const stage = reduce ? PHASES.length - 1 : stageIndex;
+  const phase = PHASES[stage];
+  const atLeast = (p: Phase) => stage >= PHASES.indexOf(p);
+
+  useEffect(() => {
+    if (reduce) return;
+    const timeout = window.setTimeout(() => {
+      if (stageIndex >= PHASES.length - 1) {
+        setStageIndex(0);
+        setWordCount(0);
+        setCycle((c) => c + 1);
+      } else {
+        setStageIndex((i) => i + 1);
+      }
+    }, PHASE_MS[PHASES[stageIndex]]);
+    return () => window.clearTimeout(timeout);
+  }, [stageIndex, reduce]);
+
+  // Claude-style word streaming during the stream phase.
+  useEffect(() => {
+    if (reduce || phase !== "stream") return;
+    let interval = 0;
+    const delay = window.setTimeout(() => {
+      interval = window.setInterval(() => {
+        setWordCount((count) => {
+          if (count >= STREAM_WORDS.length) {
+            window.clearInterval(interval);
+            return count;
+          }
+          return count + 1;
+        });
+      }, STREAM_WORD_MS);
+    }, STREAM_START_DELAY_MS);
+    return () => {
+      window.clearTimeout(delay);
+      window.clearInterval(interval);
+    };
+  }, [phase, reduce]);
+
+  // The fake cursor targets real element positions, measured per phase.
+  useEffect(() => {
+    if (reduce) return;
+    const stageEl = stageRef.current;
+    if (!stageEl) return;
+    const stageBox = stageEl.getBoundingClientRect();
+    const pointAt = (el: HTMLElement | null, dx = 0, dy = 0): CursorPoint | null => {
+      if (!el) return null;
+      const box = el.getBoundingClientRect();
+      return {
+        x: box.left - stageBox.left + box.width / 2 + dx,
+        y: box.top - stageBox.top + box.height / 2 + dy,
+      };
+    };
+
+    let next: CursorPoint | null = null;
+    if (phase === "idle") next = pointAt(installPillRef.current, 130, 110);
+    else if (phase === "move-copy" || phase === "click-copy") next = pointAt(installPillRef.current, 20, 6);
+    else if (phase === "move-terminal" || phase === "paste") next = pointAt(promptLineRef.current, 60, 8);
+    if (next) setCursor(next);
+  }, [phase, cycle, reduce]);
+
+  const isClicking = phase === "click-copy" || phase === "paste";
+  const cursorVisible = !atLeast("install");
+  const fakeCopied = phase === "click-copy" || phase === "move-terminal";
+  const copied = fakeCopied || realCopied;
+
+  const copyInstallCmd = async () => {
+    await navigator.clipboard.writeText(INSTALL_CMD);
+    setRealCopied(true);
+    trackClick("copy_code_clicked", { tab: "install" });
+    window.setTimeout(() => setRealCopied(false), 1400);
+  };
+
   return (
     <section
       id="developers"
@@ -102,18 +375,28 @@ export function DevelopersSdkSection() {
       aria-labelledby="developers-sdk-heading"
     >
       <motion.div {...fade} className="container">
-        <div className="developers-sdk-layout">
+        <div ref={stageRef} className="developers-sdk-layout sdk-demo-stage">
           <div className="developers-sdk-copy">
             <div className="landing-section-kicker">
               <h2 id="developers-sdk-heading" className="landing-section-title developers-sdk-title">
-                Use the SDK when you want direct control.
+                <span className="landing-section-title-emphasis">Use the SDK when you want direct control.</span>
+                <br />
+                <span className="landing-section-title-muted">
+                  Wire Rubicon into your own agent loop, set a spend cap, and stream paid words when your workflow needs
+                  them.
+                </span>
               </h2>
             </div>
-            <p className="landing-section-lead developers-sdk-lead">
-              Wire Rubicon into your own agent loop, set a spend cap, and stream paid words when your workflow needs
-              them.
-            </p>
-            <div className="developers-sdk-install mono">npm install @rubicon-caliga/agent-sdk</div>
+            <button
+              ref={installPillRef}
+              type="button"
+              onClick={copyInstallCmd}
+              className={`developers-sdk-install mono${copied ? " is-copied" : ""}${phase === "click-copy" ? " agents-onboarding-press" : ""}`}
+              aria-label="Copy install command"
+            >
+              {INSTALL_CMD}
+              <span className="sdk-demo-copy-hint">{copied ? "copied" : "copy"}</span>
+            </button>
             <div className="developers-sdk-links">
               <a
                 href={githubUrl}
@@ -131,7 +414,48 @@ export function DevelopersSdkSection() {
               </Link>
             </div>
           </div>
-          <CodeShowcase />
+
+          <div className="sdk-demo-panel">
+            <div className="sdk-demo-visual">
+              <SdkTerminalDemo
+                phase={phase}
+                cycle={cycle}
+                wordCount={wordCount}
+                reduce={reduce}
+                atLeast={atLeast}
+                promptLineRef={promptLineRef}
+              />
+            </div>
+          </div>
+
+          {!reduce && cursor && (
+            <motion.div
+              className="agents-onboarding-cursor"
+              aria-hidden="true"
+              initial={false}
+              animate={{ x: cursor.x, y: cursor.y, opacity: cursorVisible ? 1 : 0, scale: isClicking ? 0.82 : 1 }}
+              transition={{
+                x: { duration: 0.95, ease: EASE },
+                y: { duration: 0.95, ease: EASE },
+                opacity: { duration: 0.45, ease: "easeOut" },
+                scale: { duration: 0.18, ease: "easeOut" },
+              }}
+            >
+              <MousePointer2 size={20} fill="currentColor" />
+              <AnimatePresence>
+                {isClicking && (
+                  <motion.span
+                    key={phase}
+                    className="agents-onboarding-cursor-ring"
+                    initial={{ opacity: 0.9, scale: 0.55 }}
+                    animate={{ opacity: 0, scale: 1.65 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.65, ease: "easeOut" }}
+                  />
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
         </div>
       </motion.div>
     </section>
