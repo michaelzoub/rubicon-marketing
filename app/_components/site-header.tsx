@@ -14,8 +14,8 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { href: "/", label: "Home", matchPath: "/" },
-  { href: "/creators", label: "For Writers", matchPath: "/creators" },
-  { href: "/developers", label: "For Agents", matchPath: "/developers" },
+  { href: "/creators", label: "Writers", matchPath: "/creators" },
+  { href: "/developers", label: "Agents", matchPath: "/developers" },
   { href: "/explore", label: "Explore", matchPath: "/explore" },
 ];
 

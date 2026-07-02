@@ -47,11 +47,22 @@ export function Card({
   );
 }
 
-export function CardHeader({ title, action }: { title: ReactNode; action?: ReactNode }) {
+export function CardHeader({
+  title,
+  action,
+  description,
+}: {
+  title: ReactNode;
+  action?: ReactNode;
+  description?: ReactNode;
+}) {
   return (
-    <div className="flex items-center justify-between gap-3 border-b border-[var(--line)] px-4 py-3">
-      <h2 className="text-base font-semibold">{title}</h2>
-      {action}
+    <div className="border-b border-[var(--line)] px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="text-base font-semibold">{title}</h2>
+        {action ? <div className="shrink-0">{action}</div> : null}
+      </div>
+      {description ? <p className="mt-2 text-xs leading-relaxed text-[var(--muted)]">{description}</p> : null}
     </div>
   );
 }

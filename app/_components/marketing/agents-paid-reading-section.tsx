@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { AgentSkillSetup } from "./agent-skill-setup";
+import { DevelopersTestnetFaucet } from "./developers-testnet-faucet";
 import { cardGridProps, cardItem, fade } from "./motion";
 
 const AGENT_STEPS = [
@@ -40,8 +41,11 @@ export function AgentsPaidReadingSection() {
           </div>
         </div>
 
-        <div className="developers-agents-skill">
-          <AgentSkillSetup />
+        <div className="developers-agents-onboarding-panel">
+          <div className="developers-agents-onboarding-grid">
+            <AgentSkillSetup className="developers-agents-onboarding-card" />
+            <DevelopersTestnetFaucet />
+          </div>
         </div>
 
         <motion.div {...cardGridProps} className="developers-agents-grid">

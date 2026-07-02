@@ -140,7 +140,7 @@ export function DashboardOverviewContent({
         }
       />
 
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,300px)]">
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,300px)] xl:items-start">
         <div className="grid min-w-0 gap-3">
           <div className="grid items-stretch gap-3 sm:grid-cols-3">
             {stats.map((stat, index) => (
@@ -188,7 +188,7 @@ export function DashboardOverviewContent({
           </div>
         </div>
 
-        <aside className="grid h-fit gap-3 xl:sticky xl:top-5">
+        <aside className="grid w-full gap-3 self-start xl:sticky xl:top-5">
           <WalletCard wallet={wallet} />
         </aside>
       </div>
@@ -497,28 +497,10 @@ function ArticleRows({ rows }: { rows: DashboardOverviewArticleRow[] }) {
 
 function WalletCard({ wallet }: { wallet: DashboardOverviewWallet }) {
   return (
-    <Card>
-      <CardHeader
-        title="Payout connection"
-        action={
-          wallet.address ? (
-            <div className="flex items-center gap-4">
-              {wallet.onWithdraw && (
-                <button type="button" onClick={wallet.onWithdraw} className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--river-deep)] hover:underline">
-                  <ArrowRight size={14} aria-hidden="true" /> Withdraw
-                </button>
-              )}
-              {wallet.onRefresh && (
-                <button type="button" onClick={wallet.onRefresh} className="inline-flex items-center gap-1.5 text-sm text-[var(--river-deep)] hover:underline">
-                  <RefreshCw size={14} aria-hidden="true" /> Refresh
-                </button>
-              )}
-            </div>
-          ) : undefined
-        }
-      />
+    <Card className="p-3.5">
+      <h2 className="text-base font-semibold">Payout connection</h2>
       {!wallet.address ? (
-        <div className="p-5">
+        <div className="mt-3">
           <EmptyState
             icon={<Wallet2 size={22} aria-hidden="true" />}
             title="Connection not confirmed"
@@ -531,10 +513,10 @@ function WalletCard({ wallet }: { wallet: DashboardOverviewWallet }) {
           />
         </div>
       ) : (
-        <div className="grid gap-2.5 p-3">
-          <p className="px-2 text-xs text-[var(--muted)]">Withdrawable earnings are sent through your confirmed payout connection.</p>
-          <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
-            <div className="rounded-lg border border-[var(--line)] bg-white p-3.5">
+        <>
+          <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">Withdrawable earnings are sent through your confirmed payout connection.</p>
+          <div className="mt-3 grid grid-cols-1 gap-2">
+          <div className="rounded-lg border border-[var(--line)] bg-white p-3.5">
               <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Wallet address</div>
               <div className="mt-2 flex items-center gap-2">
                 <span className="mono text-sm font-medium">{wallet.addressLabel ?? shortWallet(wallet.address)}</span>
@@ -566,12 +548,26 @@ function WalletCard({ wallet }: { wallet: DashboardOverviewWallet }) {
             </div>
 
             <div className="rounded-lg border border-[var(--line)] bg-white p-3.5">
-              <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Balance</div>
+              <div className="flex items-center justify-between gap-3">
+                <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Balance</div>
+                <div className="flex shrink-0 items-center gap-3">
+                  {wallet.onWithdraw && (
+                    <button type="button" onClick={wallet.onWithdraw} className="inline-flex items-center gap-1 text-xs font-medium text-[var(--river-deep)] hover:underline">
+                      <ArrowRight size={12} aria-hidden="true" /> Withdraw
+                    </button>
+                  )}
+                  {wallet.onRefresh && (
+                    <button type="button" onClick={wallet.onRefresh} className="inline-flex items-center gap-1 text-xs text-[var(--river-deep)] hover:underline">
+                      <RefreshCw size={12} aria-hidden="true" /> Refresh
+                    </button>
+                  )}
+                </div>
+              </div>
               <div className="mt-2 text-2xl font-semibold tracking-[-0.01em]">{wallet.balanceLabel ?? <span className="text-base font-normal text-[var(--muted)]">Loading...</span>}</div>
               {wallet.balanceError && <div className="mt-1 text-xs text-[var(--muted)]">{wallet.balanceError}</div>}
             </div>
           </div>
-        </div>
+        </>
       )}
     </Card>
   );

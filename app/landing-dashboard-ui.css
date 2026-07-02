@@ -30,7 +30,9 @@
   min-height: 100%;
   border-right: 1px solid rgba(15, 23, 42, 0.06);
   border-radius: 0 0 0 var(--dashboard-mac-content-radius);
-  background: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   padding: 0.7rem 0.55rem 0.75rem;
   overflow: hidden;
 }
@@ -109,8 +111,8 @@
 }
 
 .landing-page .landing-dashboard-ui-nav-item.is-active {
-  background: rgba(255, 255, 255, 0.48);
-  border: 1px solid rgba(18, 18, 22, 0.08);
+  background: #f1f1f2;
+  border: 1px solid rgba(18, 18, 22, 0.06);
   color: #18181b;
   font-weight: 600;
 }

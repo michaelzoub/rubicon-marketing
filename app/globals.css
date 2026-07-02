@@ -409,27 +409,27 @@ a {
 }
 
 .dashboard-theme {
-  --background: #f5f7fb;
+  --background: #f5f5f6;
   --surface: #ffffff;
-  --surface-muted: #f1f5fb;
+  --surface-muted: #f4f4f5;
   --card: #ffffff;
-  --hovered: #e9f0fb;
-  --ink: #171a22;
-  --muted: #687082;
-  --quiet: #9a9ba5;
-  --faint: rgba(23, 26, 34, 0.07);
-  --line: rgba(30, 40, 62, 0.09);
-  --river: #2f7df6;
-  --river-deep: #1f6ae0;
-  --river-rgb: 47, 125, 246;
-  --river-pale: rgba(47, 125, 246, 0.12);
-  --river-line: rgba(47, 125, 246, 0.3);
+  --hovered: #ededee;
+  --ink: #18181b;
+  --muted: #68686f;
+  --quiet: #9a9aa2;
+  --faint: rgba(18, 18, 22, 0.07);
+  --line: rgba(18, 18, 22, 0.09);
+  --river: #303034;
+  --river-deep: #18181b;
+  --river-rgb: 24, 24, 27;
+  --river-pale: #ededee;
+  --river-line: #dedee1;
+  --dash-accent: #18181b;
   color: var(--ink);
 }
 
 .dashboard-canvas {
-  background:
-    linear-gradient(180deg, #fbfcff 0%, var(--surface-muted) 44%, #f7f9fd 100%);
+  background: #fcfcfc;
 }
 
 .writer-auth-screen {
@@ -703,12 +703,12 @@ a {
 
 .dashboard-theme .button-secondary {
   border: 0;
-  background: rgba(47, 125, 246, 0.08);
+  background: rgba(24, 24, 27, 0.06);
   color: var(--ink);
 }
 
 .dashboard-theme .button-secondary:hover {
-  background: rgba(47, 125, 246, 0.14);
+  background: rgba(24, 24, 27, 0.1);
 }
 
 button:focus-visible,
@@ -2127,8 +2127,71 @@ a {
   max-width: none;
 }
 
-.developers-agents-skill {
+.developers-agents-onboarding-panel {
   margin-top: clamp(2rem, 4vw, 2.75rem);
+}
+
+.developers-testnet-faucet {
+  display: flex;
+  flex-direction: column;
+  border: 0;
+  border-radius: var(--radius-ui);
+  background: #f5f5f6;
+  padding: clamp(1.35rem, 2.5vw, 1.75rem);
+}
+
+.developers-testnet-faucet-copy {
+  margin: 0.75rem 0 0;
+  color: var(--muted);
+  font-size: var(--landing-section-lead-size);
+  line-height: 1.65;
+}
+
+.developers-testnet-faucet-logos {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(1.75rem, 4vw, 2.75rem);
+  min-height: clamp(4.5rem, 12vh, 7.5rem);
+  margin-top: 1.25rem;
+}
+
+.developers-testnet-faucet-logo {
+  width: auto;
+  height: clamp(1.65rem, 3.2vw, 2.15rem);
+  object-fit: contain;
+}
+
+.developers-testnet-faucet-logo--circle {
+  height: clamp(1.45rem, 2.8vw, 1.85rem);
+}
+
+.developers-testnet-faucet-actions {
+  display: grid;
+  gap: 0.75rem;
+  justify-items: start;
+  margin-top: auto;
+  padding-top: 1.25rem;
+}
+
+.developers-testnet-faucet-note {
+  margin: 0;
+  color: #8b919a;
+  font-size: 0.75rem;
+  line-height: 1.5;
+}
+
+.developers-agents-onboarding-grid .developers-skill-panel,
+.developers-agents-onboarding-grid .developers-testnet-faucet {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.developers-agents-onboarding-grid .developers-skill-panel-header {
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 .developers-skill-panel {
@@ -3085,7 +3148,7 @@ a {
 .site-footer-column-title {
   margin: 0 0 0.85rem;
   color: #484b52;
-  font-size: 0.72rem;
+  font-size: 1rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   line-height: 1.2;
@@ -3225,13 +3288,14 @@ a {
 }
 
 .dashboard-theme .button-primary {
-  border: 1px solid #256fe3;
-  background: #2f7df6;
+  border: 1px solid #18181b;
+  background: #18181b;
   color: #ffffff;
 }
 
 .dashboard-theme .button-primary:hover {
-  background: #2673ec;
+  background: #2a2a2e;
+  border-color: #2a2a2e;
 }
 
 .dashboard-card {
@@ -5579,8 +5643,8 @@ a {
   --surface-muted: #f4f4f5;
   --line: rgba(18, 18, 22, 0.09);
   --hovered: #ededee;
-  /* The single permitted accent — used sparingly (active dot, focus). */
-  --dash-accent: #2f7df6;
+  /* The single permitted accent — near-black, used sparingly (focus, links, charts). */
+  --dash-accent: #18181b;
 }
 .dashboard-canvas { background: #fcfcfc; }
 .dashboard-sidebar {
@@ -5670,6 +5734,12 @@ a {
   --ink: #18181b;
   --muted: #6b6b73;
   --quiet: #9a9aa2;
+  --river: #303034;
+  --river-deep: #18181b;
+  --river-rgb: 24, 24, 27;
+  --river-pale: #ededee;
+  --river-line: #dedee1;
+  --dash-accent: #18181b;
   /* Featured stat tile = dark panel (the one sanctioned dark accent). */
   --tile-featured: linear-gradient(165deg, #232327 0%, #18181b 100%);
 }
@@ -5693,7 +5763,7 @@ a {
 /* Cards: flatter, hairline border, soft radius. */
 .dashboard-card { border: 1px solid rgba(18,18,22,.10); }
 
-/* Inputs / editor fields: white with hairline + blue focus (occasional). */
+/* Inputs / editor fields: white with hairline + neutral focus. */
 .dashboard-theme input,
 .dashboard-theme textarea,
 .dashboard-theme select {
@@ -5707,7 +5777,7 @@ a {
 .dashboard-theme select:focus {
   outline: none;
   border-color: var(--dash-accent);
-  box-shadow: 0 0 0 3px rgba(47,125,246,.16) !important;
+  box-shadow: 0 0 0 3px rgba(24, 24, 27, 0.12) !important;
 }
 
 /* Quiet, mono section eyebrows like Cursor's group labels. */
@@ -5940,11 +6010,11 @@ a {
   --line: rgba(18,18,22,.08);
   --muted: #68686f;
   --quiet: #96969d;
-  --river: #246bfd;
-  --river-deep: #1646a0;
-  --river-rgb: 36, 107, 253;
-  --river-pale: rgba(36,107,253,.10);
-  --river-line: rgba(36,107,253,.28);
+  --river: #303034;
+  --river-deep: #18181b;
+  --river-rgb: 24, 24, 27;
+  --river-pale: #ededee;
+  --river-line: #dedee1;
 }
 .dashboard-canvas {
   background-color: #e8e9ea;
@@ -6012,8 +6082,8 @@ a {
 .dashboard-main button svg,
 .dashboard-main a.button svg { width: 14px; height: 14px; stroke-width: 1.75; }
 .dashboard-data-viz {
-  --river: #246bfd;
-  --river-deep: #1646a0;
+  --river: #303034;
+  --river-deep: #18181b;
 }
 .dashboard-nav-link:hover { background: rgba(18,18,22,.075); }
 .dashboard-nav-link:active { transform: scale(.98); }

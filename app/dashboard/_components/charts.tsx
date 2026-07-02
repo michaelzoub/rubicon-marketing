@@ -164,8 +164,8 @@ export interface DonutSlice {
   color: string;
 }
 
-/** Single-hue accent-blue ramp, deep → pale, matching the overview reference. */
-export const DONUT_COLORS = ["#2f7df4", "#6da8f7", "#b7d4fb", "#d4e5fd", "#e6f0fe"];
+/** Single-hue grey ramp, deep → pale, for earnings breakdown charts. */
+export const DONUT_COLORS = ["#18181b", "#3f3f46", "#71717a", "#a1a1aa", "#d4d4d8"];
 
 /**
  * Ring chart with a centered headline. Slices sweep in clockwise on mount and

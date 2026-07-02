@@ -891,9 +891,10 @@ function OnchainCard({ address }: { address: string | null }) {
       )}
       <CardHeader
         title="Payout connection"
+        description={address ? "Withdrawable earnings are sent through your confirmed payout connection." : undefined}
         action={
           address ? (
-            <div className="flex items-center gap-4">
+            <div className="flex shrink-0 items-center gap-4">
               <button
                 type="button"
                 onClick={() => setWithdrawOpen(true)}
@@ -930,9 +931,7 @@ function OnchainCard({ address }: { address: string | null }) {
           </div>
         </div>
       ) : (
-        <div className="grid gap-3 px-3 pb-3">
-          <p className="px-2 text-xs text-[var(--muted)]">Withdrawable earnings are sent through your confirmed payout connection.</p>
-          <div className="grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
+        <div className="grid grid-cols-1 gap-2 p-3">
           {/* Wallet address */}
           <div className="rounded-lg border border-[var(--line)] bg-[var(--surface-muted)] p-5">
             <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Wallet address</div>
@@ -978,7 +977,6 @@ function OnchainCard({ address }: { address: string | null }) {
               )}
             </div>
             {balance.status === "error" && <div className="mt-1 text-xs text-[var(--muted)]">Could not reach the RPC. Try Refresh.</div>}
-          </div>
           </div>
         </div>
       )}
