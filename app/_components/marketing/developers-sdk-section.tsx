@@ -86,14 +86,16 @@ function SdkTerminalDemo({
   const bodyRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const body = bodyRef.current;
-    if (!body) return;
-
     function scrollToBottom() {
-      body.scrollTop = body.scrollHeight;
+      const el = bodyRef.current;
+      if (!el) return;
+      el.scrollTop = el.scrollHeight;
     }
 
     scrollToBottom();
+    const body = bodyRef.current;
+    if (!body) return;
+
     const observer = new ResizeObserver(scrollToBottom);
     observer.observe(body);
     return () => observer.disconnect();
