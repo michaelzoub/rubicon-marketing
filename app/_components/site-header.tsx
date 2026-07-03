@@ -96,7 +96,7 @@ export function SiteHeader({
             List an article
           </Link>
           <Link
-            href="/demo-video"
+            href="https://calendly.com/michaezl/new-meeting"
             className="site-nav-cta site-nav-cta--sales"
             onClick={() => trackClick("nav_book_demo_clicked")}
           >
