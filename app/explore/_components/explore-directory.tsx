@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { PublicCreator } from "@/lib/rubicon/public";
 import { atomicPerWordToPer1000Usd, formatUsdNumber } from "@/lib/rubicon/pricing";
 import { trackClick } from "@/app/_components/analytics-links";
+import { trackMarketingCtaClicked } from "@/app/_components/analytics/events";
 
 type SortMode = "popular" | "newest" | "price" | "depth";
 
@@ -114,7 +115,17 @@ function ArticleCard({ article }: { article: PublicCreator["articles"][number] }
   const copy = async () => {
     await navigator.clipboard.writeText(command);
     setCopied(true);
-    trackClick("explore_article_use_clicked", { article_id: article.id, article_title: article.title.slice(0, 80) });
+    trackMarketingCtaClicked({
+      cta_id: "explore_article_clicked",
+      label: article.title.slice(0, 80),
+      page: "explore",
+      section: "explore_directory",
+      audience: "agent",
+      intent: "explore",
+      position: "section",
+      target_type: "copy",
+    });
+    trackClick("explore_article_use_clicked", { article_id: article.id });
     window.setTimeout(() => setCopied(false), 1400);
   };
 
@@ -262,7 +273,7 @@ export function ExploreDirectory({ creators }: { creators: PublicCreator[] }) {
   }, []);
 
   return (
-    <div className="explore-directory">
+    <div className="explore-directory" data-analytics-section="explore_directory">
       <aside className="explore-author-rail">
         <div className="explore-rail-label">Authors</div>
         <div className="grid gap-1.5">

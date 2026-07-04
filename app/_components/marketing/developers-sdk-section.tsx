@@ -5,6 +5,11 @@ import { BookOpen, Github, MousePointer2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { trackClick } from "../analytics-links";
+import {
+  trackCopyActionCompleted,
+  trackMarketingCtaClicked,
+  trackVisualOnce,
+} from "../analytics/events";
 import { fade } from "./motion";
 
 const githubUrl = "https://github.com/michaelzoub/rubicon";
@@ -296,6 +301,16 @@ export function DevelopersSdkSection() {
   const installPillRef = useRef<HTMLButtonElement>(null);
   const promptLineRef = useRef<HTMLDivElement>(null);
 
+  // Fire one `marketing_visual_interacted` per session when the SDK demo animates.
+  useEffect(() => {
+    trackVisualOnce({
+      page: "developers",
+      section: "sdk",
+      visual_id: "sdk_demo_animation",
+      interaction: "viewed",
+    });
+  }, []);
+
   // With reduced motion, skip the choreography and show the finished run.
   const stage = reduce ? PHASES.length - 1 : stageIndex;
   const phase = PHASES[stage];
@@ -366,6 +381,16 @@ export function DevelopersSdkSection() {
   const copyInstallCmd = async () => {
     await navigator.clipboard.writeText(INSTALL_CMD);
     setRealCopied(true);
+    // Canonical copy event with stable cta_id.
+    trackCopyActionCompleted({
+      cta_id: "developers_copy_install_command",
+      label: INSTALL_CMD,
+      page: "developers",
+      section: "sdk",
+      audience: "developer",
+      intent: "copy_install",
+    });
+    // Legacy alias kept so existing PostHog insights keep working.
     trackClick("copy_code_clicked", { tab: "install" });
     window.setTimeout(() => setRealCopied(false), 1400);
   };
@@ -375,6 +400,8 @@ export function DevelopersSdkSection() {
       id="developers"
       className="landing-section-block developers-sdk-section scroll-mt-24"
       aria-labelledby="developers-sdk-heading"
+      data-analytics-section="sdk"
+      data-analytics-section-index="3"
     >
       <motion.div {...fade} className="container">
         <div ref={stageRef} className="developers-sdk-layout sdk-demo-stage">
@@ -403,14 +430,40 @@ export function DevelopersSdkSection() {
               <a
                 href={githubUrl}
                 className="button button-secondary text-sm"
-                onClick={() => trackClick("github_clicked", { location: "sdk_section" })}
+                onClick={() => {
+                  trackMarketingCtaClicked({
+                    cta_id: "developers_github",
+                    label: "View on GitHub",
+                    page: "developers",
+                    section: "sdk",
+                    audience: "developer",
+                    intent: "inspect_code",
+                    position: "section",
+                    target_type: "external",
+                    target_url: githubUrl,
+                  });
+                  trackClick("github_clicked", { location: "sdk_section" });
+                }}
               >
                 <Github size={15} aria-hidden="true" /> View on GitHub
               </a>
               <Link
                 href="/docs"
                 className="button button-secondary text-sm"
-                onClick={() => trackClick("read_docs_clicked", { location: "sdk_section" })}
+                onClick={() => {
+                  trackMarketingCtaClicked({
+                    cta_id: "developers_docs",
+                    label: "Read the docs",
+                    page: "developers",
+                    section: "sdk",
+                    audience: "developer",
+                    intent: "read_docs",
+                    position: "section",
+                    target_type: "internal_page",
+                    target_url: "/docs",
+                  });
+                  trackClick("read_docs_clicked", { location: "sdk_section" });
+                }}
               >
                 <BookOpen size={15} aria-hidden="true" /> Read the docs
               </Link>

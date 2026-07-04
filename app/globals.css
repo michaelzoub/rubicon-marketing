@@ -605,6 +605,35 @@ a {
   letter-spacing: 0;
 }
 
+/* Compact escape hatch back to the marketing site — the auth screen has no
+   header on purpose, so the brand itself is the way home. */
+.writer-auth-home {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 0.85rem;
+  border: 0;
+  background: none;
+  padding: 0;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  text-align: left;
+  transition: color 160ms var(--ease-soft);
+}
+
+.writer-auth-home:hover,
+.writer-auth-home:focus-visible {
+  color: #ffffff;
+}
+
+.writer-auth-home-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 640;
+}
+
 @media (max-width: 640px) {
   .writer-auth-screen {
     overflow: visible;
@@ -3219,6 +3248,12 @@ a {
 
 .site-footer-bar-copy {
   margin: 0;
+}
+
+.site-footer-bar-credit {
+  margin: 0;
+  font-size: 0.75rem;
+  opacity: 0.65;
 }
 
 .setup-skill-panel {

@@ -3,7 +3,8 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
-import { trackClick, APP_URL } from "./_components/analytics-links";
+import { APP_URL, AnalyticsPageView, PageEngagementTracker } from "./_components/analytics-links";
+import { trackMarketingCtaClicked } from "./_components/analytics/events";
 import { fade } from "./_components/marketing/motion";
 import { SiteFooter } from "./_components/marketing/site-footer";
 import { SiteHeader } from "./_components/site-header";
@@ -28,14 +29,38 @@ function Hero() {
               <Link
                 href={APP_URL}
                 className="button button-primary"
-                onClick={() => trackClick("start_publishing_clicked", { location: "hero" })}
+                onClick={() =>
+                  trackMarketingCtaClicked({
+                    cta_id: "home_hero_start_publishing",
+                    label: "Start publishing",
+                    page: "home",
+                    section: "hero",
+                    audience: "creator",
+                    intent: "publish",
+                    position: "hero",
+                    target_type: "app",
+                    target_url: APP_URL,
+                  })
+                }
               >
                 Start publishing <ArrowRight size={14} aria-hidden="true" />
               </Link>
               <Link
                 href="/developers"
                 className="button button-secondary"
-                onClick={() => trackClick("set_up_agent_clicked", { location: "hero" })}
+                onClick={() =>
+                  trackMarketingCtaClicked({
+                    cta_id: "home_hero_set_up_agent",
+                    label: "Set up an agent",
+                    page: "home",
+                    section: "hero",
+                    audience: "developer",
+                    intent: "setup_agent",
+                    position: "hero",
+                    target_type: "internal_page",
+                    target_url: "/developers",
+                  })
+                }
               >
                 Set up an agent
               </Link>
@@ -49,7 +74,11 @@ function Hero() {
 
 function DashboardShowcase() {
   return (
-    <section className="landing-section-block landing-dashboard-showcase" aria-label="Creator dashboard preview">
+    <section
+      className="landing-section-block landing-dashboard-showcase"
+      aria-label="Creator dashboard preview"
+      data-analytics-section="creator_dashboard_preview"
+    >
       <motion.div {...fade} className="container landing-dashboard-showcase-inner">
         <div className="landing-dashboard-showcase-column">
           <DashboardAppPreview />
@@ -61,7 +90,11 @@ function DashboardShowcase() {
 
 function ProductSection() {
   return (
-    <section className="landing-section-block landing-product-section" aria-labelledby="product-heading">
+    <section
+      className="landing-section-block landing-product-section"
+      aria-labelledby="product-heading"
+      data-analytics-section="paid_reading_product"
+    >
       <motion.div {...fade} className="container landing-product-showcase-inner">
         <div className="landing-copy-stack landing-product-showcase-header">
           <div className="landing-section-kicker">
@@ -102,8 +135,10 @@ export default function Home() {
     <>
       <div className="landing-page">
         <SiteHeader variant="home" />
+        <AnalyticsPageView page="home" audience="mixed" />
+        <PageEngagementTracker page="home" />
         <div className="landing-hero-stage">
-          <section className="landing-hero">
+          <section className="landing-hero" data-analytics-section="hero">
             <Hero />
           </section>
         </div>

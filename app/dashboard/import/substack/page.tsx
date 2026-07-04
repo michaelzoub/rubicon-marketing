@@ -7,12 +7,28 @@ import { ChangeEvent, DragEvent, useMemo, useRef, useState } from "react";
 import { Archive, ArrowLeft, Check, FolderOpen, Info, Loader2, Upload } from "lucide-react";
 import { useRubiconClient } from "@/lib/rubicon/auth";
 import { Card, PageHeader } from "../../_components/ui";
+import { trackWriterFunnel, trackWriterExitIntentOpened, type WriterExitProperties } from "../../../_components/analytics/events";
+import {
+  hasSeenObjectionPrompt,
+  markObjectionPromptSeen,
+  WriterObjectionDialog,
+  WriterObjectionInline,
+} from "../../_components/writer-objection-prompt";
 
 interface Candidate {
   id: string; title: string; subtitle: string; publishedAt: string | null; audience: string | null;
   wordCount: number; sectionCount: number; recommendedPricePerWordCents: number;
   estimatedMaxPriceCents: number; warning: string | null; importable: boolean;
 }
+
+const IMPORT_PAGE = "dashboard_import_substack";
+
+const PRICING_EXIT_CONTEXT: WriterExitProperties = {
+  page: IMPORT_PAGE,
+  section: "substack_import",
+  flow_step: "pricing_abandoned",
+  authenticated: true,
+};
 
 export default function SubstackExportPage() {
   const { getAccessToken } = usePrivy();
@@ -22,6 +38,7 @@ export default function SubstackExportPage() {
   const zipRef = useRef<HTMLInputElement>(null);
   const folderRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
+  const [exitOpen, setExitOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [committing, setCommitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -37,6 +54,7 @@ export default function SubstackExportPage() {
   async function upload(files: File[]) {
     if (!files.length) return;
     setPending(true); setError(null);
+    trackWriterFunnel("import_started", { page: IMPORT_PAGE, flow_step: "upload", import_method: "substack_export" });
     try {
       // Guarantee the creators row exists before the server writes import rows
       // that FK to it — a new writer arriving straight from onboarding may not
@@ -54,7 +72,16 @@ export default function SubstackExportPage() {
       setJobId(body.jobId); setCandidates(rows);
       setSelected(new Set(rows.filter((row) => row.importable).map((row) => row.id)));
       setPrices(Object.fromEntries(rows.map((row) => [row.id, row.recommendedPricePerWordCents])));
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not read this export."); }
+      trackWriterFunnel("import_completed", {
+        page: IMPORT_PAGE,
+        flow_step: "review",
+        import_method: "substack_export",
+        word_count: rows.reduce((sum, row) => sum + row.wordCount, 0),
+      });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not read this export.");
+      trackWriterFunnel("import_failed", { page: IMPORT_PAGE, flow_step: "upload", import_method: "substack_export", error_code: "parse_failed" });
+    }
     finally { setPending(false); }
   }
 
@@ -77,16 +104,41 @@ export default function SubstackExportPage() {
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error?.message || "Could not create the drafts.");
+      const chosen = [...selected].map((id) => prices[id]).filter((cents) => Number.isFinite(cents));
+      trackWriterFunnel("price_set", {
+        page: IMPORT_PAGE,
+        flow_step: "commit",
+        import_method: "substack_export",
+        // Substack UI prices in ¢/word; the canonical property is USD/word.
+        price_per_word: chosen.length ? chosen.reduce((sum, cents) => sum + cents, 0) / chosen.length / 100 : undefined,
+        word_count: candidates.filter((row) => selected.has(row.id)).reduce((sum, row) => sum + row.wordCount, 0),
+      });
       router.push("/dashboard/articles");
-    } catch (cause) { setError(cause instanceof Error ? cause.message : "Could not create the drafts."); }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not create the drafts.");
+      trackWriterFunnel("import_failed", { page: IMPORT_PAGE, flow_step: "commit", import_method: "substack_export", error_code: "commit_failed" });
+    }
     finally { setCommitting(false); }
   }
 
   return (
     <div className="grid gap-6">
-      <Link href="/dashboard" className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-[var(--muted)] transition-colors hover:text-[var(--ink)]">
+      <Link
+        href="/dashboard"
+        onClick={(event) => {
+          // Import parsed but drafts never committed: this is the classic
+          // "stopped right before pricing" drop-off, so ask why — once.
+          if (!jobId || committing || hasSeenObjectionPrompt()) return;
+          event.preventDefault();
+          markObjectionPromptSeen();
+          trackWriterExitIntentOpened(PRICING_EXIT_CONTEXT);
+          setExitOpen(true);
+        }}
+        className="inline-flex w-fit items-center gap-1.5 text-sm font-medium text-[var(--muted)] transition-colors hover:text-[var(--ink)]"
+      >
         <ArrowLeft size={15} aria-hidden="true" /> Back to overview
       </Link>
+      <WriterObjectionDialog open={exitOpen} context={PRICING_EXIT_CONTEXT} leaveHref="/dashboard" onClose={() => setExitOpen(false)} />
       <PageHeader title="Import Substack export" description="Upload your Substack export. We’ll only import published posts and keep full article text private." />
       {!jobId && <Card className="p-5 sm:p-6">
         <div onDragEnter={(e) => { e.preventDefault(); setDragging(true); }} onDragOver={(e) => e.preventDefault()} onDragLeave={() => setDragging(false)} onDrop={handleDrop}
@@ -105,6 +157,11 @@ export default function SubstackExportPage() {
       </Card>}
 
       {error && <div className="rounded-lg border border-[#e7b8b4] bg-[#fff1f0] px-4 py-3 text-sm text-[#8d2f2d]">{error}</div>}
+      {error && !jobId && (
+        <WriterObjectionInline
+          context={{ page: IMPORT_PAGE, section: "substack_import", flow_step: "import_failed", authenticated: true }}
+        />
+      )}
 
       {jobId && <>
         <Card className="p-4 sm:p-5">

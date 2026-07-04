@@ -6,6 +6,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import posthog from "posthog-js";
 import {
+  ArrowLeft,
   BookOpen,
   FileText,
   LayoutDashboard,
@@ -16,11 +17,25 @@ import {
   Settings,
   Wallet2,
 } from "lucide-react";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { usePrivyConfigured } from "../../providers";
 import { RubiconBrand } from "../../_components/rubicon-brand";
 import { OverviewSkeleton } from "./overview-content";
 import { DashboardPageSkeleton } from "./ui";
+import {
+  trackWriterExitConfirmed,
+  trackWriterExitIntentOpened,
+  trackWriterFunnel,
+  writerFunnelState,
+  type WriterExitProperties,
+} from "../../_components/analytics/events";
+import { attachAttributionToPerson } from "../../_components/analytics/attribution";
+import {
+  hasSeenObjectionPrompt,
+  markObjectionPromptSeen,
+  marketingHomeHref,
+  WriterObjectionDialog,
+} from "./writer-objection-prompt";
 
 const navSections = [
   {
@@ -42,6 +57,20 @@ const navSections = [
 
 export function DashboardShell({ children }: { children: ReactNode }) {
   const privyConfigured = usePrivyConfigured();
+
+  // Funnel: writer arrived in the app from the marketing site. Once per session.
+  useEffect(() => {
+    try {
+      if (window.sessionStorage.getItem("rubicon_app_opened_tracked") === "1") return;
+      const referrer = document.referrer;
+      if (!referrer.includes("rubiconpay.xyz") || referrer.includes(window.location.host)) return;
+      window.sessionStorage.setItem("rubicon_app_opened_tracked", "1");
+      trackWriterFunnel("app_opened_from_marketing", { page: "dashboard", source: "marketing_site" });
+    } catch {
+      // sessionStorage unavailable — skip, best-effort.
+    }
+  }, []);
+
   if (!privyConfigured) return <ConfigNotice />;
   return <AuthGate>{children}</AuthGate>;
 }
@@ -68,12 +97,65 @@ function AuthGate({ children }: { children: ReactNode }) {
   return <Layout>{children}</Layout>;
 }
 
+const AUTH_EXIT_CONTEXT: WriterExitProperties = {
+  page: "dashboard_auth",
+  section: "writer_auth_screen",
+  flow_step: "auth",
+  authenticated: false,
+};
+
 export function WriterAuthScreen({ onLogin, demo = false }: { onLogin: () => void; demo?: boolean }) {
+  const [exitOpen, setExitOpen] = useState(false);
+
+  // Browser Back from the auth screen also counts as leaving: arm one
+  // sentinel history entry so the first Back press surfaces the objection
+  // dialog instead of silently bouncing to "/". One entry, one interception
+  // per session — after the prompt is seen, Back behaves natively.
+  const armedBackGuard = useRef(false);
+  useEffect(() => {
+    if (demo || hasSeenObjectionPrompt()) return;
+    // Push the sentinel exactly once, but (re-)register the listener on every
+    // effect pass — StrictMode's mount/cleanup/mount cycle would otherwise
+    // leave the sentinel in history with no listener attached.
+    if (!armedBackGuard.current) {
+      armedBackGuard.current = true;
+      window.history.pushState({ rubiconAuthExitGuard: true }, "");
+    }
+    const onPopState = () => {
+      if (hasSeenObjectionPrompt()) return;
+      markObjectionPromptSeen();
+      trackWriterExitIntentOpened(AUTH_EXIT_CONTEXT);
+      setExitOpen(true);
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [demo]);
+
+  // The auth screen drops the marketing header on purpose, so this compact
+  // escape hatch is the only way back. Intercept it once per session with a
+  // gentle "why are you leaving?" prompt before navigating home.
+  function handleBackToRubicon() {
+    if (demo) return;
+    if (hasSeenObjectionPrompt()) {
+      trackWriterExitConfirmed(AUTH_EXIT_CONTEXT);
+      window.location.href = marketingHomeHref();
+      return;
+    }
+    markObjectionPromptSeen();
+    trackWriterExitIntentOpened(AUTH_EXIT_CONTEXT);
+    setExitOpen(true);
+  }
+
   return (
     <div className="writer-auth-screen">
       <div className="writer-auth-card">
         <section className="writer-auth-story">
-          <RubiconBrand className="h-8" src="/w_logo.svg" />
+          <button type="button" onClick={handleBackToRubicon} className="writer-auth-home" aria-label="Back to Rubicon">
+            <RubiconBrand className="h-8" src="/w_logo.svg" />
+            <span className="writer-auth-home-label">
+              <ArrowLeft size={13} aria-hidden="true" /> Back to Rubicon
+            </span>
+          </button>
           <div>
             <h1>Start earning when agents read your work</h1>
             <p className="writer-auth-copy">
@@ -98,6 +180,11 @@ export function WriterAuthScreen({ onLogin, demo = false }: { onLogin: () => voi
                 posthog.capture("sign_in_clicked", {
                   location: "dashboard_auth_gate",
                   current_url: window.location.pathname,
+                });
+                trackWriterFunnel("signup_started", {
+                  page: "dashboard_auth",
+                  section: "writer_auth_screen",
+                  flow_step: "auth",
                 });
                 onLogin();
               }}
@@ -126,6 +213,12 @@ export function WriterAuthScreen({ onLogin, demo = false }: { onLogin: () => voi
           </div>
         </section>
       </div>
+      <WriterObjectionDialog
+        open={exitOpen}
+        context={AUTH_EXIT_CONTEXT}
+        leaveHref={marketingHomeHref()}
+        onClose={() => setExitOpen(false)}
+      />
     </div>
   );
 }
@@ -136,6 +229,27 @@ function Layout({ children }: { children: ReactNode }) {
     user?.twitter?.username
       ? `@${user.twitter.username}`
       : user?.email?.address ?? (user?.wallet?.address ? `${user.wallet.address.slice(0, 6)}…` : "Writer");
+
+  // Funnel: writer is now authenticated. Once per session, and attach the
+  // outreach attribution to the PostHog person so conversion is traceable
+  // back to the personalized link.
+  const reportedSignup = useRef(false);
+  useEffect(() => {
+    if (reportedSignup.current) return;
+    reportedSignup.current = true;
+    if (!writerFunnelState().signup_completed) {
+      trackWriterFunnel("signup_completed", { page: "dashboard", flow_step: "auth" });
+    }
+    attachAttributionToPerson();
+  }, []);
+
+  // Funnel: Privy provisions an embedded wallet on login; record it once per
+  // session so wallet friction is measurable against signup_completed.
+  const walletAddress = user?.wallet?.address;
+  useEffect(() => {
+    if (!walletAddress || writerFunnelState().wallet_connected) return;
+    trackWriterFunnel("wallet_connected", { page: "dashboard", flow_step: "wallet", wallet_connected: true });
+  }, [walletAddress]);
 
   return (
     <DashboardFrame identity={identity} onLogout={() => logout()}>

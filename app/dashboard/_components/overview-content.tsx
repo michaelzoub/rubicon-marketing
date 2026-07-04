@@ -21,6 +21,7 @@ import {
 import type { ArticleState, PaymentStatus } from "@/lib/rubicon/types";
 import { formatUsdDisplay } from "@/lib/rubicon/pricing";
 import { RubiconBrand } from "../../_components/rubicon-brand";
+import { WriterObjectionInline } from "./writer-objection-prompt";
 import { CountUp, Donut, InsightTile, Reveal, TrendChart, type DonutSlice, type TrendBar } from "./charts";
 import {
   ArticleStatePill,
@@ -450,7 +451,7 @@ function ArticleRows({ rows }: { rows: DashboardOverviewArticleRow[] }) {
         }
       />
       {rows.length === 0 ? (
-        <div className="p-5">
+        <div className="grid gap-4 p-5">
           <EmptyState
             icon={<FileText size={22} aria-hidden="true" />}
             title="No articles yet"
@@ -460,6 +461,9 @@ function ArticleRows({ rows }: { rows: DashboardOverviewArticleRow[] }) {
                 New article
               </Link>
             }
+          />
+          <WriterObjectionInline
+            context={{ page: "dashboard", section: "articles_empty_state", flow_step: "empty_dashboard", authenticated: true }}
           />
         </div>
       ) : (

@@ -26,7 +26,12 @@ const AGENT_STEPS = [
 
 export function AgentsPaidReadingSection() {
   return (
-    <section className="landing-section-block developers-agents-section" aria-labelledby="developers-agents-heading">
+    <section
+      className="landing-section-block developers-agents-section"
+      aria-labelledby="developers-agents-heading"
+      data-analytics-section="agents_paid_reading"
+      data-analytics-section-index="0"
+    >
       <motion.div {...fade} className="container">
         <div className="landing-copy-stack developers-agents-header">
           <div className="landing-section-kicker">

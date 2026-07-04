@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { AnalyticsPageView, PageEngagementTracker } from "../_components/analytics-links";
 import { CreatorsBenefits } from "../_components/marketing/creators-benefits";
+import { CreatorsConcierge } from "../_components/marketing/creators-concierge";
 import { CreatorsHero } from "../_components/marketing/creators-hero";
 import { CreatorsScrollQuote } from "../_components/marketing/creators-scroll-quote";
 import { CreatorsHowItWorks } from "../_components/marketing/creators-how-it-works";
@@ -15,7 +17,10 @@ export default function CreatorsPage() {
   return (
     <div className="landing-page creators-page">
       <SiteHeader />
+      <AnalyticsPageView page="creators" audience="creator" />
+      <PageEngagementTracker page="creators" />
       <CreatorsHero />
+      <CreatorsConcierge />
       <CreatorsScrollQuote />
       <CreatorsBenefits />
       <CreatorsHowItWorks />

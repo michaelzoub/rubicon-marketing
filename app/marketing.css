@@ -148,7 +148,6 @@
 /* Dashboard app preview â€” mac window + substack overlay (see dashboard-app-preview.tsx) */
 .landing-page .landing-dashboard-app-panel {
   --dashboard-app-max-width: 860px;
-  --dashboard-app-image-height: clamp(460px, 58vh, 640px);
   --dashboard-app-substack-width: clamp(340px, 50%, 440px);
   --dashboard-app-substack-min-height: clamp(320px, 40vh, 390px);
   --dashboard-app-substack-peek-x: 12%;
@@ -160,10 +159,12 @@
 
   position: relative;
   z-index: 1;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
   padding: clamp(1.1rem, 3.2vw, 2.75rem) clamp(1.1rem, 3.2vw, 2.75rem);
   padding-right: clamp(1.35rem, 3.8vw, 3.25rem);
   padding-bottom: clamp(2.25rem, 5.5vw, 4rem);
-  min-height: calc(var(--dashboard-app-image-height) + clamp(4.5rem, 10vw, 6.5rem));
   background-image: url("/DB_BG.png");
   background-position: center 40%;
   background-size: cover;
@@ -193,24 +194,14 @@
   border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: var(--dashboard-mac-radius);
   background: transparent;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.75) inset,
-    0 28px 60px rgba(15, 23, 42, 0.2),
-    0 10px 24px rgba(15, 23, 42, 0.1);
   transform: scale(1);
   transform-origin: center center;
-  transition:
-    transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .landing-page .landing-dashboard-app-window:is(:hover, :focus-within) {
   z-index: 12;
   transform: scale(var(--dashboard-hover-scale));
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.75) inset,
-    0 36px 80px rgba(15, 23, 42, 0.28),
-    0 14px 32px rgba(15, 23, 42, 0.14);
 }
 
 .landing-page .landing-dashboard-app .landing-mac-titlebar {
@@ -229,9 +220,8 @@
 .landing-page .landing-dashboard-app-screen {
   position: relative;
   width: 100%;
-  height: var(--dashboard-app-image-height);
-  min-height: var(--dashboard-app-image-height);
-  max-height: var(--dashboard-app-image-height);
+  min-height: 0;
+  aspect-ratio: 1280 / 800;
   overflow: hidden;
   border-radius: 0 0 var(--dashboard-mac-content-radius) var(--dashboard-mac-content-radius);
   background: #f5f5f6;
@@ -313,7 +303,6 @@
   font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: -0.01em;
-  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.18);
   transform: translateY(6px) scale(0.96);
   transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -686,12 +675,12 @@
 
 @media (max-width: 767px) {
   .landing-page .landing-dashboard-app-panel {
-    --dashboard-app-image-height: clamp(380px, 52vh, 520px);
     --dashboard-app-substack-width: clamp(290px, 58vw, 370px);
     --dashboard-app-substack-min-height: clamp(290px, 46vh, 350px);
     --dashboard-app-substack-peek-x: 9%;
     --dashboard-app-substack-peek-y: 12%;
   }
+
 }
 
 @media (max-width: 520px) {
@@ -751,15 +740,11 @@
 
 .creators-page .creators-hero-dashboard-panel {
   --dashboard-app-max-width: 760px;
-  --dashboard-app-image-height: clamp(380px, min(48vh, 32rem), 540px);
   --dashboard-ui-scale: 0.82;
   --dashboard-hover-scale: 1.06;
   --dashboard-hover-shift-x: clamp(-1.75rem, -3.8vw, -3.25rem);
 
-  min-height: calc(var(--dashboard-app-image-height) + clamp(2.5rem, 6vw, 3.5rem));
   padding: clamp(1rem, 2.5vw, 1.75rem);
-  padding-left: clamp(1.25rem, 3vw, 2rem);
-  padding-right: clamp(0.65rem, 1.5vw, 1rem);
   background-position: center 42%;
 }
 
@@ -782,7 +767,7 @@
 
 .landing-page .landing-dashboard-app-panel--right .landing-dashboard-app {
   width: min(100%, var(--dashboard-app-max-width));
-  margin-inline: auto 0;
+  margin-inline: auto;
 }
 
 .creators-hero-cta {
@@ -817,7 +802,6 @@
   }
 
   .creators-page .creators-hero-dashboard-panel {
-    --dashboard-app-image-height: clamp(320px, 52vh, 420px);
     --dashboard-ui-scale: 0.76;
   }
 }
@@ -900,12 +884,13 @@
 /* Creators publish demo — mac window over painting6 (see creators-publish-demo-preview.tsx) */
 .creators-page .creators-publish-demo-panel {
   --creators-demo-max-width: 960px;
-  --creators-demo-height: 36rem;
   --creators-demo-mac-radius: clamp(10px, 1.2vw, 14px);
   --creators-demo-mac-content-radius: clamp(9px, 1.1vw, 13px);
 
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
   padding: clamp(1.25rem, 3.5vw, 3rem);
-  min-height: calc(var(--creators-demo-height) + clamp(2.5rem, 6vw, 4rem));
   background-image: url("/painting6.png");
   background-position: center 42%;
   background-size: cover;
@@ -926,10 +911,6 @@
   border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: var(--creators-demo-mac-radius);
   background: transparent;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.75) inset,
-    0 28px 60px rgba(15, 23, 42, 0.2),
-    0 10px 24px rgba(15, 23, 42, 0.1);
 }
 
 .creators-page .creators-publish-demo-app .landing-mac-titlebar {
@@ -945,17 +926,28 @@
 
 .creators-page .creators-publish-demo-screen {
   position: relative;
+  width: 100%;
+  min-height: 0;
   overflow: hidden;
-  height: var(--creators-demo-height);
-  max-height: var(--creators-demo-height);
+  aspect-ratio: 1280 / 720;
   border-radius: 0 0 var(--creators-demo-mac-content-radius) var(--creators-demo-mac-content-radius);
   background: #fcfcfc;
 }
 
-@media (max-width: 640px) {
-  .creators-page .creators-publish-demo-panel {
-    --creators-demo-height: 28rem;
-  }
+.creators-page .creators-publish-demo-fit-host {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  user-select: none;
+}
+
+.creators-page .creators-publish-demo-fit-inner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: top left;
+  will-change: transform;
 }
 
 /* SDK terminal demo — painting7 backdrop (see developers-sdk-section.tsx) */

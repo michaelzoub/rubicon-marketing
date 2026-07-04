@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Check, Copy, Link2, MousePointer2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { trackClick } from "../analytics-links";
+import { trackVisualOnce } from "../analytics/events";
 import { setupSkillPrompt } from "./agent-skill-setup";
 
 /**
@@ -81,6 +82,16 @@ export function LandingAgentsOnboarding() {
     }, PHASE_MS[PHASES[stageIndex]]);
     return () => window.clearTimeout(timeout);
   }, [stageIndex, reduce]);
+
+  // Fire one `marketing_visual_interacted` per session when this animation plays.
+  useEffect(() => {
+    trackVisualOnce({
+      page: "home",
+      section: "agents_setup",
+      visual_id: "agent_onboarding_animation",
+      interaction: "viewed",
+    });
+  }, []);
 
   // The fake cursor targets real element positions, measured per phase.
   useEffect(() => {

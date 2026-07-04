@@ -3,12 +3,18 @@
 import { ArrowUpRight, Droplets } from "lucide-react";
 import Image from "next/image";
 import { trackClick } from "../analytics-links";
+import { trackMarketingCtaClicked } from "../analytics/events";
 
 const faucetUrl = "https://faucet.circle.com/";
 
 export function DevelopersTestnetFaucet() {
   return (
-    <aside className="developers-testnet-faucet developers-agents-onboarding-card" aria-labelledby="developers-testnet-faucet-heading">
+    <aside
+      className="developers-testnet-faucet developers-agents-onboarding-card"
+      aria-labelledby="developers-testnet-faucet-heading"
+      data-analytics-section="testnet_faucet"
+      data-analytics-section-index="2"
+    >
       <div className="developers-testnet-faucet-header">
         <h2 id="developers-testnet-faucet-heading" className="developers-skill-panel-title">
           <Droplets size={17} className="text-[var(--river)]" aria-hidden="true" />
@@ -43,7 +49,20 @@ export function DevelopersTestnetFaucet() {
           className="button button-secondary min-h-10 text-sm"
           target="_blank"
           rel="noreferrer"
-          onClick={() => trackClick("external_link_clicked", { label: "Circle Faucet", location: "developers_testnet" })}
+          onClick={() => {
+            trackMarketingCtaClicked({
+              cta_id: "developers_circle_faucet",
+              label: "Open Circle Faucet",
+              page: "developers",
+              section: "testnet_faucet",
+              audience: "developer",
+              intent: "fund_wallet",
+              position: "section",
+              target_type: "external",
+              target_url: faucetUrl,
+            });
+            trackClick("external_link_clicked", { label: "Circle Faucet", location: "developers_testnet" });
+          }}
         >
           Open Circle Faucet
           <ArrowUpRight size={15} aria-hidden="true" />

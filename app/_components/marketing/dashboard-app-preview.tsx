@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useLayoutEffect, useRef, useState } from "react";
 import { trackClick, APP_URL } from "../analytics-links";
+import { trackVisualOnce } from "../analytics/events";
 import { CreatorDashboardPreview } from "./creator-dashboard-preview";
 import { MacWindowFrame } from "./mac-window-frame";
 import { SubstackAppOverlay } from "./substack-app-overlay";
@@ -16,11 +17,19 @@ interface DashboardAppPreviewProps {
   showSubstack?: boolean;
   showHoverCta?: boolean;
   align?: "center" | "right";
+  analyticsPage?: string;
+  analyticsSection?: string;
 }
 
 function DashboardPreviewFit() {
   const hostRef = useRef<HTMLDivElement>(null);
-  const [layout, setLayout] = useState({ scale: 1, offsetX: 0, offsetY: 0 });
+  const [layout, setLayout] = useState({
+    scale: 0,
+    offsetX: 0,
+    offsetY: 0,
+    designWidth: PREVIEW_DESIGN_WIDTH,
+    designHeight: PREVIEW_DESIGN_HEIGHT,
+  });
 
   useLayoutEffect(() => {
     const host = hostRef.current;
@@ -32,15 +41,19 @@ function DashboardPreviewFit() {
       const { width, height } = el.getBoundingClientRect();
       if (width <= 0 || height <= 0) return;
 
-      // Cover-scale the live dashboard so it fills the Mac window (no letterboxing).
-      const scale = Math.max(width / PREVIEW_DESIGN_WIDTH, height / PREVIEW_DESIGN_HEIGHT);
-      const scaledWidth = PREVIEW_DESIGN_WIDTH * scale;
-      const scaledHeight = PREVIEW_DESIGN_HEIGHT * scale;
+      const designWidth = PREVIEW_DESIGN_WIDTH;
+      const designHeight = PREVIEW_DESIGN_HEIGHT;
+
+      const scale = Math.min(width / designWidth, height / designHeight);
+      const scaledWidth = designWidth * scale;
+      const scaledHeight = designHeight * scale;
 
       setLayout({
         scale,
         offsetX: (width - scaledWidth) / 2,
         offsetY: (height - scaledHeight) / 2,
+        designWidth,
+        designHeight,
       });
     }
 
@@ -56,8 +69,8 @@ function DashboardPreviewFit() {
         className="landing-dashboard-preview-fit-inner"
         data-live-dashboard-preview="true"
         style={{
-          width: PREVIEW_DESIGN_WIDTH,
-          height: PREVIEW_DESIGN_HEIGHT,
+          width: layout.designWidth,
+          height: layout.designHeight,
           transform: `translate(${layout.offsetX}px, ${layout.offsetY}px) scale(${layout.scale})`,
         }}
       >
@@ -78,6 +91,8 @@ export function DashboardAppPreview({
   showSubstack = true,
   showHoverCta = true,
   align = "center",
+  analyticsPage = "home",
+  analyticsSection = "creator_dashboard_preview",
 }: DashboardAppPreviewProps) {
   return (
     <div
@@ -89,6 +104,14 @@ export function DashboardAppPreview({
         .filter(Boolean)
         .join(" ")}
       style={{ backgroundImage: `url("${backgroundImage}")` }}
+      onMouseEnter={() =>
+        trackVisualOnce({
+          page: analyticsPage,
+          section: analyticsSection,
+          visual_id: "dashboard_preview",
+          interaction: "hovered",
+        })
+      }
     >
       <div className="landing-dashboard-app">
         <MacWindowFrame title="Rubicon" className="landing-dashboard-app-window">

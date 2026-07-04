@@ -108,6 +108,7 @@ export function SiteFooter() {
 
       <div className="site-footer-bar">
         <div className="container site-footer-bar-inner">
+          <p className="site-footer-bar-credit">Built by Caliga</p>
           <p className="site-footer-bar-copy">© 2026 Rubicon</p>
         </div>
       </div>

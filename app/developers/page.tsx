@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AnalyticsPageView, PageEngagementTracker } from "../_components/analytics-links";
 import { AgentsPaidReadingSection } from "../_components/marketing/agents-paid-reading-section";
 import { DevelopersSdkSection } from "../_components/marketing/developers-sdk-section";
 import { SiteFooter } from "../_components/marketing/site-footer";
@@ -13,6 +14,8 @@ export default function DevelopersPage() {
   return (
     <div className="landing-page developers-page">
       <SiteHeader />
+      <AnalyticsPageView page="developers" audience="developer" />
+      <PageEngagementTracker page="developers" />
       <AgentsPaidReadingSection />
       <DevelopersSdkSection />
       <SiteFooter />

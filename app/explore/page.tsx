@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { listPublicCreators, PublicDirectoryUnavailable, type PublicCreator } from "@/lib/rubicon/public";
+import { AnalyticsPageView, PageEngagementTracker } from "../_components/analytics-links";
 import { ExploreDirectory } from "./_components/explore-directory";
 import { ExploreTrackedNotice } from "./_components/explore-tracked-notice";
 import { SiteFooter } from "../_components/marketing/site-footer";
@@ -35,6 +36,8 @@ export default async function ExplorePage() {
   return (
     <div className="landing-page explore-page">
       <SiteHeader variant="explore" />
+      <AnalyticsPageView page="explore" audience="mixed" />
+      <PageEngagementTracker page="explore" />
       <main className="explore-main dashboard-theme">
         <section className="landing-section-block explore-hero" aria-labelledby="explore-heading">
           <div className="container landing-copy-stack explore-hero-copy">
@@ -46,7 +49,7 @@ export default async function ExplorePage() {
           </div>
         </section>
 
-        <section className="container explore-directory-section">
+        <section className="container explore-directory-section" data-analytics-section="tracked_notice">
           {failed || creators.length === 0 ? <Notice failed={failed} /> : <ExploreDirectory creators={creators} />}
         </section>
       </main>

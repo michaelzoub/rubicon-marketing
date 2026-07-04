@@ -3,6 +3,7 @@ import { Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import "./marketing.css";
 import { AppProviders } from "./providers";
+import { AttributionCapture } from "./_components/analytics/attribution-capture";
 
 const sans = Hanken_Grotesk({
   subsets: ["latin"],
@@ -39,6 +40,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable}`}>
       <body>
+        <AttributionCapture />
         <AppProviders>{children}</AppProviders>
       </body>
     </html>

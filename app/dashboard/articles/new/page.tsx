@@ -25,6 +25,9 @@ import { isStolenXContent, normalizeHandle } from "@/lib/articles/ownership";
 import { MarkdownEditor } from "../../_components/markdown-editor";
 import { Card, formatDate, PageHeader, SafetyWarning, shortWallet, WalletStatePill } from "../../_components/ui";
 import { takeImport } from "../_import-handoff";
+import { trackWriterFunnel } from "../../../_components/analytics/events";
+
+const COMPOSE_PAGE = "dashboard_article_new";
 
 const PARTIAL_IMPORT_NOTICE =
   "Only public preview content was imported. Paste the full gated body below to make it available to agents.";
@@ -94,6 +97,15 @@ export default function NewArticlePage() {
       isPartial: imported.isPartial,
       importedAt: new Date().toISOString(),
       initialContent: initialBody,
+    });
+    // The URL-import flow hands off here once fetching succeeded, so this is
+    // the completion point for `import_started` fired on the import page.
+    trackWriterFunnel("import_completed", {
+      page: COMPOSE_PAGE,
+      flow_step: "compose",
+      import_method: "url",
+      source: imported.sourcePlatform,
+      word_count: initialBody ? initialBody.trim().split(/\s+/).length : 0,
     });
   }, []);
 
@@ -179,6 +191,15 @@ export default function NewArticlePage() {
       if (publish) {
         try {
           await publishArticle.run(article.id);
+          trackWriterFunnel("article_published", {
+            page: COMPOSE_PAGE,
+            flow_step: "publish",
+            article_id: article.id,
+            word_count: includedWords,
+            price_per_word: Number(pricePerWord) || undefined,
+            wallet_connected: Boolean(wallet.data?.address),
+            import_method: source ? "url" : "manual",
+          });
         } catch (err) {
           setSavedDraftId(article.id);
           setSubmitError(
@@ -238,7 +259,16 @@ export default function NewArticlePage() {
           estFullPrice={estFullPrice}
           onPrice={setPricePerWord}
           onBack={() => setStep(1)}
-          onNext={() => setStep(3)}
+          onNext={() => {
+            trackWriterFunnel("price_set", {
+              page: COMPOSE_PAGE,
+              flow_step: "pricing",
+              step_index: 2,
+              price_per_word: Number(pricePerWord) || undefined,
+              word_count: includedWords,
+            });
+            setStep(3);
+          }}
         />
       )}
 
@@ -392,6 +422,12 @@ function StepAddArticle({
     const text = await file.text();
     onContent(text);
     if (!title) onTitle(file.name.replace(/\.(md|markdown|txt)$/i, ""));
+    trackWriterFunnel("import_completed", {
+      page: COMPOSE_PAGE,
+      flow_step: "compose",
+      import_method: "markdown_upload",
+      word_count: text.trim() ? text.trim().split(/\s+/).length : 0,
+    });
   }
 
   const ready = title.trim() && author.trim() && content.trim() && !ownershipMismatch;

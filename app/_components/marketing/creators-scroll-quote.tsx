@@ -66,7 +66,13 @@ export function CreatorsScrollQuote() {
   const showAttribution = reduceMotion || revealedCount >= ATTRIBUTION_REVEAL_AT;
 
   return (
-    <section ref={sectionRef} className="creators-scroll-quote" aria-label="Quote from Jack Conte, Patreon CEO">
+    <section
+      ref={sectionRef}
+      className="creators-scroll-quote"
+      aria-label="Quote from Jack Conte, Patreon CEO"
+      data-analytics-section="creator_quote"
+      data-analytics-section-index="2"
+    >
       <div className="container">
         <blockquote className="creators-scroll-quote-block">
           <p className="creators-scroll-quote-text">

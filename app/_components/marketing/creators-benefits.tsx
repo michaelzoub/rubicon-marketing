@@ -27,7 +27,12 @@ const BENEFITS = [
 
 export function CreatorsBenefits() {
   return (
-    <section className="landing-section-block creators-benefits" aria-labelledby="creators-benefits-heading">
+    <section
+      className="landing-section-block creators-benefits"
+      aria-labelledby="creators-benefits-heading"
+      data-analytics-section="creator_benefits"
+      data-analytics-section-index="3"
+    >
       <motion.div {...fade} className="container">
         <div className="landing-copy-stack creators-benefits-header">
           <div className="landing-section-kicker">

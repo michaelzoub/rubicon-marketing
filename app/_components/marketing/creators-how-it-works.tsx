@@ -3,7 +3,8 @@
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { trackClick, APP_URL } from "../analytics-links";
+import { APP_URL } from "../analytics-links";
+import { trackMarketingCtaClicked } from "../analytics/events";
 import { CreatorsPublishDemoPreview } from "./creators-publish-demo-preview";
 import { fade } from "./motion";
 
@@ -28,6 +29,8 @@ export function CreatorsHowItWorks() {
       id="how-it-works"
       className="landing-section-block creators-how-it-works"
       aria-labelledby="creators-how-heading"
+      data-analytics-section="creator_how_it_works"
+      data-analytics-section-index="4"
     >
       <motion.div {...fade} className="container">
         <div className="landing-copy-stack creators-how-header">
@@ -67,7 +70,19 @@ export function CreatorsHowItWorks() {
             <Link
               href={APP_URL}
               className="button button-primary creators-how-cta-button"
-              onClick={() => trackClick("start_publishing_clicked", { location: "creators_how_it_works" })}
+              onClick={() =>
+                trackMarketingCtaClicked({
+                  cta_id: "creators_how_start_publishing",
+                  label: "Start publishing",
+                  page: "creators",
+                  section: "creator_how_it_works",
+                  audience: "creator",
+                  intent: "publish",
+                  position: "bottom",
+                  target_type: "app",
+                  target_url: APP_URL,
+                })
+              }
             >
               Start publishing <ArrowRight size={16} aria-hidden="true" />
             </Link>
