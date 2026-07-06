@@ -57,7 +57,7 @@ export default function TwitterRecordingPage() {
       <section className="relative mx-auto grid min-h-screen w-full max-w-[1500px] gap-6 px-5 py-5 sm:px-6 sm:py-6 md:grid-cols-[0.88fr_1.12fr] md:items-center md:gap-8 md:px-10 lg:px-14">
         <div className="flex min-h-[360px] flex-col justify-center md:min-h-[560px]">
           <div className="relative flex-1">
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait" initial={false}>
               <motion.div
                 key={beat.kicker}
                 initial={{ opacity: 0, y: 24, filter: "blur(8px)" }}
