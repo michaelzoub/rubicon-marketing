@@ -11,7 +11,6 @@ import { SiteHeader } from "./_components/site-header";
 import { LandingAgentsSection } from "./_components/marketing/landing-agents-section";
 import { DashboardAppPreview } from "./_components/marketing/dashboard-app-preview";
 import { LiveReadingAppPreview } from "./_components/marketing/live-reading-app-preview";
-
 function Hero() {
   return (
     <div className="landing-hero-content">

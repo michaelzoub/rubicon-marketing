@@ -426,6 +426,176 @@
   font-size: 1.125rem;
 }
 
+.faq-page .faq-page-header {
+  padding-block: clamp(4.5rem, 8vw, 7rem) clamp(2rem, 4vw, 3rem);
+  background: #fff;
+}
+
+.faq-page .faq-page-header .container,
+.faq-page .landing-faq .container {
+  width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  padding-inline: clamp(1.5rem, 5vw, 4rem);
+}
+
+.faq-page .faq-page-title {
+  margin: 0 0 0.85rem;
+  max-width: none;
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: #18181b;
+  text-wrap: pretty;
+}
+
+.faq-page .faq-page-subheading {
+  max-width: none;
+  margin: 0;
+  color: #606778;
+  font-size: clamp(1rem, 1.4vw, 1.08rem);
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.landing-page .landing-faq {
+  padding-block: clamp(4.5rem, 8vw, 7rem);
+  border-top: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.landing-page.faq-page .landing-faq {
+  padding-block: 0 clamp(4.5rem, 8vw, 7rem);
+  border-top: none;
+}
+
+.landing-page.faq-page .landing-faq-groups {
+  max-width: none;
+}
+
+.landing-page.faq-page .landing-faq-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.landing-page .landing-faq-layout {
+  display: grid;
+  gap: clamp(2rem, 4vw, 3rem);
+  align-items: start;
+}
+
+.landing-page .landing-faq-header {
+  display: grid;
+  max-width: 47rem;
+  gap: 0.85rem;
+}
+
+.landing-page .landing-faq-subheading {
+  max-width: 42rem;
+  margin: 0;
+  color: #606778;
+  font-size: clamp(1rem, 1.4vw, 1.08rem);
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.landing-page .landing-faq-groups {
+  display: grid;
+  gap: clamp(1.25rem, 3vw, 2rem);
+  max-width: 52rem;
+}
+
+.landing-page .landing-faq-group {
+  min-width: 0;
+}
+
+.landing-page .landing-faq-group-title {
+  margin: 0 0 0.8rem;
+  color: #18181b;
+  font-size: 0.78rem;
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.landing-page .landing-faq-list {
+  width: 100%;
+  border-top: 1px solid rgba(15, 23, 42, 0.12);
+  border-bottom: 1px solid rgba(15, 23, 42, 0.12);
+}
+
+.landing-page .landing-faq-item {
+  border-bottom: 1px solid rgba(15, 23, 42, 0.1);
+}
+
+.landing-page .landing-faq-item:last-child {
+  border-bottom: 0;
+}
+
+.landing-page .landing-faq-trigger {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: 1.05rem 0;
+  color: #18181b;
+  text-align: left;
+}
+
+.landing-page .landing-faq-trigger:hover .landing-faq-question,
+.landing-page .landing-faq-trigger:focus-visible .landing-faq-question {
+  color: #0f5fd7;
+}
+
+.landing-page .landing-faq-trigger:focus-visible {
+  outline: 2px solid rgba(15, 95, 215, 0.32);
+  outline-offset: 4px;
+}
+
+.landing-page .landing-faq-question {
+  min-width: 0;
+  color: inherit;
+  font-size: clamp(0.95rem, 1.35vw, 1.03rem);
+  font-weight: 560;
+  line-height: 1.45;
+  letter-spacing: 0;
+  text-wrap: pretty;
+  transition: color 180ms var(--ease-soft);
+}
+
+.landing-page .landing-faq-icon {
+  flex: 0 0 auto;
+  color: #0f5fd7;
+  transition: transform 220ms var(--ease-soft);
+}
+
+.landing-page .landing-faq-icon--open {
+  transform: rotate(45deg);
+}
+
+.landing-page .landing-faq-panel {
+  padding: 0 clamp(1.75rem, 3vw, 2.25rem) 1.15rem 0;
+}
+
+.landing-page .landing-faq-panel p {
+  max-width: 64ch;
+  margin: 0;
+  color: #606778;
+  font-size: 0.94rem;
+  line-height: 1.7;
+}
+
+@media (max-width: 640px) {
+  .landing-page .landing-faq-trigger {
+    align-items: flex-start;
+    padding-block: 1rem;
+  }
+
+  .landing-page .landing-faq-icon {
+    margin-top: 0.1rem;
+  }
+}
+
 @import "./landing-dashboard-ui.css";
 
 

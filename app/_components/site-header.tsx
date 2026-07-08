@@ -12,7 +12,7 @@ interface NavItem {
   label: string;
   matchPath: string;
   /** Stable cta_id used for the `nav_clicked` event. */
-  ctaId: "header_nav_home" | "header_nav_writers" | "header_nav_agents" | "header_nav_explore";
+  ctaId: "header_nav_home" | "header_nav_writers" | "header_nav_agents" | "header_nav_explore" | "header_nav_faq";
 }
 
 const navItems: NavItem[] = [
@@ -20,6 +20,7 @@ const navItems: NavItem[] = [
   { href: "/creators", label: "Writers", matchPath: "/creators", ctaId: "header_nav_writers" },
   { href: "/developers", label: "Agents", matchPath: "/developers", ctaId: "header_nav_agents" },
   { href: "/explore", label: "Explore", matchPath: "/explore", ctaId: "header_nav_explore" },
+  { href: "/faq", label: "FAQ", matchPath: "/faq", ctaId: "header_nav_faq" },
 ];
 
 function currentPageId(pathname: string): string {

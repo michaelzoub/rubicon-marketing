@@ -6,48 +6,90 @@ import { useState } from "react";
 import { trackClick } from "../analytics-links";
 import { fade } from "./motion";
 
-const LANDING_FAQ = [
+const LANDING_FAQ_GROUPS = [
   {
-    id: "word-level-metering",
-    question: "What is word-level metering?",
-    answer:
-      "Rubicon prices content by the word. Writers set a per-word rate in USDC, and agents pay only for the words that are actually streamed and read—not for the full article upfront.",
+    id: "creators",
+    label: "Creators",
+    items: [
+      {
+        id: "content-safety",
+        question: "How does Rubicon keep my content safe?",
+        answer:
+          "Your full content is stored securely and is not exposed to buyer agents upfront. Agents can only see safe metadata, such as the article title, description, headers, and pricing. When an agent needs information, Rubicon helps route it toward the relevant section without revealing the full article for free. Paid access is handled incrementally, so agents only receive the content they pay for.",
+      },
+      {
+        id: "earn-money",
+        question: "How do I earn money?",
+        answer:
+          "You set the price for your content, either per word, per section, or per block depending on the article format. When an agent accesses your writing, payment is handled through x402 and settled to your wallet.",
+      },
+      {
+        id: "crypto-payments",
+        question: "Why use crypto payments?",
+        answer:
+          "Agents need a payment rail that is programmable, permissionless, and works for very small transactions. With x402 and USDC, agents can pay for content directly without relying on card flows, subscriptions, or manual checkout pages.",
+      },
+      {
+        id: "full-article-access",
+        question: "Can agents see my full article?",
+        answer:
+          "Not by default. Agents can only access metadata before paying. The article content is released incrementally based on what the agent requests and pays for.",
+      },
+      {
+        id: "publishing-flow",
+        question: "Do I need to change how I publish?",
+        answer:
+          "No. Rubicon is designed to work alongside your existing publishing flow. You can upload or connect selected pieces of writing and choose what you want to make available to agents.",
+      },
+      {
+        id: "best-content",
+        question: "What kind of content works best?",
+        answer:
+          "High-signal writing that agents cannot easily get from public search: research, market analysis, technical posts, expert commentary, paid newsletters, reports, and deep dives.",
+      },
+    ],
   },
   {
-    id: "short-reads",
-    question: "How do short reads get paid?",
-    answer:
-      "For quick answers, the gateway streams and settles one word at a time. Each delivered word triggers a tiny USDC payment, so agents can stop the moment they have enough evidence.",
-  },
-  {
-    id: "bundled-payments",
-    question: "How does pay-per-word bundle into one payment at scale?",
-    answer:
-      "For longer reads, the gateway bundles a contiguous run of words into a single chunk released by one payment. That cuts round-trips and speeds delivery while still metering exactly what was read.",
-  },
-  {
-    id: "early-stop",
-    question: "Do I earn if an agent stops early?",
-    answer:
-      "Yes. You earn for exactly the words that were read—whether the agent stops after a definition or continues through multiple sections.",
-  },
-  {
-    id: "on-chain",
-    question: "Is every word always a separate payment?",
-    answer:
-      "Short reads stream and pay word by word. At scale, Rubicon batches consecutive words into bundled payments so micropayments stay practical without losing per-word attribution.",
-  },
-  {
-    id: "micropayments-clear",
-    question: "How do thousands of micropayments actually clear?",
-    answer:
-      "A single word can cost a fraction of a cent. Card rails would lose that to fees, so Rubicon settles every word as a USDC nanopayment—a transfer small enough to move per word, instantly, without a fee swallowing the payment. Writers set the per-word price, and each word settles in USDC with no card fees eating sub-cent amounts.",
-  },
-  {
-    id: "settlement-infrastructure",
-    question: "What infrastructure powers settlement?",
-    answer:
-      "Rubicon runs on Circle's stablecoin infrastructure and Arc, Circle's USDC-native chain where stablecoins are the gas. That makes paying for one word, then another, thousands of times over, economically real.",
+    id: "agents",
+    label: "Agents",
+    items: [
+      {
+        id: "why-pay",
+        question: "Why should my agent pay for articles when free content already exists online?",
+        answer:
+          "Free online content is often noisy, shallow, outdated, or AI-generated. Rubicon gives agents access to higher-signal writing from trusted creators, newsletters, research sources, and expert publishers.",
+      },
+      {
+        id: "better-outputs",
+        question: "How does Rubicon improve agent outputs?",
+        answer:
+          "Agents get access to specific sections of quality writing instead of relying only on public search results or summaries. Better source material should lead to better reasoning, better citations, and more useful answers.",
+      },
+      {
+        id: "quality",
+        question: "How do you ensure the writing is high quality?",
+        answer:
+          "Early creators are hand-picked by Rubicon. Over time, Rubicon will use evaluations to measure whether paid sources produce better outcomes than free public content for specific agent tasks.",
+      },
+      {
+        id: "before-paying",
+        question: "What does an agent see before paying?",
+        answer:
+          "Agents can see safe metadata such as the article title, author, description, headers, price, and available sections. They do not get the full article until they pay for access.",
+      },
+      {
+        id: "payment",
+        question: "How does payment work?",
+        answer:
+          "Agents request access through Rubicon's API or SDK. Payments are handled through x402, allowing the agent to pay incrementally for the content it consumes.",
+      },
+      {
+        id: "agent-types",
+        question: "What kinds of agents should use Rubicon?",
+        answer:
+          "Research agents, market analysis agents, coding agents, writing assistants, due diligence tools, and any agent that benefits from credible, high-signal private or paywalled content.",
+      },
+    ],
   },
 ] as const;
 
@@ -84,23 +126,35 @@ function FaqItem({
 }
 
 export function LandingFaq() {
-  const [openId, setOpenId] = useState<string | null>(null);
+  const [openByGroup, setOpenByGroup] = useState<Record<string, string | null>>({
+    creators: "content-safety",
+    agents: "why-pay",
+  });
 
   return (
-    <section className="section landing-section landing-faq" aria-labelledby="landing-faq-heading">
+    <section className="landing-section-block landing-faq" aria-labelledby="landing-faq-heading" data-analytics-section="faq">
       <motion.div {...fade} className="container landing-faq-layout">
-        <h2 id="landing-faq-heading" className="landing-faq-heading">
-          FAQs
-        </h2>
-        <div className="landing-faq-list">
-          {LANDING_FAQ.map((item) => (
-            <FaqItem
-              key={item.id}
-              question={item.question}
-              answer={item.answer}
-              open={openId === item.id}
-              onToggle={() => setOpenId((current) => (current === item.id ? null : item.id))}
-            />
+        <div className="landing-faq-groups">
+          {LANDING_FAQ_GROUPS.map((group) => (
+            <div key={group.id} className="landing-faq-group">
+              <h3 className="landing-faq-group-title">{group.label}</h3>
+              <div className="landing-faq-list">
+                {group.items.map((item) => (
+                  <FaqItem
+                    key={item.id}
+                    question={item.question}
+                    answer={item.answer}
+                    open={openByGroup[group.id] === item.id}
+                    onToggle={() =>
+                      setOpenByGroup((current) => ({
+                        ...current,
+                        [group.id]: current[group.id] === item.id ? null : item.id,
+                      }))
+                    }
+                  />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
       </motion.div>

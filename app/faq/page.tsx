@@ -5,14 +5,22 @@ import { SiteHeader } from "../_components/site-header";
 
 export const metadata: Metadata = {
   title: "FAQ · Rubicon",
-  description: "Answers about word-level metering, micropayments, USDC settlement, and how Rubicon works for writers and agents.",
+  description: "Answers for creators and agents about paid access, metadata, x402 payments, and high-signal writing on Rubicon.",
 };
 
 export default function FaqPage() {
   return (
-    <div className="landing-page">
+    <div className="landing-page faq-page">
       <SiteHeader />
       <main className="landing-main">
+        <header className="faq-page-header">
+          <div className="container">
+            <h1 className="faq-page-title">Questions agents and creators usually ask.</h1>
+            <p className="faq-page-subheading">
+              Rubicon gives creators a way to monetize agent access while giving agents better sources to reason from.
+            </p>
+          </div>
+        </header>
         <LandingFaq />
       </main>
       <SiteFooter />
