@@ -1,11 +1,10 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
 import { APP_URL, AnalyticsPageView, PageEngagementTracker } from "./_components/analytics-links";
 import { trackMarketingCtaClicked } from "./_components/analytics/events";
-import { fade } from "./_components/marketing/motion";
+import { LandingReveal } from "./_components/marketing/motion";
 import { SiteFooter } from "./_components/marketing/site-footer";
 import { SiteHeader } from "./_components/site-header";
 import { LandingAgentsSection } from "./_components/marketing/landing-agents-section";
@@ -15,7 +14,7 @@ function Hero() {
   return (
     <div className="landing-hero-content">
       <div className="container">
-        <motion.div {...fade} className="landing-copy-stack landing-hero-copy">
+        <LandingReveal className="landing-copy-stack landing-hero-copy">
           <h1 className="landing-hero-title">
             <span className="landing-hero-title-emphasis">Sell your writing to AI</span>
             <br />
@@ -65,7 +64,7 @@ function Hero() {
               </Link>
             </div>
           </div>
-        </motion.div>
+        </LandingReveal>
       </div>
     </div>
   );
@@ -78,11 +77,11 @@ function DashboardShowcase() {
       aria-label="Creator dashboard preview"
       data-analytics-section="creator_dashboard_preview"
     >
-      <motion.div {...fade} className="container landing-dashboard-showcase-inner">
+      <LandingReveal className="container landing-dashboard-showcase-inner">
         <div className="landing-dashboard-showcase-column">
           <DashboardAppPreview />
         </div>
-      </motion.div>
+      </LandingReveal>
     </section>
   );
 }
@@ -94,7 +93,7 @@ function ProductSection() {
       aria-labelledby="product-heading"
       data-analytics-section="paid_reading_product"
     >
-      <motion.div {...fade} className="container landing-product-showcase-inner">
+      <LandingReveal className="container landing-product-showcase-inner">
         <div className="landing-copy-stack landing-product-showcase-header">
           <div className="landing-section-kicker">
             <h2 id="product-heading" className="landing-section-title">
@@ -124,7 +123,7 @@ function ProductSection() {
         <div className="landing-product-showcase-column">
           <LiveReadingAppPreview />
         </div>
-      </motion.div>
+      </LandingReveal>
     </section>
   );
 }

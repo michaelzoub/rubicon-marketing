@@ -35,6 +35,8 @@ function DashboardPreviewFit() {
     const host = hostRef.current;
     if (!host) return;
 
+    let frame = 0;
+
     function updateLayout() {
       const el = hostRef.current;
       if (!el) return;
@@ -48,19 +50,36 @@ function DashboardPreviewFit() {
       const scaledWidth = designWidth * scale;
       const scaledHeight = designHeight * scale;
 
-      setLayout({
-        scale,
-        offsetX: (width - scaledWidth) / 2,
-        offsetY: (height - scaledHeight) / 2,
+      const next = {
+        scale: Number(scale.toFixed(4)),
+        offsetX: Number(((width - scaledWidth) / 2).toFixed(2)),
+        offsetY: Number(((height - scaledHeight) / 2).toFixed(2)),
         designWidth,
         designHeight,
+      };
+
+      setLayout((current) => {
+        if (
+          current.scale === next.scale &&
+          current.offsetX === next.offsetX &&
+          current.offsetY === next.offsetY
+        ) {
+          return current;
+        }
+        return next;
       });
     }
 
     updateLayout();
-    const observer = new ResizeObserver(updateLayout);
+    const observer = new ResizeObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(updateLayout);
+    });
     observer.observe(host);
-    return () => observer.disconnect();
+    return () => {
+      cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
   }, []);
 
   return (

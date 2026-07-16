@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useReducedMotion } from "framer-motion";
 import { trackClick, APP_URL } from "./analytics-links";
 import { trackNavClicked, trackMarketingCtaClicked } from "./analytics/events";
 import { RubiconBrand } from "./rubicon-brand";
@@ -71,29 +72,42 @@ export function SiteHeader({
   const [scrolled, setScrolled] = useState(false);
   const [headerHidden, setHeaderHidden] = useState(false);
   const lastScrollY = useRef(0);
+  const scrollFrame = useRef(0);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    const onScroll = () => {
+    const updateHeader = () => {
+      scrollFrame.current = 0;
       const currentY = window.scrollY;
       const delta = currentY - lastScrollY.current;
 
-      setScrolled(currentY > 16);
+      setScrolled((current) => {
+        const next = currentY > 16;
+        return current === next ? current : next;
+      });
 
-      if (currentY < 64) {
-        setHeaderHidden(false);
+      if (reduceMotion || currentY < 64) {
+        setHeaderHidden((current) => (current ? false : current));
       } else if (delta > 10) {
-        setHeaderHidden(true);
+        setHeaderHidden((current) => (current ? current : true));
       } else if (delta < -8) {
-        setHeaderHidden(false);
+        setHeaderHidden((current) => (current ? false : current));
       }
 
       lastScrollY.current = currentY;
     };
 
-    onScroll();
+    const onScroll = () => {
+      if (!scrollFrame.current) scrollFrame.current = window.requestAnimationFrame(updateHeader);
+    };
+
+    updateHeader();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+    return () => {
+      window.cancelAnimationFrame(scrollFrame.current);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [reduceMotion]);
 
   return (
     <header

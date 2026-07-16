@@ -1,12 +1,11 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { trackClick } from "../analytics-links";
 import { trackMarketingCtaClicked } from "../analytics/events";
 import { LandingAgentsOnboarding } from "./landing-agents-onboarding";
-import { fade } from "./motion";
+import { LandingReveal } from "./motion";
 
 export function LandingAgentsSection({
   showCta = true,
@@ -21,7 +20,7 @@ export function LandingAgentsSection({
       aria-labelledby="landing-agents-heading"
       data-analytics-section="agents_setup"
     >
-      <motion.div {...fade} className="container landing-agents-inner">
+      <LandingReveal className="container landing-agents-inner">
         <div className="landing-copy-stack landing-agents-header">
           <div className="landing-section-kicker">
             {isPageLead ? (
@@ -86,7 +85,7 @@ export function LandingAgentsSection({
         </div>
 
         <LandingAgentsOnboarding />
-      </motion.div>
+      </LandingReveal>
     </section>
   );
 }

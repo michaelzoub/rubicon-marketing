@@ -1,23 +1,11 @@
 {
   "version": 1,
   "skills": {
-    "12-principles-of-animation": {
-      "source": "raphaelsalaja/skill",
+    "apple-design": {
+      "source": "emilkowalski/skills",
       "sourceType": "github",
-      "skillPath": "skills/12-principles-of-animation/SKILL.md",
-      "computedHash": "fd8f83df6be0cebd89ac8c5e5345f7b5f4028a5e32f98f1699d52fa5008c7082"
-    },
-    "fixing-motion-performance": {
-      "source": "ibelick/ui-skills",
-      "sourceType": "github",
-      "skillPath": "skills/fixing-motion-performance/SKILL.md",
-      "computedHash": "426dcf33f23419643f2aab71e2253e1a5b5684a808fabb8a4ad135e489ed7a0f"
-    },
-    "sounds-on-the-web": {
-      "source": "raphaelsalaja/skill",
-      "sourceType": "github",
-      "skillPath": "skills/sounds-on-the-web/SKILL.md",
-      "computedHash": "caf809d1a9e33e01b4a0be68c9a6f1b789f5742d84d120abc09842e9ba859116"
+      "skillPath": "skills/apple-design/SKILL.md",
+      "computedHash": "8b94db67cb9edaad5f1501010804caa610131f1d2dfda0a27664b2e858deade3"
     }
   }
 }
