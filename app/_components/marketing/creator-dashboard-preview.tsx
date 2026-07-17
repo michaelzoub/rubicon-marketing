@@ -1,9 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { DONUT_COLORS, type DonutSlice, type TrendBar } from "../../dashboard/_components/charts";
+import { useMemo } from "react";
+import { buildEarningsDonutSlices, type DonutSlice } from "../../dashboard/_components/chart-data";
+import { type TrendBar } from "../../dashboard/_components/charts";
+import { DashboardOverlayProvider } from "../../dashboard/_components/overlays";
 import { DashboardFrame } from "../../dashboard/_components/shell";
 import { DashboardOverviewContent, type DashboardOverviewProps } from "../../dashboard/_components/overview-content";
+import type { AnalyticsSettlementStatus } from "@/lib/analytics/types";
 
 const earningsTrend: TrendBar[] = [
   { label: "Jun 11", fullLabel: "Thu, Jun 11", value: 18.42, detail: "1,842 words" },
@@ -22,50 +25,24 @@ const earningsTrend: TrendBar[] = [
   { label: "Jun 24", fullLabel: "Wed, Jun 24", value: 19.0, detail: "1,900 words" },
 ];
 
-const wordTrend: TrendBar[] = earningsTrend.map((bar) => ({
-  ...bar,
-  value: Number(bar.detail?.replace(/[^0-9]/g, "") ?? 0),
-  detail: `$${bar.value.toFixed(2)}`,
-}));
-
 const previewArticles = [
-  { id: "article_agent_economy", title: "The Agent Economy Is Already Here", words: 12840, reads: 58, earnings: "$142.60", state: "live" as const },
-  { id: "article_interfaces_markets", title: "Why Interfaces Become Markets", words: 9640, reads: 43, earnings: "$119.40", state: "live" as const },
-  { id: "article_ai_distribution", title: "AI Distribution After Search", words: 11320, reads: 39, earnings: "$102.75", state: "live" as const },
-  { id: "article_autonomous_readers", title: "Designing for Autonomous Readers", words: 7280, reads: 21, earnings: "$64.25", state: "paused" as const },
+  { id: "article_agent_economy", title: "The Agent Economy Is Already Here", words: 12840, reads: 58, earnings: "$142.60", earningsValue: 142.6, state: "live" as const },
+  { id: "article_interfaces_markets", title: "Why Interfaces Become Markets", words: 9640, reads: 43, earnings: "$119.40", earningsValue: 119.4, state: "live" as const },
+  { id: "article_ai_distribution", title: "AI Distribution After Search", words: 11320, reads: 39, earnings: "$102.75", earningsValue: 102.75, state: "live" as const },
+  { id: "article_autonomous_readers", title: "Designing for Autonomous Readers", words: 7280, reads: 21, earnings: "$64.25", earningsValue: 64.25, state: "paused" as const },
 ];
 
-const earningsSlices: DonutSlice[] = [
-  ...previewArticles.slice(0, 2).map((article, index) => ({
-    label: article.title,
-    value: Number(article.earnings.replace("$", "")),
-    color: DONUT_COLORS[index],
-  })),
-  {
-    label: "2 more",
-    value: previewArticles.slice(2).reduce((sum, article) => sum + Number(article.earnings.replace("$", "")), 0),
-    color: DONUT_COLORS[2],
-  },
-];
+const earningsSlices: DonutSlice[] = buildEarningsDonutSlices(
+  previewArticles.map((a) => ({ label: a.title, value: a.earningsValue })),
+);
 
-// Anchor the heatmap to "today" and show only the recent weeks that fit the
-// card width, so nothing overflows/clips (the card isn't scrollable).
-const ACTIVITY_WEEKS = 17;
-const previewActivityCalendar = (() => {
-  const totalDays = ACTIVITY_WEEKS * 7;
-  const start = new Date();
-  start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - totalDays + 1);
-  return Array.from({ length: totalDays }, (_, index) => {
-    const date = new Date(start);
-    date.setDate(start.getDate() + index);
-    const pulse = [0, 0, 1, 0, 2, 0, 3, 1, 0, 0, 2, 4, 0, 1][index % 14] ?? 0;
-    return {
-      date: date.toISOString().slice(0, 10),
-      count: index > 10 ? pulse : 0,
-    };
-  });
-})();
+const earningsSparklineValues = earningsTrend.map((bar) => bar.value);
+const earningsSparklineLabels = earningsTrend.map((bar) => bar.fullLabel);
+const earningsSparklineDetails = earningsTrend.map((bar) => bar.detail ?? "");
+
+const wordsSparklineValues = earningsTrend.map((bar) => Number(bar.detail?.replace(/[^0-9]/g, "") ?? 0));
+const wordsSparklineLabels = earningsTrend.map((bar) => bar.fullLabel);
+const wordsSparklineDetails = earningsTrend.map((bar) => `$${bar.value.toFixed(2)}`);
 
 /**
  * The real creator dashboard overview (the same component shipped at
@@ -74,20 +51,9 @@ const previewActivityCalendar = (() => {
  * marketing surfaces always show the actual, up-to-date dashboard UI.
  */
 export function CreatorDashboardPreview({ embedded = false }: { embedded?: boolean }) {
-  const [trendMetric, setTrendMetric] = useState<"earnings" | "words">("earnings");
-  const trendBars = trendMetric === "earnings" ? earningsTrend : wordTrend;
-
   const overviewProps: DashboardOverviewProps = useMemo(
     () => ({
       greeting: "@writer",
-      contentProtection: {
-        stats: [
-          { label: "Full article hidden", value: "4 articles" },
-          { label: "Paid words only", value: "4 priced" },
-          { label: "Drafts private until published", value: "Draft first" },
-          { label: "Agent preview available", value: "28 headings" },
-        ],
-      },
       exportData: {
         username: "@previewwriter",
         avatarUrl: null,
@@ -97,37 +63,55 @@ export function CreatorDashboardPreview({ embedded = false }: { embedded?: boole
         topArticle: "The Agent Economy Is Already Here",
         trendBars: earningsTrend,
       },
-      activityCalendar: previewActivityCalendar,
       stats: [
-        { label: "Total earnings", value: 501.09, format: formatUsd, deltaPct: 14 },
-        { label: "Words read", value: 50005, format: formatInt, deltaPct: 9 },
-        { label: "Live articles", value: 3, format: formatInt },
+        {
+          label: "Total earnings",
+          value: 501.09,
+          format: formatUsd,
+          deltaPct: 14,
+          context: "vs last week",
+          sparklineValues: earningsSparklineValues,
+          sparklineLabels: earningsSparklineLabels,
+          sparklineMetricLabel: "Total earnings",
+          sparklineDetails: earningsSparklineDetails,
+        },
+        {
+          label: "Words read",
+          value: 50005,
+          format: formatInt,
+          deltaPct: 9,
+          context: "vs last week",
+          sparklineValues: wordsSparklineValues,
+          sparklineLabels: wordsSparklineLabels,
+          sparklineMetricLabel: "Words read",
+          sparklineDetails: wordsSparklineDetails,
+        },
+        { label: "Agent reads", value: 183, format: formatInt, deltaPct: 12, context: "vs last week" },
+        { label: "Live articles", value: 3, format: formatInt, context: "1 paused" },
       ],
-      trendBars,
-      trendMetric,
-      onTrendMetricChange: setTrendMetric,
+      trendBars: earningsTrend,
       topArticles: previewArticles.slice(0, 3).map((article) => ({
         id: article.id,
         title: article.title,
         earnings: article.earnings,
+        value: article.earningsValue,
         href: `/dashboard/articles/${article.id}`,
       })),
       breakdown: {
-        avgPerRead: 2.73,
         totalEarned: "$501.09",
         slices: earningsSlices,
       },
       paymentRows: [
-        { id: "pay_1028", title: "The Agent Economy Is Already Here", meta: "Just now · 1,900 words read", amount: "$19.00", status: "settled" },
-        { id: "pay_1027", title: "Why Interfaces Become Markets", meta: "1d ago · 4,118 words read", amount: "$41.18", status: "settled" },
-        { id: "pay_1026", title: "AI Distribution After Search", meta: "2d ago · 5,508 words read", amount: "$55.08", status: "settled" },
-        { id: "pay_1025", title: "Designing for Autonomous Readers", meta: "3d ago · 3,294 words read", amount: "$32.94", status: "pending" },
-        { id: "pay_1024", title: "The New Bundle Economics", meta: "4d ago · 4,633 words read", amount: "$46.33", status: "settled" },
+        { id: "pay_1028", title: "The Agent Economy Is Already Here", occurredAt: "Just now · 1,900 words read", amount: "$19.00", status: "completed" as AnalyticsSettlementStatus },
+        { id: "pay_1027", title: "Why Interfaces Become Markets", occurredAt: "1d ago · 4,118 words read", amount: "$41.18", status: "completed" as AnalyticsSettlementStatus },
+        { id: "pay_1026", title: "AI Distribution After Search", occurredAt: "2d ago · 5,508 words read", amount: "$55.08", status: "completed" as AnalyticsSettlementStatus },
+        { id: "pay_1025", title: "Designing for Autonomous Readers", occurredAt: "3d ago · 3,294 words read", amount: "$32.94", status: "pending" as AnalyticsSettlementStatus },
+        { id: "pay_1024", title: "The New Bundle Economics", occurredAt: "4d ago · 4,633 words read", amount: "$46.33", status: "completed" as AnalyticsSettlementStatus },
       ],
       articleRows: previewArticles.map((article) => ({
         id: article.id,
         title: article.title,
-        meta: `${article.reads.toLocaleString()} reads · ${article.words.toLocaleString()} words`,
+        wordsRead: article.words,
         earnings: article.earnings,
         state: article.state,
         href: `/dashboard/articles/${article.id}`,
@@ -149,13 +133,15 @@ export function CreatorDashboardPreview({ embedded = false }: { embedded?: boole
         onRefresh: () => undefined,
       },
     }),
-    [trendBars, trendMetric],
+    [],
   );
 
   const frame = (
-    <DashboardFrame identity="@previewwriter" activePath="/dashboard">
-      <DashboardOverviewContent {...overviewProps} />
-    </DashboardFrame>
+    <DashboardOverlayProvider>
+      <DashboardFrame identity="@previewwriter" activePath="/dashboard">
+        <DashboardOverviewContent {...overviewProps} />
+      </DashboardFrame>
+    </DashboardOverlayProvider>
   );
 
   if (!embedded) return frame;

@@ -155,7 +155,7 @@
   --dashboard-ui-scale: 0.9;
   --dashboard-mac-radius: clamp(10px, 1.2vw, 14px);
   --dashboard-mac-content-radius: clamp(9px, 1.1vw, 13px);
-  --dashboard-hover-scale: 1.06;
+  --dashboard-hover-scale: 1.025;
 
   position: relative;
   z-index: 1;
@@ -169,11 +169,6 @@
   background-position: center 40%;
   background-size: cover;
   border-radius: clamp(14px, 1.6vw, 22px);
-  overflow: hidden;
-}
-
-.landing-page .landing-dashboard-app-panel:has(.landing-dashboard-app-window:is(:hover, :focus-within)) {
-  z-index: 8;
   overflow: visible;
 }
 
@@ -197,11 +192,6 @@
   transform: translateZ(0) scale(1);
   transform-origin: center center;
   transition: transform 0.36s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.landing-page .landing-dashboard-app-window:is(:hover, :focus-within) {
-  z-index: 12;
-  transform: translateZ(0) scale(var(--dashboard-hover-scale));
 }
 
 .landing-page .landing-dashboard-app .landing-mac-titlebar {
@@ -230,6 +220,8 @@
 .landing-page .landing-dashboard-preview-fit-host {
   position: absolute;
   inset: 0;
+  /* This is the dashboard viewport, so it is the only layer that clips the
+     dashboard document. The outer artwork and window shadow stay free. */
   overflow: hidden;
   pointer-events: none;
   user-select: none;
@@ -240,6 +232,8 @@
   position: absolute;
   top: 0;
   left: 0;
+  /* Avoid a full-size dashboard flash before the first ResizeObserver pass. */
+  transform: translate3d(0, 0, 0) scale(0.001);
   transform-origin: top left;
   will-change: transform;
   backface-visibility: hidden;
@@ -267,11 +261,10 @@
 
 .landing-page .landing-dashboard-preview-fit-inner .dashboard-main {
   min-height: 100%;
-  overflow: hidden;
 }
 
 .landing-page .landing-dashboard-preview-fit-inner .dashboard-main > .w-full {
-  overflow: hidden;
+  min-height: 100%;
 }
 
 .landing-page .landing-dashboard-hover-cta {
@@ -287,8 +280,7 @@
   text-decoration: none;
   opacity: 0;
   pointer-events: none;
-  backdrop-filter: blur(3px);
-  transition: opacity 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .landing-page .landing-dashboard-hover-cta span {
@@ -304,23 +296,41 @@
   font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: -0.01em;
-  transform: translateY(6px) scale(0.96);
-  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.18s ease;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.16);
+  transform: translateY(5px);
+  transition:
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
 }
 
-.landing-page .landing-dashboard-app-window:is(:hover, :focus-within) .landing-dashboard-hover-cta {
-  opacity: 1;
-  pointer-events: auto;
-}
+@media (hover: hover) and (pointer: fine) {
+  /* Keep the hover state on the untransformed panel. Scaling the window itself
+     used to shrink its hover hitbox at the edge, which made it flicker. */
+  .landing-page .landing-dashboard-app-panel:is(:hover, :focus-within) {
+    z-index: 8;
+  }
 
-.landing-page .landing-dashboard-app-window:is(:hover, :focus-within) .landing-dashboard-hover-cta span {
-  transform: translateY(0) scale(1);
+  .landing-page .landing-dashboard-app-panel:is(:hover, :focus-within) .landing-dashboard-app-window {
+    z-index: 12;
+    transform: translateZ(0) scale(var(--dashboard-hover-scale));
+  }
+
+  .landing-page .landing-dashboard-app-panel:is(:hover, :focus-within) .landing-dashboard-hover-cta {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .landing-page .landing-dashboard-app-panel:is(:hover, :focus-within) .landing-dashboard-hover-cta span {
+    transform: translateY(0);
+  }
 }
 
 .landing-page .landing-dashboard-hover-cta:hover span,
 .landing-page .landing-dashboard-hover-cta:focus-visible span {
   background: #fff;
-  transform: translateY(-1px) scale(1.02);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.22);
+  transform: translateY(-2px);
 }
 
 .landing-page .landing-dashboard-hover-cta:focus-visible {
@@ -622,7 +632,7 @@
     opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.landing-page .landing-dashboard-app:has(.landing-dashboard-app-window:is(:hover, :focus-within)) .landing-substack-overlay {
+.landing-page .landing-dashboard-app-panel:is(:hover, :focus-within) .landing-substack-overlay {
   z-index: 2;
   opacity: 0.72;
   transform: translate(var(--dashboard-app-substack-peek-x), var(--dashboard-app-substack-peek-y)) scale(0.94);
@@ -843,10 +853,16 @@
   .landing-page .landing-dashboard-app-panel,
   .landing-page .landing-dashboard-app .landing-mac-window,
   .landing-page .landing-dashboard-app .landing-dashboard-app-window,
-  .landing-page .landing-dashboard-app .landing-substack-overlay,
-  .landing-page .landing-dashboard-hover-cta,
-  .landing-page .landing-dashboard-hover-cta span {
+  .landing-page .landing-dashboard-app .landing-substack-overlay {
     transition: none !important;
+  }
+
+  .landing-page .landing-dashboard-hover-cta {
+    transition: opacity 0.16s linear !important;
+  }
+
+  .landing-page .landing-dashboard-hover-cta span {
+    transition: background-color 0.16s ease, box-shadow 0.16s ease !important;
   }
 }
 
@@ -866,7 +882,7 @@
   }
 }
 
-@media (hover: none), (pointer: coarse) {
+@media (max-width: 767px), (hover: none), (pointer: coarse) {
   .landing-page .landing-dashboard-app-panel {
     --dashboard-hover-scale: 1;
   }
@@ -896,7 +912,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .landing-page .landing-dashboard-app-window,
-  .landing-page .landing-dashboard-app-window:is(:hover, :focus-within),
+  .landing-page .landing-dashboard-app-panel:is(:hover, :focus-within) .landing-dashboard-app-window,
   .landing-page .landing-dashboard-hover-cta span {
     transform: none;
   }
@@ -954,28 +970,25 @@
 .creators-page .creators-hero-dashboard-panel {
   --dashboard-app-max-width: 760px;
   --dashboard-ui-scale: 0.82;
-  --dashboard-hover-scale: 1.06;
-  --dashboard-hover-shift-x: clamp(-1.75rem, -3.8vw, -3.25rem);
+  --dashboard-hover-scale: 1.025;
+  --dashboard-hover-shift-x: clamp(-0.6rem, -1.25vw, -1rem);
 
   padding: clamp(1rem, 2.5vw, 1.75rem);
   background-position: center 42%;
 }
 
-.creators-page .creators-hero-dashboard-panel:has(.landing-dashboard-app-window:is(:hover, :focus-within)) {
-  z-index: 12;
-  overflow: visible;
-}
+@media (hover: hover) and (pointer: fine) {
+  .creators-page .creators-hero-visual:has(.creators-hero-dashboard-panel:is(:hover, :focus-within)) {
+    z-index: 12;
+  }
 
-.creators-page .creators-hero-visual:has(.landing-dashboard-app-window:is(:hover, :focus-within)) {
-  z-index: 12;
-}
+  .creators-page .creators-hero-dashboard-panel .landing-dashboard-app-window {
+    transform-origin: right center;
+  }
 
-.creators-page .creators-hero-dashboard-panel .landing-dashboard-app-window {
-  transform-origin: right center;
-}
-
-.creators-page .creators-hero-dashboard-panel .landing-dashboard-app-window:is(:hover, :focus-within) {
-  transform: scale(var(--dashboard-hover-scale)) translateX(var(--dashboard-hover-shift-x));
+  .creators-page .creators-hero-dashboard-panel:is(:hover, :focus-within) .landing-dashboard-app-window {
+    transform: translate3d(var(--dashboard-hover-shift-x), 0, 0) scale(var(--dashboard-hover-scale));
+  }
 }
 
 .landing-page .landing-dashboard-app-panel--right .landing-dashboard-app {
@@ -1000,7 +1013,7 @@
   }
 
   .creators-page .creators-hero-dashboard-panel {
-    --dashboard-hover-shift-x: clamp(-2.5rem, -5vw, -4.5rem);
+    --dashboard-hover-shift-x: clamp(-0.75rem, -1.5vw, -1.25rem);
   }
 }
 

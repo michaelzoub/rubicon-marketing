@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { trackClick, APP_URL } from "../analytics-links";
 import { trackVisualOnce } from "../analytics/events";
 import { CreatorDashboardPreview } from "./creator-dashboard-preview";
@@ -23,13 +23,8 @@ interface DashboardAppPreviewProps {
 
 function DashboardPreviewFit() {
   const hostRef = useRef<HTMLDivElement>(null);
-  const [layout, setLayout] = useState({
-    scale: 0,
-    offsetX: 0,
-    offsetY: 0,
-    designWidth: PREVIEW_DESIGN_WIDTH,
-    designHeight: PREVIEW_DESIGN_HEIGHT,
-  });
+  const innerRef = useRef<HTMLDivElement>(null);
+  const lastTransformRef = useRef("");
 
   useLayoutEffect(() => {
     const host = hostRef.current;
@@ -39,7 +34,8 @@ function DashboardPreviewFit() {
 
     function updateLayout() {
       const el = hostRef.current;
-      if (!el) return;
+      const inner = innerRef.current;
+      if (!el || !inner) return;
       const { width, height } = el.getBoundingClientRect();
       if (width <= 0 || height <= 0) return;
 
@@ -50,24 +46,13 @@ function DashboardPreviewFit() {
       const scaledWidth = designWidth * scale;
       const scaledHeight = designHeight * scale;
 
-      const next = {
-        scale: Number(scale.toFixed(4)),
-        offsetX: Number(((width - scaledWidth) / 2).toFixed(2)),
-        offsetY: Number(((height - scaledHeight) / 2).toFixed(2)),
-        designWidth,
-        designHeight,
-      };
+      const nextTransform = `translate3d(${((width - scaledWidth) / 2).toFixed(2)}px, ${((height - scaledHeight) / 2).toFixed(2)}px, 0) scale(${scale.toFixed(4)})`;
+      if (lastTransformRef.current === nextTransform) return;
 
-      setLayout((current) => {
-        if (
-          current.scale === next.scale &&
-          current.offsetX === next.offsetX &&
-          current.offsetY === next.offsetY
-        ) {
-          return current;
-        }
-        return next;
-      });
+      // Keep resize updates off React's render path. This preview can be shown
+      // in multiple landing scenes, and only its compositor transform changes.
+      inner.style.transform = nextTransform;
+      lastTransformRef.current = nextTransform;
     }
 
     updateLayout();
@@ -85,12 +70,12 @@ function DashboardPreviewFit() {
   return (
     <div ref={hostRef} className="landing-dashboard-preview-fit-host">
       <div
+        ref={innerRef}
         className="landing-dashboard-preview-fit-inner"
         data-live-dashboard-preview="true"
         style={{
-          width: layout.designWidth,
-          height: layout.designHeight,
-          transform: `translate(${layout.offsetX}px, ${layout.offsetY}px) scale(${layout.scale})`,
+          width: PREVIEW_DESIGN_WIDTH,
+          height: PREVIEW_DESIGN_HEIGHT,
         }}
       >
         <CreatorDashboardPreview embedded />
@@ -143,7 +128,7 @@ export function DashboardAppPreview({
                 aria-label="Visit the dashboard"
                 onClick={() => trackClick("dashboard_showcase_clicked", { location: "dashboard_hover_cta" })}
               >
-                <span>Visit me</span>
+                <span>View dashboard</span>
               </Link>
             ) : null}
           </div>

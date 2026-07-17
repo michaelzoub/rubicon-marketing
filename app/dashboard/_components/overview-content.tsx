@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import {
   ArrowRight,
   Check,
@@ -11,29 +11,27 @@ import {
   Download,
   ExternalLink,
   FileText,
-  Link2,
   ImagePlus,
   RefreshCw,
   ShieldCheck,
   Wallet2,
   X,
 } from "lucide-react";
-import type { ArticleState, PaymentStatus } from "@/lib/rubicon/types";
+import type { ArticleState } from "@/lib/rubicon/types";
+import type { AnalyticsSettlementStatus } from "@/lib/analytics/types";
 import { formatUsdDisplay } from "@/lib/rubicon/pricing";
 import { RubiconBrand } from "../../_components/rubicon-brand";
-import { WriterObjectionInline } from "./writer-objection-prompt";
-import { CountUp, Donut, InsightTile, Reveal, TrendChart, type DonutSlice, type TrendBar } from "./charts";
+import { ChartEmptyState, CountUp, Donut, Reveal, Sparkline, TrendChart, type DonutSlice, type TrendBar } from "./charts";
+import { DashboardDialog } from "./overlays";
 import {
-  ArticleStatePill,
   Card,
   CardHeader,
   EmptyState,
+  MetricTrend,
   PageHeader,
-  PaymentStatusPill,
   RefreshDots,
   Skeleton,
   shortWallet,
-  StatTile,
 } from "./ui";
 
 export interface DashboardOverviewStat {
@@ -41,20 +39,25 @@ export interface DashboardOverviewStat {
   value: number;
   format: (value: number) => string;
   deltaPct?: number | null;
+  context?: string;
+  sparklineValues?: number[];
+  sparklineLabels?: string[];
+  sparklineMetricLabel?: string;
+  sparklineDetails?: string[];
 }
 
 export interface DashboardOverviewPaymentRow {
   id: string;
   title: string;
-  meta: string;
+  occurredAt: string;
   amount: string;
-  status: PaymentStatus;
+  status: AnalyticsSettlementStatus;
 }
 
 export interface DashboardOverviewArticleRow {
   id: string;
   title: string;
-  meta: string;
+  wordsRead: number;
   earnings: string;
   state: ArticleState;
   href?: string;
@@ -86,25 +89,19 @@ export interface DashboardOverviewExport {
   trendBars: TrendBar[];
 }
 
-export interface DashboardActivityDay {
-  date: string;
-  count: number;
-}
-
 export interface DashboardOverviewProps {
   greeting: string;
   exportData?: DashboardOverviewExport;
-  activityCalendar: DashboardActivityDay[];
   stats: DashboardOverviewStat[];
   trendBars: TrendBar[];
   topArticles?: Array<{
     id?: string;
     title: string;
     earnings: string;
+    value?: number;
     href?: string;
   }>;
   breakdown?: {
-    avgPerRead: number;
     totalEarned: string;
     slices: DonutSlice[];
   } | null;
@@ -117,7 +114,6 @@ export interface DashboardOverviewProps {
 }
 
 export function DashboardOverviewContent({
-  greeting,
   exportData,
   stats,
   trendBars,
@@ -128,79 +124,107 @@ export function DashboardOverviewContent({
   wallet,
   refreshing = false,
 }: DashboardOverviewProps) {
+  const hasTopArticles = topArticles.length > 0;
+  const hasBreakdown = Boolean(breakdown && breakdown.slices.length > 0);
+  const [payoutOpen, setPayoutOpen] = useState(false);
+
   return (
-    <div className="grid gap-4">
+    <div className="grid gap-3 sm:gap-4">
       <PageHeader
         title="Overview"
         action={
           <div className="flex flex-wrap items-center gap-2">
             {refreshing && <RefreshDots />}
+            <button type="button" onClick={() => setPayoutOpen(true)} className="button button-secondary text-sm">
+              <Wallet2 size={15} aria-hidden="true" /> Payout connection
+            </button>
             <ContentProtectionPolicy />
             {exportData && <ExportButton {...exportData} />}
           </div>
         }
       />
 
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,300px)] xl:items-start">
-        <div className="grid min-w-0 gap-3">
-          <div className="grid items-stretch gap-3 sm:grid-cols-3">
-            {stats.map((stat, index) => (
-              <Reveal key={stat.label} delay={index * 0.035} className="h-full">
-                <StatTile
-                  label={stat.label}
-                  value={<CountUp value={stat.value} format={stat.format} />}
-                  hint={stat.deltaPct !== undefined ? <DeltaHint pct={stat.deltaPct} /> : undefined}
-                />
-              </Reveal>
-            ))}
-          </div>
+      <Reveal delay={0.02} className="dashboard-tooltip-layer relative">
+        <UnifiedMetricsPanel stats={stats} />
+      </Reveal>
 
-          <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1.25fr)_minmax(360px,1fr)]">
-            <Reveal delay={0.08} className="h-full">
-              <MoneyActivityChart bars={exportData?.trendBars ?? trendBars} />
-            </Reveal>
+      <div className="grid min-w-0 gap-3 sm:gap-4">
+        <div className={`grid min-w-0 gap-3 ${hasTopArticles ? "lg:grid-cols-[minmax(0,2.125fr)_minmax(18rem,1fr)]" : ""}`}>
+          <Reveal delay={0.06} className="h-full">
+            <MoneyActivityChart bars={exportData?.trendBars ?? trendBars} />
+          </Reveal>
 
-            {topArticles.length > 0 && (
-              <Reveal delay={0.1} className="h-full">
-                <TopArticlesPodium articles={topArticles} />
-              </Reveal>
-            )}
-          </div>
-
-          {breakdown && breakdown.slices.length > 0 && (
-            <Reveal delay={0.12}>
-              <Card className="p-3.5">
-                <div>
-                  <h2 className="text-base font-semibold">Earnings breakdown</h2>
-                </div>
-                <div className="mt-3 grid gap-3 lg:grid-cols-[minmax(0,0.65fr)_minmax(0,1.35fr)]">
-                  <InsightTile value={<CountUp value={breakdown.avgPerRead} format={formatUsdDisplay} />} caption="Average earned per agent read" />
-                  <div className="flex min-w-0 items-center overflow-hidden rounded-lg border border-[var(--line)] bg-white p-3.5">
-                    <Donut slices={breakdown.slices} centerValue={breakdown.totalEarned} centerLabel="Total earned" showCenter={false} size={142} stroke={18} />
-                  </div>
-                </div>
-              </Card>
+          {hasTopArticles && (
+            <Reveal delay={0.09} className="h-full">
+              <TopArticlesPodium articles={topArticles} />
             </Reveal>
           )}
-
-          <div className="grid gap-3 lg:grid-cols-2">
-            <PaymentActivityRows rows={paymentRows} />
-            <ArticleRows rows={articleRows} />
-          </div>
         </div>
 
-        <aside className="grid w-full gap-3 self-start xl:sticky xl:top-5">
-          <WalletCard wallet={wallet} />
-        </aside>
+        {hasBreakdown && (
+          <Reveal delay={0.12} className="h-full">
+            <EarningsBreakdown breakdown={breakdown!} />
+          </Reveal>
+        )}
+
+        <div className="grid items-start gap-3 lg:grid-cols-2">
+          <PaymentActivityRows rows={paymentRows} />
+          <ArticleRows rows={articleRows} />
+        </div>
       </div>
+
+      <PayoutConnectionDialog open={payoutOpen} onClose={() => setPayoutOpen(false)} wallet={wallet} />
     </div>
   );
 }
 
-/** A deliberately simple loading shimmer — a few calm placeholder blocks that
-    echo the dashboard's shape (stat row, two content cards, two lists, wallet)
-    without trying to pixel-match it. No rigid min-width tracks, so it can't
-    overflow, and generous spacing keeps it from feeling cramped. */
+function UnifiedMetricsPanel({ stats }: { stats: DashboardOverviewStat[] }) {
+  return (
+    <Card className="grid min-h-[126px] overflow-visible sm:grid-cols-2 xl:grid-cols-4">
+      {stats.map((stat, index) => (
+        <div
+          key={stat.label}
+          className={`dashboard-metric-cell relative flex min-w-0 flex-col justify-between px-4 py-3.5 sm:px-5 ${metricDividerClass(index)}`}
+          data-dashboard-metric={stat.label}
+        >
+          <div className="flex items-start justify-between gap-2">
+            <span className="text-[0.72rem] font-medium text-[var(--muted)]">{stat.label}</span>
+            {stat.deltaPct !== undefined && <MetricTrend value={stat.deltaPct} />}
+          </div>
+          <div className="mt-3 text-[1.45rem] font-semibold leading-none tracking-[-0.035em] tabular-nums">
+            <CountUp value={stat.value} format={stat.format} />
+          </div>
+          <div className="mt-3 flex min-h-4 items-end justify-between gap-2">
+            {stat.context && <span className="text-[0.68rem] leading-4 text-[var(--quiet)]">{stat.context}</span>}
+            {stat.sparklineValues && stat.sparklineValues.length > 1 && (
+              <div className="ml-auto w-16 opacity-55">
+                <Sparkline
+                  values={stat.sparklineValues}
+                  labels={stat.sparklineLabels}
+                  metricLabel={stat.sparklineMetricLabel ?? stat.label}
+                  details={stat.sparklineDetails}
+                  formatValue={stat.format}
+                  height={20}
+                  strokeWidth={1}
+                />
+              </div>
+            )}
+          </div>
+        </div>
+      ))}
+    </Card>
+  );
+}
+
+function metricDividerClass(index: number) {
+  if (index === 0) return "";
+  if (index === 1) return "border-t border-[var(--line)] sm:border-l sm:border-t-0";
+  if (index === 2) return "border-t border-[var(--line)] xl:border-l xl:border-t-0";
+  return "border-t border-[var(--line)] sm:border-l xl:border-l xl:border-t-0";
+}
+
+/** A deliberately simple loading shimmer that follows the loaded overview's
+    major geometry without trying to pixel-match every data state. */
 export function OverviewSkeleton({ refreshing = false }: { refreshing?: boolean }) {
   return (
     <div className="grid gap-4">
@@ -215,104 +239,221 @@ export function OverviewSkeleton({ refreshing = false }: { refreshing?: boolean 
         }
       />
 
-      <div className="grid min-w-0 gap-3 xl:grid-cols-[minmax(0,1fr)_minmax(0,300px)]">
-        {/* main column */}
-        <div className="grid min-w-0 gap-3">
-          {/* stat tiles */}
-          <div className="grid gap-3 sm:grid-cols-3">
-            {Array.from({ length: 3 }).map((_, i) => (
-              <Card key={i} className="grid min-h-[108px] content-between gap-6 p-4">
-                <Skeleton className="h-3.5 w-20" />
-                <Skeleton className="h-7 w-28" />
-              </Card>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i} className="grid min-h-[108px] content-between gap-6 p-4">
+            <Skeleton className="h-3.5 w-20" />
+            <Skeleton className="h-7 w-28" />
+          </Card>
+        ))}
+      </div>
+
+      <div className="grid min-w-0 gap-3 lg:grid-cols-[minmax(0,1.25fr)_minmax(19rem,1fr)]">
+        <Card className="min-h-[20rem] p-4">
+          <Skeleton className="h-4 w-36" />
+          <div className="mt-6 flex h-[12rem] items-end gap-2">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <Skeleton key={i} className="flex-1" rounded="rounded" />
             ))}
           </div>
-
-          {/* chart + secondary */}
-          <div className="grid min-w-0 gap-3 lg:grid-cols-2">
-            <Card className="min-h-[13rem] p-4">
-              <Skeleton className="h-4 w-36" />
-              <div className="mt-6 flex h-[9rem] items-end gap-2">
-                {Array.from({ length: 12 }).map((_, i) => (
-                  <Skeleton key={i} className="flex-1" rounded="rounded" />
-                ))}
+        </Card>
+        <Card className="min-h-[20rem] p-4 sm:p-5">
+          <Skeleton className="h-4 w-28" />
+          <div className="mt-5 grid grid-cols-3 items-end gap-2 sm:gap-3">
+            {["h-20", "h-28", "h-16"].map((height, i) => (
+              <div key={i} className="grid gap-3">
+                <Skeleton className={`${height} w-full`} rounded="rounded-t-lg" />
+                <Skeleton className="mx-auto h-3 w-4/5" />
+                <Skeleton className="mx-auto h-2.5 w-3/5" />
               </div>
-            </Card>
-            <Card className="min-h-[13rem] p-4">
-              <Skeleton className="h-4 w-28" />
-              <div className="mt-6 grid gap-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="h-12 w-full" rounded="rounded-lg" />
-                ))}
-              </div>
-            </Card>
-          </div>
-
-          {/* list cards */}
-          <div className="grid min-w-0 gap-3 lg:grid-cols-2">
-            {[0, 1].map((card) => (
-              <Card key={card} className="p-4">
-                <Skeleton className="h-4 w-40" />
-                <div className="mt-5 grid gap-4">
-                  {Array.from({ length: 4 }).map((_, i) => (
-                    <div key={i} className="flex items-center justify-between gap-4">
-                      <Skeleton className="h-3.5 w-40" />
-                      <Skeleton className="h-3.5 w-12" />
-                    </div>
-                  ))}
-                </div>
-              </Card>
             ))}
           </div>
+        </Card>
+      </div>
+
+      <Card className="min-h-[12rem] p-4">
+        <Skeleton className="h-4 w-36" />
+        <div className="mt-6 grid grid-cols-[minmax(0,1fr)_7rem] items-center gap-6">
+          <Skeleton className="h-24 w-full" rounded="rounded-lg" />
+          <Skeleton className="aspect-square w-full" rounded="rounded-full" />
         </div>
+      </Card>
 
-        {/* wallet sidebar */}
-        <aside className="min-w-0">
-          <Card className="p-4">
-            <Skeleton className="h-4 w-32" />
-            <div className="mt-5 grid gap-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full" rounded="rounded-lg" />
+      <Card className="min-h-[10rem] p-4">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="mt-5 h-20 w-full" rounded="rounded-lg" />
+      </Card>
+
+      <div className="grid min-w-0 gap-3 lg:grid-cols-2">
+        {[0, 1].map((card) => (
+          <Card key={card} className="p-4">
+            <Skeleton className="h-4 w-40" />
+            <div className="mt-5 grid gap-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center justify-between gap-4">
+                  <Skeleton className="h-3.5 w-40" />
+                  <Skeleton className="h-3.5 w-12" />
+                </div>
               ))}
             </div>
           </Card>
-        </aside>
+        ))}
       </div>
     </div>
   );
 }
 
-const PODIUM_LABELS = ["1st", "2nd", "3rd"] as const;
+const PODIUM_STYLES = [
+  {
+    rank: 1,
+    top: "#fff0c4",
+    front: "#f7d77e",
+    side: "#dfac43",
+    badge: "#9c660d",
+    line: "#ecc767",
+    height: "4.25rem",
+  },
+  {
+    rank: 2,
+    top: "#ffffff",
+    front: "#f1f2f4",
+    side: "#d5d8dc",
+    badge: "#969aa2",
+    line: "#e4e6e9",
+    height: "4.25rem",
+  },
+  {
+    rank: 3,
+    top: "#fff0e4",
+    front: "#efcba9",
+    side: "#d79c68",
+    badge: "#b67534",
+    line: "#e9c8ad",
+    height: "4.25rem",
+  },
+] as const;
 
 function TopArticlesPodium({ articles }: { articles: NonNullable<DashboardOverviewProps["topArticles"]> }) {
-  const podiumOrder = articles.length === 3 ? [articles[1], articles[0], articles[2]] : articles;
-  return (
-    <Card className="flex h-full min-h-[13rem] flex-col overflow-hidden p-3.5">
-      <h2 className="text-base font-semibold">Top articles</h2>
-      <div className="mt-3 grid flex-1 grid-cols-3 items-end gap-2">
-        {podiumOrder.map((article) => {
-          const rank = articles.indexOf(article);
-          const label = PODIUM_LABELS[rank] ?? PODIUM_LABELS[2];
-          const content = (
-            <>
-              <span className="grid h-8 w-8 place-items-center rounded-full border border-[var(--river-line)] bg-[var(--river-pale)] text-xs font-bold text-[var(--river-deep)]">
-                {label}
-              </span>
-              <span className="mt-3 truncate text-sm font-semibold leading-snug">{article.title}</span>
-              <span className="mt-auto pt-3 text-sm font-semibold tabular-nums">{article.earnings}</span>
-            </>
-          );
+  const ranked = articles.slice(0, 6);
+  const leaders = ranked.slice(0, 3);
+  const runners = ranked.slice(3, 6);
+  const podiumOrder = leaders.length === 3 ? [leaders[1], leaders[0], leaders[2]] : leaders.length === 2 ? [leaders[1], leaders[0]] : leaders;
+  const podiumGridClass = leaders.length === 1
+    ? "mx-auto w-full max-w-32 grid-cols-1"
+    : leaders.length === 2
+      ? "mx-auto w-full max-w-64 grid-cols-2"
+      : "grid-cols-3";
+  const total = ranked.reduce((sum, article) => sum + (article.value ?? 0), 0);
 
-          const height = rank === 0 ? "min-h-[10.75rem]" : rank === 1 ? "min-h-[9.75rem]" : "min-h-[9rem]";
-          const className = `flex min-w-0 flex-col rounded-lg border border-[var(--line)] bg-white p-3 ${height}`;
-          return article.href ? (
-            <Link key={article.id ?? article.title} href={article.href} className={className}>
-              {content}
-            </Link>
-          ) : (
-            <div key={article.id ?? article.title} className={className}>{content}</div>
-          );
+  return (
+    <Card className="flex h-full min-h-[20rem] flex-col overflow-hidden p-4 sm:p-5">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 className="dashboard-panel-title">Top articles</h2>
+        <span className="dashboard-meta">Ranked by earnings</span>
+      </div>
+      <ol className={`mt-4 grid items-stretch gap-1.5 sm:gap-2 ${podiumGridClass}`} aria-label="Top three articles">
+        {podiumOrder.map((article) => {
+          const rank = leaders.indexOf(article);
+          const style = PODIUM_STYLES[rank] ?? PODIUM_STYLES[2];
+          const percentage = total > 0 && article.value !== undefined ? (article.value / total) * 100 : null;
+          return <PodiumPlace key={article.id ?? article.title} article={article} style={style} percentage={percentage} />;
         })}
+      </ol>
+      {runners.length > 0 && (
+        <ol className="mt-3 divide-y divide-[var(--line)] border-t border-[var(--line)]" aria-label="Fourth through sixth place">
+          {runners.map((article, index) => {
+            const rank = index + 4;
+            const percentage = total > 0 && article.value !== undefined ? (article.value / total) * 100 : null;
+            return <PodiumRunner key={article.id ?? article.title} article={article} rank={rank} percentage={percentage} />;
+          })}
+        </ol>
+      )}
+    </Card>
+  );
+}
+
+function PodiumPlace({
+  article,
+  style,
+  percentage,
+}: {
+  article: NonNullable<DashboardOverviewProps["topArticles"]>[number];
+  style: typeof PODIUM_STYLES[number];
+  percentage: number | null;
+}) {
+  const content = (
+    <>
+      <div className="relative flex h-[5.5rem] w-full items-end" aria-hidden="true">
+        <div className="relative w-full" style={{ height: style.height }}>
+          <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 56" preserveAspectRatio="none">
+            <polygon points="1,9 9,1 99,1 91,9" fill={style.top} stroke={style.line} vectorEffect="non-scaling-stroke" />
+            <polygon points="1,9 91,9 91,55 1,55" fill={style.front} stroke={style.line} vectorEffect="non-scaling-stroke" />
+            <polygon points="91,9 99,1 99,47 91,55" fill={style.side} stroke={style.line} vectorEffect="non-scaling-stroke" />
+          </svg>
+          <span
+            className="absolute left-[46%] top-[57%] grid h-7 w-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white/45 text-[0.68rem] font-semibold tabular-nums text-white"
+            style={{ backgroundColor: style.badge, zIndex: "var(--dashboard-z-content)" }}
+          >
+            {style.rank}
+          </span>
+        </div>
+      </div>
+      <div className="grid min-w-0 grid-rows-[2.1rem_1rem] px-0.5 pt-2 text-center">
+        <p className="line-clamp-2 w-full text-[0.72rem] font-semibold leading-[1.05rem] text-[var(--ink)] group-hover:text-[var(--river-deep)]" title={article.title}>
+          {article.title}
+        </p>
+        <p className="mt-0.5 flex items-center justify-center gap-1.5 text-[0.64rem] tabular-nums text-[var(--quiet)]">
+          <span className="font-medium text-[var(--muted)]">{article.earnings}</span>
+          {percentage !== null && <span>{percentage.toFixed(1)}%</span>}
+        </p>
+      </div>
+    </>
+  );
+  const className = "group relative flex w-full min-w-0 flex-col justify-end rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--river-line)]";
+  return (
+    <li className="flex min-w-0 self-stretch items-end">
+      {article.href ? <Link href={article.href} className={className}>{content}</Link> : <div className={className}>{content}</div>}
+    </li>
+  );
+}
+
+function PodiumRunner({
+  article,
+  rank,
+  percentage,
+}: {
+  article: NonNullable<DashboardOverviewProps["topArticles"]>[number];
+  rank: number;
+  percentage: number | null;
+}) {
+  const content = (
+    <>
+      <span className="w-7 text-[0.62rem] font-medium tracking-[0.08em] tabular-nums text-[var(--quiet)]" data-rank>{String(rank).padStart(2, "0")}</span>
+      <span className="min-w-0 truncate text-xs font-medium" title={article.title}>{article.title}</span>
+      <span className="text-right text-[0.68rem] font-medium tabular-nums">{article.earnings}</span>
+      <span className="text-right text-[0.66rem] tabular-nums text-[var(--quiet)]">{percentage === null ? "—" : `${percentage.toFixed(1)}%`}</span>
+    </>
+  );
+  const className = "group grid min-h-10 min-w-0 grid-cols-[1.75rem_minmax(0,1fr)_4.5rem_3rem] items-center gap-2 rounded-[5px] px-1.5 transition-[background-color,color] duration-150 hover:bg-black/[0.025] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--river-line)] motion-reduce:transition-none";
+  return (
+    <li className="min-w-0">
+      {article.href ? <Link href={article.href} className={className}>{content}</Link> : <div className={className}>{content}</div>}
+    </li>
+  );
+}
+
+function EarningsBreakdown({ breakdown }: { breakdown: NonNullable<DashboardOverviewProps["breakdown"]> }) {
+  return (
+    <Card className="h-full min-h-[13rem] overflow-hidden">
+      <div className="flex items-end justify-between gap-3 px-4 pb-1 pt-3.5">
+        <div>
+          <h2 className="dashboard-panel-title">Earnings breakdown</h2>
+          <div className="dashboard-meta mt-0.5">All-time settled earnings by article</div>
+        </div>
+        <div className="text-sm font-semibold tabular-nums">{breakdown.totalEarned}</div>
+      </div>
+      <div className="flex min-h-[10rem] items-center px-4 pb-4 pt-2">
+        <Donut slices={breakdown.slices} centerValue={breakdown.totalEarned} centerLabel="All-time earnings" size={132} stroke={12} />
       </div>
     </Card>
   );
@@ -321,20 +462,25 @@ function TopArticlesPodium({ articles }: { articles: NonNullable<DashboardOvervi
 function MoneyActivityChart({ bars }: { bars: TrendBar[] }) {
   const total = bars.reduce((sum, bar) => sum + bar.value, 0);
   const paidDays = bars.filter((bar) => bar.value > 0).length;
+  const hasMeaningfulData = paidDays > 0;
   return (
-    <Card className="flex h-full min-h-[13rem] flex-col overflow-hidden p-3.5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-base font-semibold">Earnings activity</h2>
-          <p className="text-xs text-[var(--muted)]">Daily earnings from agent reads</p>
+    <Card className="flex h-full min-h-[20rem] flex-col overflow-hidden">
+      <div className="flex flex-col gap-3 px-4 pb-1 pt-3.5 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+        <div className="min-w-0">
+          <h2 className="dashboard-panel-title text-balance">Earnings activity</h2>
+          <p className="dashboard-meta mt-0.5">Last {bars.length} days · settled agent reads</p>
         </div>
         <div className="text-right">
           <div className="text-sm font-semibold tabular-nums">{formatUsdDisplay(total)}</div>
-          <div className="text-[0.68rem] text-[var(--muted)]">{paidDays} paid days</div>
+          <div className="dashboard-meta">{paidDays} paid days</div>
         </div>
       </div>
-      <div className="mt-3 min-h-0 flex-1">
-        <TrendChart bars={bars} formatValue={formatUsdDisplay} height={132} />
+      <div className="flex min-h-0 flex-1 px-3 pb-3 pt-3 sm:px-4 sm:pb-4">
+        {hasMeaningfulData ? (
+          <TrendChart bars={bars} formatValue={formatUsdDisplay} height="100%" />
+        ) : (
+          <ChartEmptyState title="Waiting for first settled read" description="Earnings activity appears after an agent completes a paid read." />
+        )}
       </div>
     </Card>
   );
@@ -364,12 +510,31 @@ const CONTENT_PROTECTION_RULES = [
 ];
 
 export function ContentProtectionPolicy() {
+  const [open, setOpen] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("pointerdown", onPointerDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      window.removeEventListener("pointerdown", onPointerDown);
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
   return (
-    <div className="group relative">
-      <button type="button" className="button button-secondary text-sm">
+    <div ref={rootRef} className="relative">
+      <button type="button" onClick={() => setOpen((current) => !current)} className="button button-secondary text-sm" aria-expanded={open} aria-controls="content-protection-popover">
         <ShieldCheck size={15} aria-hidden="true" /> Content Protection Policy
       </button>
-      <div className="pointer-events-none absolute right-0 top-[calc(100%+0.5rem)] z-40 w-[min(27rem,calc(100vw-2rem))] translate-y-1 rounded-[10px] bg-white p-4 text-left opacity-0 transition group-hover:pointer-events-auto group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:pointer-events-auto group-focus-within:translate-y-0 group-focus-within:opacity-100">
+      {open && <div id="content-protection-popover" className="absolute right-0 top-[calc(100%+0.5rem)] w-[min(27rem,calc(100vw-2rem))] rounded-[10px] border border-[var(--line)] bg-white p-4 text-left" style={{ zIndex: "var(--dashboard-z-popover)" }}>
         <div className="flex items-center gap-2.5">
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-[var(--surface-muted)] text-[var(--muted)]">
             <ShieldCheck size={17} aria-hidden="true" />
@@ -382,7 +547,7 @@ export function ContentProtectionPolicy() {
         <div className="mt-4 divide-y divide-[var(--line)] border-y border-[var(--line)]">
           {CONTENT_PROTECTION_RULES.map((rule) => (
             <div key={rule.title} className="grid grid-cols-[18px_1fr] gap-3 py-3">
-              <CheckCircle2 size={16} className="mt-0.5 text-[var(--river)]" aria-hidden="true" />
+              <CheckCircle2 size={16} className="mt-0.5 text-[var(--ink)]" aria-hidden="true" />
               <div>
                 <div className="text-sm font-semibold">{rule.title}</div>
                 <p className="mt-1 text-xs leading-5 text-[var(--muted)]">{rule.detail}</p>
@@ -390,7 +555,7 @@ export function ContentProtectionPolicy() {
             </div>
           ))}
         </div>
-      </div>
+      </div>}
     </div>
   );
 }
@@ -400,13 +565,13 @@ function PaymentActivityRows({ rows }: { rows: DashboardOverviewPaymentRow[] }) 
     <Card>
       <CardHeader
         title={
-          <span className="inline-flex items-center gap-2">
+          <span className="inline-flex items-center gap-2 text-sm font-medium">
             Recent payment activity
             {rows.length > 0 && <LiveDot />}
           </span>
         }
         action={
-          <Link href="/dashboard/earnings" className="text-sm text-[var(--river-deep)] hover:underline">
+          <Link href="/dashboard/earnings" className="text-sm text-[var(--muted)] transition-colors hover:text-[var(--ink)] hover:underline">
             View all
           </Link>
         }
@@ -420,20 +585,27 @@ function PaymentActivityRows({ rows }: { rows: DashboardOverviewPaymentRow[] }) 
           />
         </div>
       ) : (
-        <ul className="grid gap-1 px-2 pb-2">
-          {rows.slice(0, 5).map((row) => (
-            <li key={row.id} className="flex min-w-0 items-center justify-between gap-4 rounded-lg px-3 py-2.5 hover:bg-[var(--surface-muted)]">
-              <div className="min-w-0">
-                <div className="truncate font-medium">{row.title}</div>
-                <div className="truncate text-xs text-[var(--muted)]">{row.meta}</div>
-              </div>
-              <div className="flex shrink-0 items-center gap-3">
-                <span className="font-semibold">{row.amount}</span>
-                <PaymentStatusPill status={row.status} />
-              </div>
-            </li>
-          ))}
-        </ul>
+        <>
+          <div className="px-4 pt-1 sm:px-5">
+            <div className="grid grid-cols-[minmax(0,1fr)_auto_auto] gap-3 border-b border-[var(--line)] pb-2 text-[0.63rem] font-medium uppercase tracking-[0.08em] text-[var(--quiet)]">
+              <span>Article</span>
+              <span className="text-right">Amount</span>
+              <span className="w-[4.7rem] text-right">Status</span>
+            </div>
+          </div>
+          <ul className="divide-y divide-[var(--line)] px-4 pb-1 sm:px-5">
+            {rows.slice(0, 5).map((row) => (
+              <li key={row.id} className="grid min-h-[56px] min-w-0 grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 py-2.5">
+                <div className="min-w-0">
+                  <div className="truncate text-[0.82rem] font-medium">{row.title}</div>
+                  <div className="mt-0.5 text-[0.7rem] text-[var(--muted)]">{row.occurredAt}</div>
+                </div>
+                <span className="shrink-0 text-right text-sm font-semibold tabular-nums">{row.amount}</span>
+                <span className="w-[4.7rem] shrink-0 text-right"><PaymentStatusText status={row.status} /></span>
+              </li>
+            ))}
+          </ul>
+        </>
       )}
     </Card>
   );
@@ -443,15 +615,15 @@ function ArticleRows({ rows }: { rows: DashboardOverviewArticleRow[] }) {
   return (
     <Card>
       <CardHeader
-        title="Your articles"
+        title={<span className="text-sm font-medium">Your articles</span>}
         action={
-          <Link href="/dashboard/articles" className="text-sm text-[var(--river-deep)] hover:underline">
+          <Link href="/dashboard/articles" className="text-sm text-[var(--muted)] transition-colors hover:text-[var(--ink)] hover:underline">
             Manage
           </Link>
         }
       />
       {rows.length === 0 ? (
-        <div className="grid gap-4 p-5">
+        <div className="p-5">
           <EmptyState
             icon={<FileText size={22} aria-hidden="true" />}
             title="No articles yet"
@@ -462,123 +634,159 @@ function ArticleRows({ rows }: { rows: DashboardOverviewArticleRow[] }) {
               </Link>
             }
           />
-          <WriterObjectionInline
-            context={{ page: "dashboard", section: "articles_empty_state", flow_step: "empty_dashboard", authenticated: true }}
-          />
         </div>
       ) : (
-        <ul className="grid gap-1 px-2 pb-2">
+        <>
+          <div className="hidden px-4 pt-1 sm:block sm:px-5">
+            <div className="grid grid-cols-[minmax(0,1fr)_4.5rem_4.75rem_4.5rem] gap-3 border-b border-[var(--line)] pb-2 text-[0.63rem] font-medium uppercase tracking-[0.08em] text-[var(--quiet)]">
+              <span>Article</span>
+              <span className="text-right">Words</span>
+              <span className="text-right">Earned</span>
+              <span className="text-right">Status</span>
+            </div>
+          </div>
+          <ul className="divide-y divide-[var(--line)] px-4 pb-1 sm:px-5">
           {rows.slice(0, 4).map((row) => {
             const content = (
               <>
                 <div className="min-w-0">
-                  <div className="truncate font-medium">{row.title}</div>
-                  <div className="truncate text-xs text-[var(--muted)]">{row.meta}</div>
+                  <div className="truncate text-[0.82rem] font-medium">{row.title}</div>
+                  <div className="mt-0.5 text-[0.7rem] text-[var(--muted)] sm:hidden">{row.wordsRead.toLocaleString()} words read</div>
                 </div>
-                <div className="flex shrink-0 items-center gap-3">
-                  <span className="text-sm font-semibold">{row.earnings}</span>
-                  <ArticleStatePill state={row.state} />
-                </div>
+                <span className="hidden text-right text-xs tabular-nums text-[var(--muted)] sm:block">{row.wordsRead.toLocaleString()}</span>
+                <span className="text-right text-sm font-semibold tabular-nums">{row.earnings}</span>
+                <span className="w-[4.5rem] text-right"><ArticleStateText state={row.state} /></span>
               </>
             );
             return (
               <li key={row.id} className="min-w-0">
                 {row.href ? (
-                  <Link href={row.href} className="flex min-w-0 flex-col gap-3 rounded-lg px-3 py-2.5 hover:bg-[var(--surface-muted)] sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                  <Link href={row.href} className="grid min-h-[56px] min-w-0 grid-cols-[minmax(0,1fr)_4.75rem_4.5rem] items-center gap-3 py-2.5 sm:grid-cols-[minmax(0,1fr)_4.5rem_4.75rem_4.5rem]">
                     {content}
                   </Link>
                 ) : (
-                  <div className="flex min-w-0 flex-col gap-3 rounded-lg px-3 py-2.5 hover:bg-[var(--surface-muted)] sm:flex-row sm:items-center sm:justify-between sm:gap-4">{content}</div>
+                  <div className="grid min-h-[56px] min-w-0 grid-cols-[minmax(0,1fr)_4.75rem_4.5rem] items-center gap-3 py-2.5 sm:grid-cols-[minmax(0,1fr)_4.5rem_4.75rem_4.5rem]">{content}</div>
                 )}
               </li>
             );
           })}
-        </ul>
-      )}
-    </Card>
-  );
-}
-
-function WalletCard({ wallet }: { wallet: DashboardOverviewWallet }) {
-  return (
-    <Card className="p-3.5">
-      <h2 className="text-base font-semibold">Payout connection</h2>
-      {!wallet.address ? (
-        <div className="mt-3">
-          <EmptyState
-            icon={<Wallet2 size={22} aria-hidden="true" />}
-            title="Connection not confirmed"
-            description="Confirm the secure Privy connection Rubicon uses for payouts."
-            action={
-              <Link href={wallet.settingsHref ?? "/dashboard/settings"} className="button button-primary text-sm">
-                Confirm connection
-              </Link>
-            }
-          />
-        </div>
-      ) : (
-        <>
-          <p className="mt-1 text-xs leading-relaxed text-[var(--muted)]">Withdrawable earnings are sent through your confirmed payout connection.</p>
-          <div className="mt-3 grid grid-cols-1 gap-2">
-          <div className="rounded-lg border border-[var(--line)] bg-white p-3.5">
-              <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Wallet address</div>
-              <div className="mt-2 flex items-center gap-2">
-                <span className="mono text-sm font-medium">{wallet.addressLabel ?? shortWallet(wallet.address)}</span>
-                {wallet.onCopy && (
-                  <button type="button" onClick={wallet.onCopy} className="text-[var(--muted)] transition-colors hover:text-[var(--ink)]" aria-label="Copy address">
-                    <Copy size={14} aria-hidden="true" />
-                  </button>
-                )}
-                {wallet.copied && <span className="text-xs text-[var(--green)]">copied</span>}
-              </div>
-              {wallet.explorerHref && (
-                <a
-                  href={wallet.explorerHref}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-2 inline-flex items-center gap-1 text-xs text-[var(--river-deep)] hover:underline"
-                >
-                  View on {wallet.explorerLabel ?? "explorer"} <ExternalLink size={11} aria-hidden="true" />
-                </a>
-              )}
-            </div>
-
-            <div className="rounded-lg border border-[var(--line)] bg-white p-3.5">
-              <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Network</div>
-              <div className="mt-2 flex items-center gap-2 text-sm font-medium">
-                <Link2 size={14} className="text-[var(--muted)]" aria-hidden="true" /> {wallet.networkName ?? "Not connected"}
-              </div>
-              {wallet.chainId && <div className="mt-2 text-xs text-[var(--muted)]">Chain ID {wallet.chainId}</div>}
-            </div>
-
-            <div className="rounded-lg border border-[var(--line)] bg-white p-3.5">
-              <div className="flex items-center justify-between gap-3">
-                <div className="mono text-[0.66rem] uppercase tracking-[0.14em] text-[var(--muted)]">Balance</div>
-                <div className="flex shrink-0 items-center gap-3">
-                  {wallet.onWithdraw && (
-                    <button type="button" onClick={wallet.onWithdraw} className="inline-flex items-center gap-1 text-xs font-medium text-[var(--river-deep)] hover:underline">
-                      <ArrowRight size={12} aria-hidden="true" /> Withdraw
-                    </button>
-                  )}
-                  {wallet.onRefresh && (
-                    <button type="button" onClick={wallet.onRefresh} className="inline-flex items-center gap-1 text-xs text-[var(--river-deep)] hover:underline">
-                      <RefreshCw size={12} aria-hidden="true" /> Refresh
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div className="mt-2 text-2xl font-semibold tracking-[-0.01em]">{wallet.balanceLabel ?? <span className="text-base font-normal text-[var(--muted)]">Loading...</span>}</div>
-              {wallet.balanceError && <div className="mt-1 text-xs text-[var(--muted)]">{wallet.balanceError}</div>}
-            </div>
-          </div>
+          </ul>
         </>
       )}
     </Card>
   );
 }
 
+const PAYMENT_STATUS_TONES: Record<AnalyticsSettlementStatus, string> = {
+  not_applicable: "text-[var(--muted)] before:bg-[#8b8b91]",
+  pending: "text-[#8a5a10] before:bg-[#c78a22]",
+  confirmed: "text-[#176342] before:bg-[#2e8a61]",
+  completed: "text-[#176342] before:bg-[#2e8a61]",
+  failed: "text-[#963b37] before:bg-[#c5221c]",
+};
+
+function PaymentStatusText({ status }: { status: AnalyticsSettlementStatus }) {
+  const label = status === "not_applicable" ? "Free" : status[0].toUpperCase() + status.slice(1);
+  return <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${PAYMENT_STATUS_TONES[status]} before:h-1.5 before:w-1.5 before:rounded-full before:content-['']`}>{label}</span>;
+}
+
+const ARTICLE_STATE_TONES: Record<ArticleState, string> = {
+  draft: "text-[var(--muted)] before:bg-[#8b8b91]",
+  live: "text-[#176342] before:bg-[#2e8a61]",
+  paused: "text-[#8a5a10] before:bg-[#c78a22]",
+  archived: "text-[var(--muted)] before:bg-[#8b8b91]",
+  deleted: "text-[#963b37] before:bg-[#c5221c]",
+};
+
+function ArticleStateText({ state }: { state: ArticleState }) {
+  return <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${ARTICLE_STATE_TONES[state]} before:h-1.5 before:w-1.5 before:rounded-full before:content-['']`}>{state[0].toUpperCase() + state.slice(1)}</span>;
+}
+
+function PayoutConnectionDialog({ open, onClose, wallet }: { open: boolean; onClose: () => void; wallet: DashboardOverviewWallet }) {
+  return (
+    <DashboardDialog open={open} onClose={onClose} labelledBy="payout-connection-title" className="max-w-xl overflow-hidden">
+      <div className="flex items-center justify-between gap-3 border-b border-[var(--line)] px-4 py-3.5 sm:px-5">
+        <h2 id="payout-connection-title" className="dashboard-panel-title">Payout connection</h2>
+        <div className="flex items-center gap-3">
+          <PayoutConnectionActions wallet={wallet} onClose={onClose} />
+          <button type="button" onClick={onClose} className="dashboard-icon-button" aria-label="Close payout connection">
+            <X size={16} aria-hidden="true" />
+          </button>
+        </div>
+      </div>
+      <PayoutConnectionDetails wallet={wallet} />
+    </DashboardDialog>
+  );
+}
+
+function PayoutConnectionActions({ wallet, onClose }: { wallet: DashboardOverviewWallet; onClose: () => void }) {
+  if (!wallet.address) return null;
+  return (
+    <div className="flex items-center gap-3">
+      {wallet.onWithdraw && (
+        <button
+          type="button"
+          onClick={() => {
+            onClose();
+            wallet.onWithdraw?.();
+          }}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-[var(--ink)] hover:underline"
+        >
+          <ArrowRight size={14} aria-hidden="true" /> Withdraw
+        </button>
+      )}
+      {wallet.onRefresh && (
+        <button type="button" onClick={wallet.onRefresh} className="inline-flex items-center gap-1.5 text-sm text-[var(--muted)] transition-colors hover:text-[var(--ink)] hover:underline">
+          <RefreshCw size={14} aria-hidden="true" /> Refresh
+        </button>
+      )}
+    </div>
+  );
+}
+
+function PayoutConnectionDetails({ wallet }: { wallet: DashboardOverviewWallet }) {
+  if (!wallet.address) {
+    return (
+      <div className="p-5">
+        <EmptyState
+          icon={<Wallet2 size={22} aria-hidden="true" />}
+          title="Payouts not set up yet"
+          description="Set up the secure account your earnings land in. It takes one click — Rubicon handles the rest."
+          action={<Link href={wallet.settingsHref ?? "/dashboard/settings#payout-connection"} className="button button-primary text-sm">Set up payouts</Link>}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-2.5 p-3 sm:p-4">
+      <p className="px-1 text-xs text-[var(--muted)]">Withdrawable earnings are sent through your confirmed payout connection.</p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="rounded-lg border border-[var(--line)] bg-white p-3.5">
+          <div className="text-xs font-medium text-[var(--muted)]">Wallet address</div>
+          <div className="mt-2 flex items-center gap-2">
+            <span className="mono text-sm font-medium">{wallet.addressLabel ?? shortWallet(wallet.address)}</span>
+            {wallet.onCopy && <button type="button" onClick={wallet.onCopy} className="text-[var(--muted)] transition-colors hover:text-[var(--ink)]" aria-label="Copy address"><Copy size={14} aria-hidden="true" /></button>}
+            {wallet.copied && <span className="text-xs text-[var(--green)]">copied</span>}
+          </div>
+          {wallet.explorerHref && <a href={wallet.explorerHref} target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-xs text-[var(--muted)] transition-colors hover:text-[var(--ink)] hover:underline">View on {wallet.explorerLabel ?? "explorer"} <ExternalLink size={11} aria-hidden="true" /></a>}
+        </div>
+        <div className="rounded-lg border border-[var(--line)] bg-white p-3.5">
+          <div className="text-xs font-medium text-[var(--muted)]">Balance</div>
+          <div className="mt-2 text-2xl font-semibold tracking-[-0.01em]">{wallet.balanceLabel ?? <span className="text-base font-normal text-[var(--muted)]">Loading...</span>}</div>
+          {wallet.balanceError && <div className="mt-1 text-xs text-[var(--muted)]">{wallet.balanceError}</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const PRESET_BACKGROUNDS = [
-  { src: "/export-card-painting.png", label: "Painting" },
+  { src: "/export-card-michele-1.jpeg", label: "Harbor" },
+  { src: "/export-card-michele-2.jpg", label: "Orchard" },
+  { src: "/export-card-michele-3.jpg", label: "Lakeside" },
+  { src: "/export-card-michele-4.jpg", label: "Village path" },
+  { src: "/export-card-painting.png", label: "Pond" },
 ];
 
 const PRESET_THUMB_SIZE = 44;
@@ -597,8 +805,7 @@ function ExportButton({
   const [open, setOpen] = useState(false);
   const [pngUrl, setPngUrl] = useState<string | null>(null);
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "blocked">("idle");
-  const [celebrationKey, setCelebrationKey] = useState(0);
-  const [bgImage, setBgImage] = useState<string>("/export-card-painting.png");
+  const [bgImage, setBgImage] = useState<string>("/export-card-michele-1.jpeg");
   const [customBgs, setCustomBgs] = useState<{ src: string; label: string }[]>([]);
   const [loadedPresets, setLoadedPresets] = useState<{ src: string; label: string }[]>([]);
 
@@ -675,7 +882,6 @@ function ExportButton({
       }
       await navigator.clipboard.write([new ClipboardItem({ "image/png": dataUrlToPngBlob(pngUrl) })]);
       setCopyStatus("copied");
-      setCelebrationKey((key) => key + 1);
     } catch {
       setCopyStatus("blocked");
     }
@@ -688,37 +894,16 @@ function ExportButton({
         <Download size={15} aria-hidden="true" /> Export card
       </button>
 
-      <AnimatePresence>
-        {open && (
-        <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => setOpen(false)}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Export card"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.16, ease: [0.23, 1, 0.32, 1] }}
-        >
-          <motion.div
-            className="relative w-full max-w-md overflow-hidden rounded-[var(--radius-lg)] bg-white"
-            onClick={(e) => e.stopPropagation()}
-            initial={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(8px) scale(0.97)" }}
-            animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
-            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, transform: "translateY(4px) scale(0.985)" }}
-            transition={{ duration: 0.22, ease: [0.23, 1, 0.32, 1] }}
-          >
-            <AnimatePresence>{copyStatus === "copied" && <CopyCelebration key={celebrationKey} />}</AnimatePresence>
-            <div className="flex items-center justify-between border-b border-[var(--faint)] px-5 py-4">
+      <DashboardDialog open={open} onClose={() => setOpen(false)} labelledBy="export-card-title" className="max-w-md overflow-hidden">
+            <div className="flex items-center justify-between px-5 pb-3 pt-4">
               <div>
-                <h2 className="text-base font-semibold">Export card</h2>
-                <p className="text-xs text-[var(--muted)]">X-ready PNG · 1080 × 1350</p>
+                <h2 id="export-card-title" className="text-base font-semibold">Export card</h2>
+                <p className="dashboard-meta">X-ready PNG · 1080 × 1350</p>
               </div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="text-[var(--muted)] transition-colors hover:text-[var(--ink)]"
+                className="dashboard-icon-button"
                 aria-label="Close"
               >
                 <X size={18} aria-hidden="true" />
@@ -726,8 +911,8 @@ function ExportButton({
             </div>
 
             {allBackgrounds.length > 0 && (
-              <div className="border-b border-[var(--faint)] px-5 py-3">
-                <p className="mb-2 text-[11px] font-medium uppercase tracking-[0.6px] text-[var(--muted)]">Background</p>
+              <div className="mx-5 rounded-xl bg-[var(--surface-muted)] px-3 py-3">
+                <p className="mb-2 text-xs font-medium text-[var(--muted)]">Background</p>
                 <div className="flex flex-wrap gap-2">
                   {allBackgrounds.map((bg) => (
                     <button
@@ -735,10 +920,10 @@ function ExportButton({
                       type="button"
                       onClick={() => setBgImage(bg.src)}
                       title={bg.label}
-                      className={`relative overflow-hidden rounded-[var(--radius-ui)] transition-all ${
+                      className={`relative overflow-hidden rounded-[var(--radius-ui)] border-2 transition-[border-color,transform] ${
                         bgImage === bg.src
-                          ? "ring-2 ring-[var(--river)] ring-offset-1"
-                          : "ring-1 ring-[var(--line)] hover:ring-[var(--muted)]"
+                          ? "border-[var(--ink)]"
+                          : "border-[var(--line)] hover:border-[var(--muted)]"
                       }`}
                       style={{ width: PRESET_THUMB_SIZE, height: PRESET_THUMB_SIZE }}
                     >
@@ -805,54 +990,17 @@ function ExportButton({
                 <p className="mt-2 text-xs text-[var(--muted)]">This browser blocked image clipboard access. Use Download as a fallback.</p>
               )}
             </div>
-          </motion.div>
-        </motion.div>
-        )}
-      </AnimatePresence>
+      </DashboardDialog>
     </>
   );
 }
 
-const CONFETTI = [
-  [-150, -250, -38, "#246bfd"], [-112, -292, 42, "#18181b"], [-72, -235, -76, "#62c79b"],
-  [-36, -320, 88, "#f0b64d"], [0, -260, -28, "#246bfd"], [34, -305, 64, "#e46d67"],
-  [70, -242, -54, "#18181b"], [108, -286, 36, "#62c79b"], [148, -252, -82, "#f0b64d"],
-  [-132, -190, 70, "#e46d67"], [-88, -214, -44, "#246bfd"], [-48, -178, 92, "#62c79b"],
-  [46, -196, -62, "#f0b64d"], [88, -218, 52, "#e46d67"], [130, -188, -96, "#246bfd"],
-] as const;
-
-function CopyCelebration() {
-  const reduceMotion = useReducedMotion();
-  if (reduceMotion) return null;
-
-  return (
-    <div className="pointer-events-none absolute inset-0 z-20 overflow-hidden" aria-hidden="true">
-      {CONFETTI.map(([x, y, rotate, color], index) => (
-        <motion.span
-          key={`${x}-${y}`}
-          className="absolute bottom-[62px] left-1/2 h-2.5 w-1.5 rounded-[2px]"
-          style={{ background: color }}
-          initial={{ opacity: 0, transform: "translate(-50%, 0) rotate(0deg) scale(0.92)" }}
-          animate={{
-            opacity: [0, 1, 1, 0],
-            transform: [
-              "translate(-50%, 0) rotate(0deg) scale(0.92)",
-              `translate(calc(-50% + ${x * 0.45}px), ${y * 0.58}px) rotate(${rotate * 0.45}deg) scale(1)`,
-              `translate(calc(-50% + ${x}px), ${y}px) rotate(${rotate}deg) scale(0.96)`,
-              `translate(calc(-50% + ${x * 1.08}px), ${y + 72}px) rotate(${rotate + 80}deg) scale(0.9)`,
-            ],
-          }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.78, delay: index * 0.018, ease: [0.23, 1, 0.32, 1] }}
-        />
-      ))}
-    </div>
-  );
-}
-
 /**
- * Renders the share card as a portrait poster with subtle laurel art, a close
- * earnings card, and a white metrics panel.
+ * Renders the share card as "The Crossing" — a flat portrait poster split by a
+ * single full-bleed rule. Above the line the chosen artwork runs edge to edge
+ * (the writing); below it a dark typographic ledger records what agents paid.
+ * The earnings figure straddles the rule, crossing from art into income — the
+ * Rubicon moment the brand is named for.
  */
 async function renderExportPng({
   username,
@@ -887,20 +1035,32 @@ async function renderExportPng({
   ctx.textBaseline = "alphabetic";
 
   const INK = "#0b0d12";
-  const SOFT_BLUE = "#b7caee";
-  const GRAPHITE = "#26303d";
-  const PATH = "#dbe4f2";
-  const LABEL = "#9aa2af";
-  const MUTE = "#6b7280";
-  const GREEN_BG = "#e7f6ec";
-  const GREEN = "#1f8f4e";
-  const FONT = '"Helvetica Neue", Arial, sans-serif';
+  const PAPER = "#ffffff";
+  const MUTED = "rgba(11,13,18,0.55)";
+  const QUIET = "rgba(11,13,18,0.34)";
+  const HAIRLINE = "rgba(11,13,18,0.12)";
+  const RIVER = "#7f9cd4";
+  const GAIN = "#1f8f4e";
+
+  // The dashboard's own faces (Hanken Grotesk / JetBrains Mono) carry into the
+  // artifact; wait for them so the canvas doesn't rasterize a fallback.
+  try {
+    await document.fonts.ready;
+  } catch {
+    // fonts API unavailable — the fallback stacks below still render
+  }
+  const SANS = resolveCanvasFontStack("--font-sans", '"Helvetica Neue", Arial, sans-serif');
+  const MONO = resolveCanvasFontStack("--font-mono", '"SFMono-Regular", Menlo, monospace');
+
   const [painting, logo, avatar] = await Promise.all([
     loadImage(bgImage),
     loadImage("/Header-logo_b.svg"),
     avatarUrl ? loadImage(avatarUrl) : Promise.resolve(null),
   ]);
-  const trendValues = trendBars.map((bar) => bar.value);
+
+  const MARGIN = 64;
+  const RIGHT = W - MARGIN;
+  const CROSSING = 620;
 
   // letterSpacing lands on the 2d context in modern browsers but isn't yet in
   // the TS DOM lib; cast so the source type-checks.
@@ -908,291 +1068,226 @@ async function renderExportPng({
     (ctx as unknown as { letterSpacing: string }).letterSpacing = v;
   };
 
-  const panel = (x: number, y: number, w: number, h: number, r: number, fill: string, stroke?: string) => {
-    ctx.fillStyle = fill;
-    roundRect(ctx, x, y, w, h, r);
-    ctx.fill();
-    if (stroke) {
-      ctx.strokeStyle = stroke;
-      ctx.lineWidth = 1.5;
-      ctx.stroke();
-    }
-  };
-
-  const drawLabel = (text: string, x: number, y: number, align: CanvasTextAlign = "left") => {
-    ctx.font = `700 13px ${FONT}`;
-    ctx.fillStyle = LABEL;
+  const monoLabel = (
+    text: string,
+    x: number,
+    y: number,
+    { align = "left" as CanvasTextAlign, color = MUTED, size = 13, tracking = "2.5px" } = {},
+  ) => {
+    ctx.font = `700 ${size}px ${MONO}`;
+    ctx.fillStyle = color;
     ctx.textAlign = align;
-    setSpacing("1.4px");
+    setSpacing(tracking);
     ctx.fillText(text, x, y);
     setSpacing("0px");
     ctx.textAlign = "left";
   };
 
-  // ---- backdrop (darkened atmospheric glass) -----------------------------
-  ctx.fillStyle = "#13261f";
+  const hairline = (y: number) => {
+    ctx.strokeStyle = HAIRLINE;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(MARGIN, y);
+    ctx.lineTo(RIGHT, y);
+    ctx.stroke();
+  };
+
+  // ---- upper bank: the artwork, vivid and full-bleed ----------------------
+  ctx.fillStyle = PAPER;
   ctx.fillRect(0, 0, W, H);
   if (painting) {
-    drawBlurredCover(ctx, painting, -52, -52, W + 104, H + 104, { alpha: 0.88, saturate: 0.88 });
+    drawCoverImage(ctx, painting, 0, 0, W, CROSSING);
   }
-  ctx.fillStyle = "rgba(5, 24, 18, 0.46)";
-  ctx.fillRect(0, 0, W, H);
 
-  // ---- top bar -----------------------------------------------------------
+  // Keep a dark wash under the white top chrome for legibility.
+  const chrome = ctx.createLinearGradient(0, 0, 0, 200);
+  chrome.addColorStop(0, "rgba(6,9,14,0.55)");
+  chrome.addColorStop(1, "rgba(6,9,14,0)");
+  ctx.fillStyle = chrome;
+  ctx.fillRect(0, 0, W, 200);
+
   // The source SVG has a roomy square artboard. Crop to its horizontal lockup
-  // so the real white Rubicon mark sits cleanly in the original top-left spot.
+  // so the real white Rubicon mark sits cleanly in the top-left corner.
   if (logo) {
     // drawImage uses the SVG's intrinsic 2000px dimensions, not its 1500-unit
     // viewBox. These source coordinates account for that 4/3 scale.
-    ctx.drawImage(logo, 110, 760, 1740, 470, 64, 54, 210, 57);
+    ctx.drawImage(logo, 110, 760, 1740, 470, MARGIN, 54, 210, 57);
   }
+  monoLabel("PROOF OF PAID READS", RIGHT, 90, { align: "right", color: "rgba(255,255,255,0.85)" });
 
-  // ---- earn card ---------------------------------------------------------
-  const cardW = 860;
-  const backOffset = 14;
-  // Center the combined silhouette: the backing extends left while the black
-  // card extends the same distance farther right.
-  const cardX = (W - cardW) / 2 + backOffset / 2;
-  const cardY = 190;
-  const cardH = 860;
-  const cardR = 48;
+  // ---- lower bank: the ledger ----------------------------------------------
+  ctx.fillStyle = PAPER;
+  ctx.fillRect(0, CROSSING, W, H - CROSSING);
 
-  // A translucent pearlescent backing picks up the atmospheric colors beneath
-  // it while remaining a crisp, axis-aligned second sheet.
-  const glassX = cardX - backOffset;
-  const glassY = cardY - backOffset;
-  const glass = ctx.createLinearGradient(glassX, glassY, glassX + cardW, glassY + cardH);
-  glass.addColorStop(0, "rgba(255,255,255,0.28)");
-  glass.addColorStop(0.42, "rgba(226,239,235,0.1)");
-  glass.addColorStop(1, "rgba(255,255,255,0.16)");
-  ctx.fillStyle = glass;
-  roundRect(ctx, glassX, glassY, cardW, cardH, cardR);
-  ctx.fill();
-  ctx.strokeStyle = "rgba(255,255,255,0.42)";
-  ctx.lineWidth = 1.5;
+  // The crossing itself — the only full-bleed rule on the card.
+  ctx.strokeStyle = "rgba(11,13,18,0.8)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(0, CROSSING);
+  ctx.lineTo(W, CROSSING);
   ctx.stroke();
 
-  ctx.fillStyle = "#0b0d12";
-  roundRect(ctx, cardX, cardY, cardW, cardH, cardR);
-  ctx.fill();
+  // ---- the figure, mid-crossing --------------------------------------------
+  // Sized to fit the column and drawn last across both banks.
+  setSpacing("-4px");
+  let amountSize = 192;
+  ctx.font = `800 ${amountSize}px ${SANS}`;
+  while (amountSize > 96 && ctx.measureText(amount).width > RIGHT - MARGIN) {
+    amountSize -= 8;
+    ctx.font = `800 ${amountSize}px ${SANS}`;
+  }
+  ctx.fillStyle = INK;
+  ctx.fillText(amount, MARGIN - 4, CROSSING + 96);
+  setSpacing("0px");
 
-  // The result is the character of the artifact: one large proof statement,
-  // with the amount shown only once rather than repeated inside the receipt.
-  ctx.fillStyle = "#ffffff";
-  ctx.font = `700 66px ${FONT}`;
-  ctx.fillText(amount, cardX + 42, cardY + 92);
-  const amountW = ctx.measureText(amount).width;
-  ctx.font = `600 27px ${FONT}`;
-  ctx.fillText("earned from agent reads", cardX + 42 + amountW + 20, cardY + 92);
-
-  // ---- paid-read receipt -------------------------------------------------
-  const innerX = cardX + 32;
-  const innerW = cardW - 64;
-  const innerY = cardY + 142;
-  const innerH = 500;
-  panel(innerX, innerY, innerW, innerH, 32, "#ffffff");
-
-  const pad = 40;
-  const cx = innerX + pad;
-  const cr = innerX + innerW - pad;
-
-  panel(cr - 106, innerY + 29, 106, 32, 10, "#f1f3f6");
-  ctx.fillStyle = GRAPHITE;
-  ctx.font = `700 14px ${FONT}`;
-  ctx.textAlign = "center";
-  ctx.fillText("14 days live", cr - 53, innerY + 50);
-  ctx.textAlign = "left";
-
-  // Positive growth is useful proof. Negative growth is intentionally omitted
+  // Positive growth is useful proof; negative growth is intentionally omitted
   // from a share artifact rather than turning it into a dashboard report.
-  const delta = computeTrendDelta(trendValues);
-  if (delta.up) {
-    ctx.font = `700 14px ${FONT}`;
-    const pillTextW = ctx.measureText(delta.label).width;
-    const pillH = 32;
-    const pillW = pillTextW + 24;
-    const pillTop = innerY + 29;
-    const pillX = cr - 116 - pillW;
-    panel(pillX, pillTop, pillW, pillH, 10, GREEN_BG);
-    ctx.fillStyle = GREEN;
-    ctx.fillText(delta.label, pillX + 12, pillTop + pillH / 2 + 5);
+  const delta = computeTrendDelta(trendBars.map((bar) => bar.value));
+  const captionY = CROSSING + 152;
+  monoLabel("EARNED FROM AGENT READS", MARGIN, captionY, { size: 15 });
+  if (delta.up && delta.label.startsWith("+")) {
+    ctx.font = `700 15px ${MONO}`;
+    setSpacing("2.5px");
+    const captionW = ctx.measureText("EARNED FROM AGENT READS").width;
+    setSpacing("0px");
+    monoLabel(`${delta.label} VS PRIOR WEEK`, MARGIN + captionW + 28, captionY, { size: 15, color: GAIN });
   }
 
-  // A literal transaction path gives the proof-of-earnings artifact its own
-  // visual language: the agent read becomes paid words, then creator earnings.
-  const pathY = innerY + 138;
-  const pathXs = [cx + 18, (cx + cr) / 2, cr - 18];
-  ctx.strokeStyle = PATH;
-  ctx.lineWidth = 3;
-  ctx.beginPath();
-  ctx.moveTo(pathXs[0], pathY);
-  ctx.lineTo(pathXs[2], pathY);
-  ctx.stroke();
-
-  // Small directional notches make the transaction sequence read left-to-right.
-  [
-    (pathXs[0] + pathXs[1]) / 2,
-    (pathXs[1] + pathXs[2]) / 2,
-  ].forEach((x) => {
-    ctx.fillStyle = "#aebed8";
-    ctx.beginPath();
-    ctx.moveTo(x - 4, pathY - 6);
-    ctx.lineTo(x + 5, pathY);
-    ctx.lineTo(x - 4, pathY + 6);
-    ctx.closePath();
-    ctx.fill();
-  });
-
-  const receiptSteps = [
-    { value: reads, label: `agent ${reads === "1" ? "read" : "reads"}` },
-    { value: words, label: "paid words" },
-    { value: amount, label: "earned" },
+  // ---- ruled ledger rows ----------------------------------------------------
+  const rows = [
+    { label: "AGENT READS", value: reads, size: 32 },
+    { label: "PAID WORDS", value: words, size: 32 },
+    { label: "TOP PAID ARTICLE", value: topArticle, size: 26 },
   ];
-  receiptSteps.forEach((step, index) => {
-    const x = pathXs[index];
-    ctx.fillStyle = index === 1 ? SOFT_BLUE : GRAPHITE;
-    ctx.beginPath();
-    ctx.arc(x, pathY, 9, 0, Math.PI * 2);
-    ctx.fill();
-
+  const ledgerTop = 838;
+  const rowH = 72;
+  rows.forEach((row, i) => {
+    const top = ledgerTop + i * rowH;
+    hairline(top);
+    monoLabel(row.label, MARGIN, top + 45);
+    ctx.font = `600 ${row.size}px ${SANS}`;
     ctx.fillStyle = INK;
-    ctx.font = `800 30px ${FONT}`;
-    ctx.textAlign = "center";
-    ctx.fillText(step.value, x, pathY - 28);
-    ctx.fillStyle = MUTE;
-    ctx.font = `600 14px ${FONT}`;
-    ctx.fillText(step.label, x, pathY + 36);
+    ctx.textAlign = "right";
+    ctx.fillText(truncateForCanvas(ctx, row.value, RIGHT - MARGIN - 260), RIGHT, top + 46);
+    ctx.textAlign = "left";
   });
-  ctx.textAlign = "left";
+  hairline(ledgerTop + rows.length * rowH);
 
-  // divider
-  const div1 = innerY + 208;
-  ctx.strokeStyle = "rgba(15,22,38,0.08)";
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(cx, div1);
-  ctx.lineTo(cr, div1);
-  ctx.stroke();
+  // ---- 14-day strip ---------------------------------------------------------
+  const stripLabelY = 1102;
+  monoLabel("EARNINGS ACTIVITY", MARGIN, stripLabelY, { color: QUIET });
+  monoLabel("LAST 14 DAYS", RIGHT, stripLabelY, { align: "right", color: QUIET });
+  drawEarningsStrip(ctx, MARGIN, 1126, RIGHT - MARGIN, 78, trendBars, {
+    paid: RIVER,
+    peak: INK,
+    rest: "rgba(11,13,18,0.22)",
+    baseline: HAIRLINE,
+    labels: QUIET,
+    mono: MONO,
+  });
 
-  // activity chart
-  const chartY = div1 + 42;
-  const chartH = innerY + innerH - chartY - 42;
-  drawLabel("EARNINGS ACTIVITY", cx, chartY);
-  drawExportMoneyChart(ctx, cx, chartY + 34, cr - cx, chartH - 34, trendBars, GRAPHITE);
-
-  // Top article breaks out of the receipt into the dark creator-owned surface.
-  const articleY = innerY + innerH + 48;
-  ctx.fillStyle = SOFT_BLUE;
-  roundRect(ctx, cardX + 42, articleY - 14, 6, 88, 3);
-  ctx.fill();
-  ctx.fillStyle = "rgba(255,255,255,0.58)";
-  ctx.font = `600 15px ${FONT}`;
-  ctx.fillText("Top paid article", cardX + 66, articleY);
-  ctx.fillStyle = "#ffffff";
-  ctx.font = `700 34px ${FONT}`;
-  ctx.fillText(truncateForCanvas(ctx, topArticle, cardW - 108), cardX + 66, articleY + 42);
-  ctx.fillStyle = "rgba(255,255,255,0.58)";
-  ctx.font = `500 15px ${FONT}`;
-  ctx.fillText(`${words} words accessed by agents`, cardX + 66, articleY + 72);
-
-  // ---- footer ------------------------------------------------------------
-  // Personal creator signature replaces the wallet address entirely.
-  const footY = H - 70;
-  const avatarSize = 42;
-  const avatarX = 64;
-  const avatarY = footY - avatarSize + 10;
-  ctx.font = `700 17px ${FONT}`;
-  const usernameW = ctx.measureText(username).width;
-  const identityX = avatarX - 12;
-  const identityY = avatarY - 6;
-  const identityW = avatarSize + usernameW + 50;
-  const identityGlass = ctx.createLinearGradient(identityX, identityY, identityX + identityW, identityY + 54);
-  identityGlass.addColorStop(0, "rgba(255,255,255,0.22)");
-  identityGlass.addColorStop(1, "rgba(255,255,255,0.08)");
-  ctx.fillStyle = identityGlass;
-  roundRect(ctx, identityX, identityY, identityW, 54, 27);
-  ctx.fill();
-  ctx.strokeStyle = "rgba(255,255,255,0.32)";
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
+  // ---- signature ------------------------------------------------------------
+  const avatarSize = 44;
+  const avatarY = 1258;
+  const footBaseline = avatarY + 29;
   ctx.save();
   ctx.beginPath();
-  ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
+  ctx.arc(MARGIN + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2, 0, Math.PI * 2);
   ctx.clip();
   if (avatar) {
-    drawCoverImage(ctx, avatar, avatarX, avatarY, avatarSize, avatarSize);
+    drawCoverImage(ctx, avatar, MARGIN, avatarY, avatarSize, avatarSize);
   } else {
-    ctx.fillStyle = "rgba(255,255,255,0.92)";
-    ctx.fillRect(avatarX, avatarY, avatarSize, avatarSize);
     ctx.fillStyle = INK;
-    ctx.font = `700 17px ${FONT}`;
+    ctx.fillRect(MARGIN, avatarY, avatarSize, avatarSize);
+    ctx.fillStyle = PAPER;
+    ctx.font = `700 18px ${SANS}`;
     ctx.textAlign = "center";
-    ctx.fillText(username.replace(/^@/, "").slice(0, 1).toUpperCase(), avatarX + avatarSize / 2, avatarY + 27);
+    ctx.fillText(username.replace(/^@/, "").slice(0, 1).toUpperCase(), MARGIN + avatarSize / 2, avatarY + 29);
+    ctx.textAlign = "left";
   }
   ctx.restore();
-  ctx.strokeStyle = "rgba(255,255,255,0.34)";
+  ctx.strokeStyle = "rgba(11,13,18,0.18)";
   ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.arc(avatarX + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2 - 0.5, 0, Math.PI * 2);
+  ctx.arc(MARGIN + avatarSize / 2, avatarY + avatarSize / 2, avatarSize / 2 - 0.5, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.textAlign = "left";
-  ctx.fillStyle = "rgba(255,255,255,0.9)";
-  ctx.font = `700 17px ${FONT}`;
-  ctx.fillText(username, avatarX + avatarSize + 14, footY - 5);
+  ctx.fillStyle = INK;
+  ctx.font = `700 21px ${SANS}`;
+  ctx.fillText(username, MARGIN + avatarSize + 16, footBaseline);
+
   // bottom-right: creator-first Rubicon attribution
   const lead = "Creating on ";
-  ctx.font = `500 18px ${FONT}`;
+  ctx.font = `500 18px ${SANS}`;
   const leadW = ctx.measureText(lead).width;
-  ctx.font = `700 18px ${FONT}`;
+  ctx.font = `700 18px ${SANS}`;
   const brandW = ctx.measureText("Rubicon").width;
-  const startX = W - 64 - leadW - brandW;
-  ctx.fillStyle = "rgba(255,255,255,0.68)";
-  ctx.font = `500 18px ${FONT}`;
-  ctx.fillText(lead, startX, footY);
-  ctx.fillStyle = "#ffffff";
-  ctx.font = `700 18px ${FONT}`;
-  ctx.fillText("Rubicon", startX + leadW, footY);
+  const attributionX = RIGHT - leadW - brandW;
+  ctx.fillStyle = MUTED;
+  ctx.font = `500 18px ${SANS}`;
+  ctx.fillText(lead, attributionX, footBaseline);
+  ctx.fillStyle = INK;
+  ctx.font = `700 18px ${SANS}`;
+  ctx.fillText("Rubicon", attributionX + leadW, footBaseline);
 
   return canvas.toDataURL("image/png");
 }
 
-function drawExportMoneyChart(
+/**
+ * Resolves a next/font CSS variable (its hashed family names) into a stack the
+ * canvas 2d context can use, falling back when the variable isn't available.
+ */
+function resolveCanvasFontStack(cssVar: string, fallback: string) {
+  if (typeof window === "undefined") return fallback;
+  const families = getComputedStyle(document.documentElement).getPropertyValue(cssVar).trim();
+  return families ? `${families}, ${fallback}` : fallback;
+}
+
+/**
+ * The 14-day trend as a scan strip: one thin stroke per day rising from a
+ * shared baseline — days agents paid read like marks on a scanned code, quiet
+ * days stay as countable notches, and the best day is picked out in white.
+ */
+function drawEarningsStrip(
   ctx: CanvasRenderingContext2D,
   x: number,
   y: number,
   width: number,
   height: number,
   bars: TrendBar[],
-  blue: string,
+  colors: { paid: string; peak: string; rest: string; baseline: string; labels: string; mono: string },
 ) {
   const data = normalizeFourteenBars(bars);
   const max = Math.max(...data.map((bar) => bar.value), 0);
-  const labelGap = 30;
-  const barsH = height - labelGap;
-  const count = data.length;
-  const gap = 7;
-  const barW = (width - gap * (count - 1)) / count;
-  const radius = Math.min(4, barW / 2);
+  const peak = data.reduce((best, bar, i) => (bar.value > data[best].value ? i : best), 0);
+  const baseY = y + height;
+  const slot = width / data.length;
+  const strokeW = 7;
 
   data.forEach((bar, i) => {
-    if (bar.value <= 0 || max <= 0) return;
-    const barH = Math.max(4, (bar.value / max) * barsH);
-    const bx = x + i * (barW + gap);
-    const by = y + barsH - barH;
-    ctx.fillStyle = blue;
-    roundRect(ctx, bx, by, barW, barH, radius);
+    const bx = x + i * slot + (slot - strokeW) / 2;
+    if (bar.value <= 0 || max <= 0) {
+      ctx.fillStyle = colors.rest;
+      ctx.fillRect(bx, baseY - 5, strokeW, 5);
+      return;
+    }
+    const strokeH = Math.max(10, (bar.value / max) * height);
+    ctx.fillStyle = i === peak ? colors.peak : colors.paid;
+    roundRect(ctx, bx, baseY - strokeH, strokeW, strokeH, 3);
     ctx.fill();
   });
 
-  ctx.fillStyle = "#6b7280";
-  ctx.font = "600 11px \"Helvetica Neue\", Arial, sans-serif";
-  ctx.textAlign = "left";
-  ctx.fillText(data[0]?.label ?? "", x, y + height);
-  ctx.textAlign = "center";
-  ctx.fillText(data[Math.floor(data.length / 2)]?.label ?? "", x + width / 2, y + height);
+  ctx.strokeStyle = colors.baseline;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x, baseY + 2);
+  ctx.lineTo(x + width, baseY + 2);
+  ctx.stroke();
+
+  ctx.fillStyle = colors.labels;
+  ctx.font = `700 12px ${colors.mono}`;
+  ctx.fillText(data[0]?.label ?? "", x, baseY + 28);
   ctx.textAlign = "right";
-  ctx.fillText(data[data.length - 1]?.label ?? "", x + width, y + height);
+  ctx.fillText(data[data.length - 1]?.label ?? "", x + width, baseY + 28);
   ctx.textAlign = "left";
 }
 
@@ -1221,86 +1316,6 @@ function drawCoverImage(
   const sourceX = (image.width - sourceW) / 2;
   const sourceY = (image.height - sourceH) / 2;
   ctx.drawImage(image, sourceX, sourceY, sourceW, sourceH, x, y, width, height);
-}
-
-/**
- * Draws an image scaled to cover the target box, but heavily softened into a
- * frosted-glass backdrop. Rather than relying on `ctx.filter = "blur(...)"`
- * (which several browsers silently ignore for `drawImage`), it downsamples the
- * cover crop to a tiny offscreen canvas and upscales it with smoothing — a
- * cheap, reliable blur. A small `ctx.filter` pass on top, where supported,
- * smooths the bilinear upscale and desaturates for the glassy look.
- */
-function drawBlurredCover(
-  ctx: CanvasRenderingContext2D,
-  image: HTMLImageElement,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  { alpha = 1, saturate = 1 }: { alpha?: number; saturate?: number } = {},
-) {
-  // cover-fit crop math (matches drawCoverImage)
-  const coverScale = Math.max(width / image.width, height / image.height);
-  const sourceW = width / coverScale;
-  const sourceH = height / coverScale;
-  const sourceX = (image.width - sourceW) / 2;
-  const sourceY = (image.height - sourceH) / 2;
-
-  // Intermediate ~1/30 of the target width reproduces roughly a 30px blur once
-  // upscaled, smearing brushstrokes into soft glassy color fields.
-  const smallW = Math.max(2, Math.round(width / 30));
-  const smallH = Math.max(2, Math.round(height / 30));
-  const small = document.createElement("canvas");
-  small.width = smallW;
-  small.height = smallH;
-  const sctx = small.getContext("2d");
-  if (!sctx) {
-    drawCoverImage(ctx, image, x, y, width, height);
-    return;
-  }
-  sctx.imageSmoothingEnabled = true;
-  sctx.imageSmoothingQuality = "high";
-  sctx.drawImage(image, sourceX, sourceY, sourceW, sourceH, 0, 0, smallW, smallH);
-
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
-  ctx.filter = `blur(8px) saturate(${saturate})`;
-  ctx.drawImage(small, 0, 0, smallW, smallH, x, y, width, height);
-  ctx.restore();
-}
-
-function drawTintedImage(
-  ctx: CanvasRenderingContext2D,
-  image: HTMLImageElement,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  color: string,
-  alpha: number,
-  source?: { x: number; y: number; width: number; height: number },
-) {
-  const buffer = document.createElement("canvas");
-  buffer.width = Math.max(1, Math.round(width * 2));
-  buffer.height = Math.max(1, Math.round(height * 2));
-  const bufferCtx = buffer.getContext("2d");
-  if (!bufferCtx) return;
-  bufferCtx.scale(2, 2);
-  if (source) {
-    bufferCtx.drawImage(image, source.x, source.y, source.width, source.height, 0, 0, width, height);
-  } else {
-    bufferCtx.drawImage(image, 0, 0, width, height);
-  }
-  bufferCtx.globalCompositeOperation = "source-in";
-  bufferCtx.fillStyle = color;
-  bufferCtx.fillRect(0, 0, width, height);
-  ctx.save();
-  ctx.globalAlpha = alpha;
-  ctx.drawImage(buffer, x, y, width, height);
-  ctx.restore();
 }
 
 /**
@@ -1354,27 +1369,6 @@ function loadImage(src: string): Promise<HTMLImageElement | null> {
     img.onerror = () => resolve(null);
     img.src = src;
   });
-}
-
-function DeltaHint({ pct, onDark = false }: { pct: number | null; onDark?: boolean }) {
-  if (pct === null) return null;
-  if (Math.abs(pct) < 1) {
-    return <span className="inline-flex rounded-full bg-[var(--surface-muted)] px-2.5 py-1 font-medium text-[var(--muted)]">Flat vs last week</span>;
-  }
-  const up = pct > 0;
-  const color = up
-    ? onDark
-      ? "bg-white/10 text-[var(--gain-on-dark)]"
-      : "bg-[#e8f6ef] text-[var(--gain)]"
-    : onDark
-      ? "bg-white/10 text-[var(--loss-on-dark)]"
-      : "bg-[#fde8e6] text-[var(--loss)]";
-  return (
-    <span className={`inline-flex rounded-full px-2.5 py-1 font-medium ${color}`}>
-      {up ? "+" : "−"}
-      {Math.abs(Math.round(pct))}% vs last week
-    </span>
-  );
 }
 
 function LiveDot() {

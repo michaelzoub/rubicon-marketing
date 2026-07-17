@@ -1,14 +1,16 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { DashboardAppPreview } from "./dashboard-app-preview";
-import { fade } from "./motion";
+import { ease } from "./motion";
 import { APP_URL } from "../analytics-links";
 import { trackMarketingCtaClicked } from "../analytics/events";
 
 export function CreatorsHero() {
+  const reduceMotion = useReducedMotion();
+
   return (
     <section
       className="creators-hero"
@@ -16,7 +18,13 @@ export function CreatorsHero() {
       data-analytics-section="creator_hero"
       data-analytics-section-index="0"
     >
-      <motion.div {...fade} className="container creators-hero-inner">
+      <motion.div
+        className="container creators-hero-inner"
+        initial={reduceMotion ? false : { opacity: 0, y: 14 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.2 }}
+        transition={reduceMotion ? { duration: 0.16 } : { duration: 0.52, ease }}
+      >
         <div className="creators-hero-copy">
           <h1 id="creators-hero-heading" className="creators-hero-title">
             <span className="landing-section-title-emphasis">Creators</span>{" "}

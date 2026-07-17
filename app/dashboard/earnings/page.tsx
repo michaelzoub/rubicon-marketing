@@ -3,6 +3,7 @@
 import { Activity } from "lucide-react";
 import { useRubiconQuery } from "@/lib/rubicon/hooks";
 import { formatUsd } from "@/lib/rubicon/pricing";
+import { convertPaymentStatus } from "@/lib/analytics/types";
 import {
   Card,
   CardHeader,
@@ -94,7 +95,7 @@ export default function EarningsPage() {
                     <td className="px-5 py-3">{formatUsd(row.grossAmount)}</td>
                     <td className="px-5 py-3 text-[var(--muted)]">$0</td>
                     <td className="px-5 py-3 font-medium">{formatUsd(row.creatorAmount)}</td>
-                    <td className="px-5 py-3"><PaymentStatusPill status={row.status} /></td>
+                    <td className="px-5 py-3"><PaymentStatusPill status={convertPaymentStatus(row.status)} /></td>
                     <td className="px-5 py-3 mono text-xs text-[var(--muted)]">{row.settlementReference ?? "—"}</td>
                   </tr>
                 ))}

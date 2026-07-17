@@ -19,12 +19,13 @@ import {
 import { usePrivy } from "@privy-io/react-auth";
 import { useRubiconQuery, type QueryResult } from "@/lib/rubicon/hooks";
 import { atomicToUsd, formatUsdAtomicDisplay, formatUsdDisplay, formatUsdNumber } from "@/lib/rubicon/pricing";
-import type { Article, PaymentActivity } from "@/lib/rubicon/types";
+import type { Article, PaymentActivity, PaymentStatus } from "@/lib/rubicon/types";
 import { ACTIVE_CHAIN } from "@/lib/chain";
 import { explorerAddressUrl, formatBalance, useNativeBalance } from "@/lib/onchain";
 import { WithdrawDialog } from "./_components/withdraw-dialog";
 import { CountUp, Donut, DONUT_COLORS, InsightTile, Reveal, type DonutSlice, type TrendBar } from "./_components/charts";
 import { ContentProtectionPolicy, DashboardOverviewContent, OverviewSkeleton, type DashboardOverviewProps } from "./_components/overview-content";
+import { convertPaymentStatus, type AnalyticsSettlementStatus } from "@/lib/analytics/types";
 import { SubstackOnboardingDialog } from "./_components/substack-onboarding-dialog";
 import {
   ArticleStatePill,
@@ -73,10 +74,6 @@ export default function OverviewPage() {
   const earningsSlices = useMemo(() => buildEarningsSlices(articles.data ?? []), [articles.data]);
   const hasBreakdown = earningsSlices.length > 0;
 
-  const avgPerRead =
-    (earnings.data?.agentReads ?? 0) > 0
-      ? atomicToUsd(earnings.data?.settledEarnings) / (earnings.data?.agentReads ?? 1)
-      : 0;
   const totalEarned = atomicToUsd(earnings.data?.settledEarnings);
 
   const weeklyDeltas = useMemo(() => buildWeeklyDeltas(activity.data ?? []), [activity.data]);
@@ -90,14 +87,14 @@ export default function OverviewPage() {
     const paymentRows = (activity.data ?? []).slice(0, 5).map((row) => ({
       id: row.id,
       title: row.articleTitle,
-      meta: `${formatRelative(row.date)} · ${row.wordsRead.toLocaleString()} words read`,
+      occurredAt: `${formatRelative(row.date)} · ${row.wordsRead.toLocaleString()} words read`,
       amount: formatUsdAtomicDisplay(row.creatorAmount),
-      status: row.status,
+      status: convertPaymentStatus(row.status),
     }));
     const articleRows = articleList.slice(0, 4).map((article) => ({
       id: article.id,
       title: article.title,
-      meta: `${article.usage.wordsRead.toLocaleString()} words read`,
+      wordsRead: article.usage.wordsRead,
       earnings: formatUsdAtomicDisplay(article.usage.earnings),
       state: article.state,
       href: `/dashboard/articles/${article.id}`,
@@ -125,10 +122,10 @@ export default function OverviewPage() {
         topArticle: earnings.data.topArticle?.title ?? null,
         trendBars,
       },
-      activityCalendar: buildActivityCalendar(activity.data ?? []),
       stats: [
-        { label: "Total earnings", value: totalEarned, format: formatUsdDisplay, deltaPct: weeklyDeltas.earnings },
-        { label: "Words read", value: earnings.data.wordsPaidFor ?? 0, format: formatInt, deltaPct: weeklyDeltas.words },
+        { label: "Total earnings", value: totalEarned, format: formatUsdDisplay, deltaPct: weeklyDeltas.earnings, context: "vs last week" },
+        { label: "Words read", value: earnings.data.wordsPaidFor ?? 0, format: formatInt, deltaPct: weeklyDeltas.words, context: "vs last week" },
+        { label: "Agent reads", value: earnings.data.agentReads ?? 0, format: formatInt, context: "vs last week" },
         { label: "Live articles", value: earnings.data.liveArticles ?? 0, format: formatInt },
       ],
       trendBars,
@@ -139,11 +136,11 @@ export default function OverviewPage() {
           id: article.id,
           title: article.title,
           earnings: formatUsdAtomicDisplay(article.usage.earnings),
+          value: atomicToUsd(article.usage.earnings),
           href: `/dashboard/articles/${article.id}`,
         })),
       breakdown: earningsSlices.length > 0
         ? {
-            avgPerRead,
             totalEarned: formatUsdAtomicDisplay(earnings.data.settledEarnings),
             slices: earningsSlices,
           }
@@ -163,7 +160,6 @@ export default function OverviewPage() {
   }, [
     activity.data,
     articles.data,
-    avgPerRead,
     earnings.data,
     earningsSlices,
     greeting,
@@ -418,7 +414,7 @@ function PaymentActivityCard({ activity }: { activity: QueryResult<PaymentActivi
               </div>
               <div className="flex items-center gap-3">
                 <span className="font-semibold">{formatUsdAtomicDisplay(row.creatorAmount)}</span>
-                <PaymentStatusPill status={row.status} />
+                <PaymentStatusPill status={convertPaymentStatus(row.status)} />
               </div>
             </li>
           ))}

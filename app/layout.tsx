@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Hanken_Grotesk, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
+import "./dashboard/dashboard.css";
 import "./marketing.css";
 import { AppProviders } from "./providers";
 import { AttributionCapture } from "./_components/analytics/attribution-capture";

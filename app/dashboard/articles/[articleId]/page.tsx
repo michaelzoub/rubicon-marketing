@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Archive, ArrowLeft, Eye, Pause, Play } from "lucide-react";
 import type { ArticleDetail } from "@/lib/rubicon/types";
+import { convertPaymentStatus } from "@/lib/analytics/types";
 import { useRubiconMutation, useRubiconQuery } from "@/lib/rubicon/hooks";
 import {
   atomicToUsd,
@@ -234,7 +235,7 @@ export default function ArticleDetailPage() {
                         <td className="px-5 py-3">{formatDate(row.date)}</td>
                         <td className="px-5 py-3">{row.wordsRead.toLocaleString()}</td>
                         <td className="px-5 py-3 font-medium">{formatUsd(row.creatorAmount)}</td>
-                        <td className="px-5 py-3"><PaymentStatusPill status={row.status} /></td>
+                        <td className="px-5 py-3"><PaymentStatusPill status={convertPaymentStatus(row.status)} /></td>
                         <td className="px-5 py-3 mono text-xs text-[var(--muted)]">{row.settlementReference ?? "—"}</td>
                       </tr>
                     ))}

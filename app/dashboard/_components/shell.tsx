@@ -273,6 +273,7 @@ export function DashboardFrame({
 
   return (
     <div
+      data-dashboard-root
       className={`dashboard-theme dashboard-canvas min-h-screen bg-[var(--surface-muted)] lg:grid ${
         sidebarOpen ? "lg:grid-cols-[208px_1fr]" : "lg:grid-cols-[56px_1fr]"
       }`}
@@ -405,26 +406,26 @@ function MobileBar({ onLogout, activePath }: { onLogout?: () => void; activePath
   const pathname = usePathname();
   const currentPath = activePath ?? pathname;
   return (
-    <div className="sticky top-0 z-30 border-b border-[var(--line)] bg-white/90 backdrop-blur lg:hidden">
+    <div className="dashboard-mobile-bar sticky top-0 z-30 border-b border-[var(--line)] bg-white/90 backdrop-blur lg:hidden">
       <div className="flex items-center justify-between px-5 py-3">
         <Link href="/" className="flex items-center" aria-label="Rubicon home">
           <RubiconBrand className="h-7" onLight src="/w_logo.svg" />
         </Link>
         {onLogout && (
-          <button type="button" onClick={onLogout} className="text-[var(--muted)]" aria-label="Sign out">
+          <button type="button" onClick={onLogout} className="dashboard-icon-button text-[var(--muted)]" aria-label="Sign out">
             <LogOut size={18} aria-hidden="true" />
           </button>
         )}
       </div>
-      <nav className="flex gap-1 overflow-x-auto px-3 pb-2" aria-label="Dashboard">
+      <nav className="dashboard-mobile-nav flex gap-1 overflow-x-auto px-3 pb-2" aria-label="Dashboard">
         {navSections.flatMap((section) => section.items).map((item) => {
           const active = item.exact ? currentPath === item.href : currentPath.startsWith(item.href);
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ${
-                active ? "bg-[var(--river-pale)] text-[var(--river-deep)]" : "text-[var(--muted)]"
+              className={`inline-flex min-h-10 items-center whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ${
+                active ? "bg-[var(--surface-muted)] text-[var(--ink)]" : "text-[var(--muted)]"
               }`}
             >
               {item.label}
