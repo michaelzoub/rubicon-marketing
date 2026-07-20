@@ -10,6 +10,7 @@ import { SiteHeader } from "./_components/site-header";
 import { LandingAgentsSection } from "./_components/marketing/landing-agents-section";
 import { DashboardAppPreview } from "./_components/marketing/dashboard-app-preview";
 import { LiveReadingAppPreview } from "./_components/marketing/live-reading-app-preview";
+import { RubiconAgentChat } from "./_components/marketing/agent-chat/agent-chat";
 function Hero() {
   return (
     <div className="landing-hero-content">
@@ -143,6 +144,7 @@ export default function Home() {
         <DashboardShowcase />
         <LandingAgentsSection />
         <ProductSection />
+        <RubiconAgentChat />
       </div>
       <SiteFooter />
     </>

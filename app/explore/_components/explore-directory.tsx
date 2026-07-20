@@ -33,10 +33,6 @@ function xAvatarUrl(username: string): string {
   return handle ? `https://unavatar.io/x/${encodeURIComponent(handle)}` : "";
 }
 
-function creatorAvatarSrc(creator: PublicCreator): string {
-  return creator.avatarUrl || xAvatarUrl(creator.username);
-}
-
 function xProfileUrl(username: string): string {
   const handle = username.replace(/^@/, "").trim();
   return handle ? `https://x.com/${encodeURIComponent(handle)}` : "";
@@ -166,7 +162,7 @@ function CreatorRoom({ creator, sort }: { creator: PublicCreator; sort: SortMode
   const readCount = totalReads(articles);
   const wordCount = totalWords(creator);
   const xArticleCount = xSourcedArticles(articles);
-  const avatarSrc = creatorAvatarSrc(creator);
+  const avatarSrc = xAvatarUrl(creator.username);
   const profileUrl = xProfileUrl(creator.username);
   return (
     <section id={`creator-${creator.id}`} className="explore-room">
@@ -194,18 +190,16 @@ function CreatorRoom({ creator, sort }: { creator: PublicCreator; sort: SortMode
           // eslint-disable-next-line @next/next/no-img-element
           <img src={avatarSrc} alt="" />
         ) : (
-          <span className="explore-avatar">{initials(creator.displayName)}</span>
+          <span className="explore-avatar">{initials(creator.username)}</span>
         )}
       </span>
 
       <div className="explore-room-body">
         <div className="explore-room-id">
           <div className="flex flex-wrap items-center gap-2">
-            <h2>{creator.displayName}</h2>
+            <h2>@{creator.username}</h2>
             <span className="explore-author-tag"><UserRound size={11} /> Author</span>
           </div>
-          <p className="explore-room-handle">@{creator.username}</p>
-          {creator.bio && <p className="explore-room-bio">{creator.bio}</p>}
         </div>
 
         <dl className="explore-room-stats">
@@ -251,7 +245,7 @@ export function ExploreDirectory({ creators }: { creators: PublicCreator[] }) {
       ...creator,
       articles: creator.articles.filter((article) => {
         if (!normalizedQuery) return true;
-        return [creator.displayName, creator.username, creator.bio ?? "", article.title, article.author, article.sourceAuthorHandle ?? "", ...article.sectionHeadings]
+        return [creator.username, article.title, article.sourceAuthorHandle ?? "", ...article.sectionHeadings]
           .join(" ")
           .toLowerCase()
           .includes(normalizedQuery);
@@ -278,21 +272,21 @@ export function ExploreDirectory({ creators }: { creators: PublicCreator[] }) {
         <div className="explore-rail-label">Authors</div>
         <div className="grid gap-1.5">
           {filtered.map((creator) => {
-            const avatarSrc = creatorAvatarSrc(creator);
+            const avatarSrc = xAvatarUrl(creator.username);
             return (
               <a
                 key={creator.id}
                 href={`#creator-${creator.id}`}
                 className="explore-author-link"
-                onClick={() => trackClick("explore_author_clicked", { creator_id: creator.id, display_name: creator.displayName })}
+                onClick={() => trackClick("explore_author_clicked", { creator_id: creator.id, username: creator.username })}
               >
                 {avatarSrc ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={avatarSrc} alt="" />
                 ) : (
-                  <span>{initials(creator.displayName)}</span>
+                  <span>{initials(creator.username)}</span>
                 )}
-                <span className="min-w-0 truncate">{creator.displayName}</span>
+                <span className="min-w-0 truncate">@{creator.username}</span>
                 <span className="explore-author-proof">{totalReads(creator.articles).toLocaleString()} reads</span>
               </a>
             );

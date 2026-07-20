@@ -2,8 +2,8 @@
  * Public, unauthenticated reads for the Explore directory.
  *
  * Visitors browse the catalog of creators and their *live* articles (title,
- * author, price, length). Nothing here exposes unpaid body text, drafts, or
- * any creator-private data — only what a buyer needs to decide what to read.
+ * price, length). Nothing here exposes unpaid body text, drafts, or any
+ * creator-private data — only what a buyer needs to decide what to read.
  *
  * Runs server-side. Prefers a server-only service-role key when present so the
  * directory works regardless of row-level-security policies; otherwise falls
@@ -16,7 +16,6 @@ import type { ArticleSourcePlatform, ArticleState } from "./types";
 export interface PublicArticle {
   id: string;
   title: string;
-  author: string;
   /** Price per single word, in atomic USDC units. */
   pricePerWordAtomic: string;
   /** Optional cap on the total an agent can be charged for one article. */
@@ -37,9 +36,6 @@ export interface PublicArticle {
 export interface PublicCreator {
   id: string;
   username: string;
-  displayName: string;
-  bio: string | null;
-  avatarUrl: string | null;
   createdAt: string;
   popularityScore: number;
   articles: PublicArticle[];
@@ -49,7 +45,6 @@ type ArticleRow = {
   id: string;
   creator_id: string;
   title: string;
-  author: string;
   state: ArticleState;
   price_per_word_atomic: string;
   max_article_price_atomic: string | null;
@@ -62,8 +57,7 @@ type ArticleRow = {
 };
 
 type SectionRow = { article_id: string; heading: string; ordinal: number };
-type CreatorRow = { id: string; username: string; display_name: string; created_at: string };
-type ProfileRow = { creator_id: string; bio: string | null; avatar_url: string | null };
+type CreatorRow = { id: string; username: string; created_at: string };
 type PopularityRow = { id: string; article_id: string; session_id: string | null };
 
 export class PublicDirectoryUnavailable extends Error {
@@ -93,7 +87,7 @@ export async function listPublicCreators(): Promise<PublicCreator[]> {
 
   const { data: articles, error: articlesError } = await supabase
     .from("articles")
-    .select("id, creator_id, title, author, state, price_per_word_atomic, max_article_price_atomic, total_words, source_platform, source_url, source_author_handle, created_at, updated_at")
+    .select("id, creator_id, title, state, price_per_word_atomic, max_article_price_atomic, total_words, source_platform, source_url, source_author_handle, created_at, updated_at")
     .eq("state", "live")
     .order("updated_at", { ascending: false })
     .returns<ArticleRow[]>();
@@ -106,7 +100,7 @@ export async function listPublicCreators(): Promise<PublicCreator[]> {
   const articleIds = articles.map((a) => a.id);
   const creatorIds = Array.from(new Set(articles.map((a) => a.creator_id)));
 
-  const [sectionsRes, creatorsRes, profilesRes, popularityRes] = await Promise.all([
+  const [sectionsRes, creatorsRes, popularityRes] = await Promise.all([
     supabase
       .from("article_sections")
       .select("article_id, heading, ordinal")
@@ -115,14 +109,9 @@ export async function listPublicCreators(): Promise<PublicCreator[]> {
       .returns<SectionRow[]>(),
     supabase
       .from("creators")
-      .select("id, username, display_name, created_at")
+      .select("id, username, created_at")
       .in("id", creatorIds)
       .returns<CreatorRow[]>(),
-    supabase
-      .from("creator_profiles")
-      .select("creator_id, bio, avatar_url")
-      .in("creator_id", creatorIds)
-      .returns<ProfileRow[]>(),
     supabase
       .from("word_payments")
       .select("id, article_id, session_id")
@@ -148,7 +137,6 @@ export async function listPublicCreators(): Promise<PublicCreator[]> {
     popularityByArticle.set(row.article_id, reads);
   }
 
-  const profileByCreator = new Map((profilesRes.data ?? []).map((p) => [p.creator_id, p]));
   const creatorById = new Map((creatorsRes.data ?? []).map((c) => [c.id, c]));
 
   const byCreator = new Map<string, PublicCreator>();
@@ -158,13 +146,9 @@ export async function listPublicCreators(): Promise<PublicCreator[]> {
 
     let creator = byCreator.get(article.creator_id);
     if (!creator) {
-      const profile = profileByCreator.get(article.creator_id);
       creator = {
         id: creatorRow.id,
         username: creatorRow.username,
-        displayName: creatorRow.display_name,
-        bio: profile?.bio ?? null,
-        avatarUrl: profile?.avatar_url ?? null,
         createdAt: creatorRow.created_at,
         popularityScore: 0,
         articles: [],
@@ -178,7 +162,6 @@ export async function listPublicCreators(): Promise<PublicCreator[]> {
     creator.articles.push({
       id: article.id,
       title: article.title,
-      author: article.author,
       pricePerWordAtomic: article.price_per_word_atomic,
       maxArticlePriceAtomic: article.max_article_price_atomic,
       totalWords: article.total_words,
