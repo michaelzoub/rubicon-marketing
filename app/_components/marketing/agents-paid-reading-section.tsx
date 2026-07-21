@@ -10,21 +10,22 @@ const AGENT_STEPS = [
   {
     label: "01 · Connect",
     title: "Start from chat",
-    copy: "Copy the prompt into Codex or another agent. The skill setup happens in the agent's own workflow.",
+    copy: "Copy the prompt into Codex or another agent. Rubicon becomes part of the agent’s existing research workflow.",
   },
   {
-    label: "02 · Fund",
-    title: "Cap every read",
-    copy: "Set the buyer wallet and maximum spend before paid words stream.",
+    label: "02 · Control",
+    title: "Set a spending cap",
+    copy: "Choose the buyer wallet and maximum spend before the agent approves any passage.",
   },
   {
-    label: "03 · Read",
-    title: "Stop when answered",
-    copy: "The agent pays word by word and can stop before buying the full article.",
+    label: "03 · Use",
+    title: "Return the evidence",
+    copy: "The selected passage is unlocked and returned to the agent for its grounded final answer.",
   },
 ] as const;
 
-export function AgentsPaidReadingSection() {
+export function AgentsPaidReadingSection({ headingLevel = "h1" }: { headingLevel?: "h1" | "h2" }) {
+  const Heading = headingLevel;
   return (
     <section
       className="landing-section-block developers-agents-section"
@@ -35,14 +36,14 @@ export function AgentsPaidReadingSection() {
       <motion.div {...fade} className="container">
         <div className="landing-copy-stack developers-agents-header">
           <div className="landing-section-kicker">
-            <h1 id="developers-agents-heading" className="landing-section-title">
+            <Heading id="developers-agents-heading" className="landing-section-title">
               <span className="landing-section-title-emphasis">Add paid reading to your agent.</span>
               <br />
               <span className="landing-section-title-muted">
-                Use Rubicon from the agent you already work with. It can discover articles, pay from a capped wallet,
-                and stop as soon as it has the answer.
+                Use Rubicon from the agent you already work with. It can discover sources, select a relevant passage
+                through the gateway, and approve only the evidence that fits your cap.
               </span>
-            </h1>
+            </Heading>
           </div>
         </div>
 

@@ -6,6 +6,7 @@ import { useEffect, useRef, useState } from "react";
 import { trackClick } from "../analytics-links";
 import { trackVisualOnce } from "../analytics/events";
 import { setupSkillPrompt } from "./agent-skill-setup";
+import { SuccessCelebration } from "./success-celebration";
 
 /**
  * Looping onboarding animation for the landing "For agents" section:
@@ -59,6 +60,7 @@ export function LandingAgentsOnboarding() {
   const [cycle, setCycle] = useState(0);
   const [cursor, setCursor] = useState<CursorPoint | null>(null);
   const [realCopied, setRealCopied] = useState(false);
+  const [celebrationKey, setCelebrationKey] = useState(0);
 
   const stageRef = useRef<HTMLDivElement>(null);
   const copyButtonRef = useRef<HTMLButtonElement>(null);
@@ -139,6 +141,7 @@ export function LandingAgentsOnboarding() {
   const copySetupPrompt = async () => {
     await navigator.clipboard.writeText(setupSkillPrompt);
     setRealCopied(true);
+    setCelebrationKey((key) => key + 1);
     trackClick("copy_agent_prompt_clicked", { layout: "landing" });
     window.setTimeout(() => setRealCopied(false), 1400);
   };
@@ -287,7 +290,7 @@ export function LandingAgentsOnboarding() {
                 Paste this into Codex or another agent. It installs the Rubicon skill, funds a buyer wallet, and runs
                 a capped first read.
               </p>
-              <button
+              <div className="relative w-fit"><button
                 ref={copyButtonRef}
                 type="button"
                 onClick={copySetupPrompt}
@@ -295,7 +298,7 @@ export function LandingAgentsOnboarding() {
               >
                 {copied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />}{" "}
                 {copied ? "Copied" : "Copy prompt"}
-              </button>
+              </button><SuccessCelebration active={realCopied} celebrationKey={celebrationKey} /></div>
             </div>
           </div>
           <code

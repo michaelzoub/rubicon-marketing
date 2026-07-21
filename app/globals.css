@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
 /* The /dashboard/flow preview is gitignored, so Tailwind v4's automatic source
    detection skips it. Register it explicitly so its utility classes still
    generate. Safe to remove once the preview route is deleted. */
@@ -102,6 +104,14 @@
   text-align: center;
 }
 
+.stream-simple-cap-note {
+  margin: -2rem auto 0;
+  color: #2f7df6;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+}
+
 .stream-simple-footer {
   justify-content: flex-end;
   gap: clamp(2rem, 6vw, 5rem);
@@ -133,6 +143,7 @@
   .stream-simple-content { min-height: 16rem; padding: 2rem 1.25rem; }
   .stream-simple-route { grid-template-columns: auto minmax(2rem, 1fr) auto; gap: 0.65rem; }
   .stream-simple-footer { justify-content: space-between; }
+  .stream-simple-cap-note { margin-top: -1rem; }
 }
 
 /* Warm neutrals replace cold gray across the light marketing and app surfaces. */

@@ -1,37 +1,56 @@
 "use client";
 
-import { ArrowRight, Check } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { APP_URL, AnalyticsPageView, PageEngagementTracker } from "./_components/analytics-links";
 import { trackMarketingCtaClicked } from "./_components/analytics/events";
-import { LandingReveal } from "./_components/marketing/motion";
 import { SiteFooter } from "./_components/marketing/site-footer";
 import { SiteHeader } from "./_components/site-header";
-import { LandingAgentsSection } from "./_components/marketing/landing-agents-section";
-import { DashboardAppPreview } from "./_components/marketing/dashboard-app-preview";
-import { LiveReadingAppPreview } from "./_components/marketing/live-reading-app-preview";
+import { AgentComparison, AgentWorkflow } from "./_components/marketing/agent-workflow";
+import { AgentUseCases } from "./_components/marketing/agent-use-cases";
+import { EvidenceReadSimulation } from "./_components/marketing/evidence-read-simulation";
+import { LazyDashboardShowcase } from "./_components/marketing/lazy-dashboard-showcase";
 import { RubiconAgentChat } from "./_components/marketing/agent-chat/agent-chat";
 function Hero() {
   return (
     <div className="landing-hero-content">
-      <div className="container">
-        <LandingReveal className="landing-copy-stack landing-hero-copy">
+      <div className="container landing-hero-layout">
+        <div className="landing-copy-stack landing-hero-copy">
           <h1 className="landing-hero-title">
-            <span className="landing-hero-title-emphasis">Sell your writing to AI</span>
-            <br />
-            <span className="landing-hero-title-muted">
-              Agents pay for words read. You set the price, you stay in control.
-            </span>
+            <span className="landing-hero-title-emphasis">Give agents better material to reason from.</span>
           </h1>
+          <p className="landing-hero-lead">
+            Rubicon helps agents discover high-quality human writing, identify the passage relevant to their task, and
+            pay only to unlock that evidence.
+          </p>
           <div className="landing-hero-cta">
             <div className="landing-hero-actions">
               <Link
-                href={APP_URL}
+                href="#agent-workflow"
                 className="button button-primary"
                 onClick={() =>
                   trackMarketingCtaClicked({
-                    cta_id: "home_hero_start_publishing",
-                    label: "Start publishing",
+                    cta_id: "home_hero_see_how_it_works",
+                    label: "See how it works",
+                    page: "home",
+                    section: "hero",
+                    audience: "mixed",
+                    intent: "explore",
+                    position: "hero",
+                    target_type: "internal_page",
+                    target_url: "#agent-workflow",
+                  })
+                }
+              >
+                See how it works <ArrowRight size={14} aria-hidden="true" />
+              </Link>
+              <Link
+                href={APP_URL}
+                className="button button-secondary"
+                onClick={() =>
+                  trackMarketingCtaClicked({
+                    cta_id: "home_hero_list_writing",
+                    label: "List your writing",
                     page: "home",
                     section: "hero",
                     audience: "creator",
@@ -42,90 +61,16 @@ function Hero() {
                   })
                 }
               >
-                Start publishing <ArrowRight size={14} aria-hidden="true" />
-              </Link>
-              <Link
-                href="/developers"
-                className="button button-secondary"
-                onClick={() =>
-                  trackMarketingCtaClicked({
-                    cta_id: "home_hero_set_up_agent",
-                    label: "Set up an agent",
-                    page: "home",
-                    section: "hero",
-                    audience: "developer",
-                    intent: "setup_agent",
-                    position: "hero",
-                    target_type: "internal_page",
-                    target_url: "/developers",
-                  })
-                }
-              >
-                Set up an agent
+                List your writing
               </Link>
             </div>
           </div>
-        </LandingReveal>
+        </div>
+        <div className="landing-hero-preview">
+          <EvidenceReadSimulation />
+        </div>
       </div>
     </div>
-  );
-}
-
-function DashboardShowcase() {
-  return (
-    <section
-      className="landing-section-block landing-dashboard-showcase"
-      aria-label="Creator dashboard preview"
-      data-analytics-section="creator_dashboard_preview"
-    >
-      <LandingReveal className="container landing-dashboard-showcase-inner">
-        <div className="landing-dashboard-showcase-column">
-          <DashboardAppPreview />
-        </div>
-      </LandingReveal>
-    </section>
-  );
-}
-
-function ProductSection() {
-  return (
-    <section
-      className="landing-section-block landing-product-section"
-      aria-labelledby="product-heading"
-      data-analytics-section="paid_reading_product"
-    >
-      <LandingReveal className="container landing-product-showcase-inner">
-        <div className="landing-copy-stack landing-product-showcase-header">
-          <div className="landing-section-kicker">
-            <h2 id="product-heading" className="landing-section-title">
-              <span className="landing-section-title-emphasis">How agents pay creators, word by word.</span>
-              <br />
-              <span className="landing-section-title-muted">
-                Agents read only the sections they need and pay per word. Creators earn for exactly what&apos;s read.
-              </span>
-            </h2>
-          </div>
-          <ul className="landing-product-points">
-            <li>
-              <Check size={14} className="text-[var(--muted)]" aria-hidden="true" />
-              Per-word pricing: no subscriptions, no paywalls
-            </li>
-            <li>
-              <Check size={14} className="text-[var(--muted)]" aria-hidden="true" />
-              You set your price and keep 100% — 0% platform fee
-            </li>
-            <li>
-              <Check size={14} className="text-[var(--muted)]" aria-hidden="true" />
-              Unpaid words stay locked until they&apos;re paid for
-            </li>
-          </ul>
-        </div>
-
-        <div className="landing-product-showcase-column">
-          <LiveReadingAppPreview />
-        </div>
-      </LandingReveal>
-    </section>
   );
 }
 
@@ -141,9 +86,10 @@ export default function Home() {
             <Hero />
           </section>
         </div>
-        <DashboardShowcase />
-        <LandingAgentsSection />
-        <ProductSection />
+        <AgentWorkflow />
+        <LazyDashboardShowcase />
+        <AgentUseCases />
+        <AgentComparison />
         <RubiconAgentChat />
       </div>
       <SiteFooter />

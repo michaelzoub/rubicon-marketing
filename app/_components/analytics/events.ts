@@ -142,7 +142,7 @@ function capture(eventName: string, properties: object = {}): void {
 // Helpers
 // ---------------------------------------------------------------------------
 
-export type PageId = "home" | "creators" | "developers" | "explore" | "demo_video";
+export type PageId = "home" | "creators" | "developers" | "agents" | "explore" | "demo_video";
 
 export interface PageViewProperties {
   page: PageId;

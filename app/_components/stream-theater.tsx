@@ -4,10 +4,19 @@ import { motion, useInView } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
 const PRICE_PER_WORD = 0.00001;
+const SELECTIVE_PRICE_PER_WORD = 0.004;
 const WORDS = "Agents read only the passage they need. Each word unlocks as a tiny payment settles, and the writer earns instantly.".split(" ");
 const ease = [0.16, 1, 0.3, 1] as const;
 
-export function StreamTheater({ compact = false, embedded = false }: { compact?: boolean; embedded?: boolean }) {
+export function StreamTheater({
+  compact = false,
+  embedded = false,
+  selectiveSpend = false,
+}: {
+  compact?: boolean;
+  embedded?: boolean;
+  selectiveSpend?: boolean;
+}) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const inView = useInView(rootRef, { amount: 0.35, margin: "0px 0px -48px 0px" });
   const [wordsRead, setWordsRead] = useState(0);
@@ -19,27 +28,31 @@ export function StreamTheater({ compact = false, embedded = false }: { compact?:
     }
 
     const interval = window.setInterval(() => {
-      setWordsRead((current) => (current >= WORDS.length ? 0 : current + 1));
+      setWordsRead((current) => Math.min(WORDS.length, current + 1));
     }, 360);
 
     return () => window.clearInterval(interval);
   }, [inView]);
 
-  const paid = (wordsRead * PRICE_PER_WORD).toFixed(5);
+  const accessedWords = selectiveSpend ? wordsRead * 16 : wordsRead;
+  const costPerWord = selectiveSpend ? SELECTIVE_PRICE_PER_WORD : PRICE_PER_WORD;
+  const paid = (accessedWords * costPerWord).toFixed(selectiveSpend ? 2 : 5);
+  const remaining = Math.max(0, 5 - accessedWords * costPerWord).toFixed(2);
+  const complete = wordsRead >= WORDS.length;
   const progress = Math.max(4, (wordsRead / WORDS.length) * 100);
 
   return (
     <div ref={rootRef} className={`stream-simple${compact ? " stream-simple--compact" : ""}${embedded ? " stream-simple--embedded" : ""}`}>
       <div className="stream-simple-header">
-        <span>Live reading</span>
-        <span className="stream-simple-status"><i aria-hidden="true" /> Pay per word</span>
+        <span>{selectiveSpend ? "Selective passage unlock" : "Live reading"}</span>
+        <span className="stream-simple-status"><i aria-hidden="true" /> {selectiveSpend ? "Capped spend" : "Pay per word"}</span>
       </div>
 
       <div className="stream-simple-content">
         <div className="stream-simple-route" aria-label="Payment route">
           <span>Buyer agent</span>
           <div className="stream-simple-line"><motion.i animate={{ left: `${progress}%` }} transition={{ duration: 0.32, ease }} /></div>
-          <span>Writer</span>
+          <span>{selectiveSpend ? "Selected passage" : "Writer"}</span>
         </div>
 
         <p className="stream-simple-copy" aria-label="Streaming article excerpt">
@@ -58,11 +71,13 @@ export function StreamTheater({ compact = false, embedded = false }: { compact?:
             </motion.span>
           ))}
         </p>
+        {selectiveSpend && complete ? <p className="stream-simple-cap-note">Stopped after enough evidence was found.</p> : null}
       </div>
 
       <div className="stream-simple-footer">
-        <div><span>Words read</span><strong>{wordsRead}</strong></div>
-        <div><span>Writer earned</span><strong>${paid}</strong></div>
+        <div><span>{selectiveSpend ? "Words accessed" : "Words read"}</span><strong>{accessedWords}</strong></div>
+        <div><span>{selectiveSpend ? "Spent of $5.00 cap" : "Writer earned"}</span><strong>${paid}</strong></div>
+        {selectiveSpend ? <div><span>Cap remaining</span><strong>${remaining}</strong></div> : null}
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { Check, Copy, Link2 } from "lucide-react";
 import { useState } from "react";
 import { trackClick } from "../analytics-links";
 import { trackCopyActionCompleted } from "../analytics/events";
+import { SuccessCelebration } from "./success-celebration";
 
 const skillUrl = "https://www.rubiconpay.xyz/skill.md";
 export const setupSkillPrompt = `Set up the Rubicon skill from ${skillUrl}. Help me fund my buyer wallet, then find and summarize the first available article. Spend no more than $0.01.`;
@@ -16,9 +17,11 @@ export function AgentSkillSetup({
   layout?: "default" | "landing";
 }) {
   const [copied, setCopied] = useState(false);
+  const [celebrationKey, setCelebrationKey] = useState(0);
   const copySetupPrompt = async () => {
     await navigator.clipboard.writeText(setupSkillPrompt);
     setCopied(true);
+    setCelebrationKey((key) => key + 1);
     // Canonical copy event with stable cta_id.
     trackCopyActionCompleted({
       cta_id: "developers_copy_skill_prompt",
@@ -51,21 +54,21 @@ export function AgentSkillSetup({
             capped first read.
           </p>
           {isLanding && (
-            <button
+            <div className="relative w-fit"><button
               type="button"
               onClick={copySetupPrompt}
               className="button button-secondary min-h-10 w-fit text-sm"
             >
               {copied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />}{" "}
               {copied ? "Copied" : "Copy prompt"}
-            </button>
+            </button><SuccessCelebration active={copied} celebrationKey={celebrationKey} /></div>
           )}
         </div>
         {!isLanding && (
-          <button type="button" onClick={copySetupPrompt} className="button button-secondary min-h-10 shrink-0 text-sm">
+          <div className="relative shrink-0"><button type="button" onClick={copySetupPrompt} className="button button-secondary min-h-10 text-sm">
             {copied ? <Check size={15} aria-hidden="true" /> : <Copy size={15} aria-hidden="true" />}{" "}
             {copied ? "Copied" : "Copy prompt"}
-          </button>
+          </button><SuccessCelebration active={copied} celebrationKey={celebrationKey} /></div>
         )}
       </div>
       <code className="developers-skill-prompt mono">{setupSkillPrompt}</code>

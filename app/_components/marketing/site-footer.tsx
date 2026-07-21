@@ -49,7 +49,7 @@ function FooterLink({
   }
 
   return (
-    <Link href={href} className={className} onClick={handleClick}>
+    <Link href={href} prefetch={false} className={className} onClick={handleClick}>
       {label}
     </Link>
   );

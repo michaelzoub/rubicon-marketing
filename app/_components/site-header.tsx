@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { useReducedMotion } from "framer-motion";
 import { trackClick, APP_URL } from "./analytics-links";
 import { trackNavClicked, trackMarketingCtaClicked } from "./analytics/events";
 import { RubiconBrand } from "./rubicon-brand";
@@ -19,13 +18,14 @@ interface NavItem {
 const navItems: NavItem[] = [
   { href: "/", label: "Home", matchPath: "/", ctaId: "header_nav_home" },
   { href: "/creators", label: "Writers", matchPath: "/creators", ctaId: "header_nav_writers" },
-  { href: "/developers", label: "Agents", matchPath: "/developers", ctaId: "header_nav_agents" },
+  { href: "/agents", label: "Agents", matchPath: "/agents", ctaId: "header_nav_agents" },
   { href: "/explore", label: "Explore", matchPath: "/explore", ctaId: "header_nav_explore" },
   { href: "/faq", label: "FAQ", matchPath: "/faq", ctaId: "header_nav_faq" },
 ];
 
 function currentPageId(pathname: string): string {
   if (pathname === "/") return "home";
+  if (pathname === "/developers") return "developers";
   for (const item of navItems) {
     if (pathname === item.matchPath) return item.matchPath.replace("/", "");
   }
@@ -34,7 +34,7 @@ function currentPageId(pathname: string): string {
 }
 
 function NavLink({ item, pathname }: { item: NavItem; pathname: string }) {
-  const isActive = pathname === item.matchPath;
+  const isActive = pathname === item.matchPath || (item.ctaId === "header_nav_agents" && pathname === "/developers");
   const className = `site-nav-link${isActive ? " site-nav-link--active" : ""}`;
 
   return (
@@ -73,7 +73,17 @@ export function SiteHeader({
   const [headerHidden, setHeaderHidden] = useState(false);
   const lastScrollY = useRef(0);
   const scrollFrame = useRef(0);
-  const reduceMotion = useReducedMotion();
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  // Keep this small shared navigation component free of the animation runtime.
+  // The scroll behavior still respects the user's motion preference.
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updatePreference = () => setReduceMotion(media.matches);
+    updatePreference();
+    media.addEventListener("change", updatePreference);
+    return () => media.removeEventListener("change", updatePreference);
+  }, []);
 
   useEffect(() => {
     const updateHeader = () => {
