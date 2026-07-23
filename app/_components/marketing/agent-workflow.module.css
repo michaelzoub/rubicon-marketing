@@ -77,8 +77,8 @@
   flex-direction: column;
   overflow: hidden;
   min-width: 0;
-  min-height: 19rem;
-  border-radius: 12px;
+  min-height: 17.25rem;
+  border-radius: 18px;
   background: #fff;
   box-shadow:
     0 0 0 1px rgba(15, 23, 42, 0.07),
@@ -103,25 +103,26 @@
 
 .demo {
   position: relative;
-  flex: 0 0 13rem;
-  height: 13rem;
+  flex: 0 0 12.25rem;
+  height: 12.25rem;
   min-height: 0;
-  margin: 0.75rem 0.75rem 0;
+  margin: 0.5rem 0.5rem 0;
   overflow: hidden;
-  border-radius: 8px;
-  background: #f6f6f7;
-  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.045);
+  padding: 0.85rem;
+  border-radius: 10px;
+  background: #f5f7fa;
+  box-shadow: inset 0 0 0 1px rgba(49, 111, 177, 0.07);
   color: #242522;
 }
 
 .stepBody {
   flex: 1 1 auto;
-  padding: 1.2rem 1.3rem 1.35rem;
+  padding: 1rem 1.15rem 1.1rem;
 }
 
 .stepNumber {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.32rem;
   color: #898b86;
   font-family: var(--font-mono), monospace;
   font-size: 0.67rem;
@@ -140,18 +141,11 @@
   text-wrap: balance;
 }
 
-.step p,
 .comparisonCard li,
 .trustNote p {
   color: #606778;
   font-size: 0.78rem;
   line-height: 1.52;
-}
-
-.step p {
-  max-width: 31rem;
-  margin: 0.55rem 0 0;
-  text-wrap: pretty;
 }
 
 .comparisonLabel {
@@ -231,7 +225,7 @@
 .chatTop { gap: 0.4rem; padding: 0 0.15rem 0.7rem; border-bottom: 1px solid rgba(15,23,42,.07); font-size: 0.6rem; font-weight: 620; }
 .chatTop > span:last-child { margin-left: auto; color: #757780; font-size: 0.51rem; font-weight: 500; }
 .agentDot { width: 0.42rem; height: 0.42rem; border-radius: 50%; background: #6b6d75; box-shadow: 0 0 0 3px #e5e5e7; }
-.chatBody { display: grid; gap: 0.8rem; padding: 1rem 0.05rem; }
+.chatBody { display: grid; align-content: start; gap: 0.68rem; height: 100%; padding: 0.15rem 0.05rem; }
 .userBubble { justify-self: end; max-width: 86%; padding: 0.65rem 0.72rem; border-radius: 10px 10px 3px 10px; background: #252623; color: #fff; font-size: 0.59rem; line-height: 1.45; }
 .agentReply { display: flex; align-items: flex-start; gap: 0.45rem; max-width: 92%; color: #5f6068; font-size: 0.57rem; line-height: 1.5; }
 .agentReply svg { flex: none; margin-top: 0.12rem; color: #666872; }
@@ -283,6 +277,134 @@
 .gatewayPrice span { margin-left: .2rem; color: #858780; font-size: .47rem; font-weight: 450; }
 .inferenceResponse { display: grid; gap: .35rem; background: #fdfdfd; }
 .inferenceResponse p { margin: 0; color: #45474d; font-size: .58rem; line-height: 1.55; }
+.responseSurface {
+  display: grid;
+  gap: 0.38rem;
+  padding: 0.72rem;
+}
+
+.previewResponse,
+.evidenceResponse {
+  align-self: center;
+}
+
+.evidenceResponse {
+  gap: 0.3rem;
+  padding-block: 0.82rem;
+}
+
+.responseSurface > strong {
+  color: #252a31;
+  font-size: 0.65rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  line-height: 1.3;
+}
+
+.responseSurface > p {
+  margin: 0;
+  color: #5c6571;
+  font-size: 0.54rem;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+.sectionChoice {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 1.55rem;
+  padding: 0.35rem 0.42rem;
+  border-radius: 6px;
+  color: #727985;
+  font-size: 0.5rem;
+  line-height: 1.35;
+}
+
+.sectionChoice > span { display: flex; min-width: 0; align-items: center; gap: 0.35rem; }
+.sectionChoice > span > small { color: #4d7eae; font-size: 0.42rem; font-weight: 620; }
+.sectionChoice > strong { margin-left: auto; color: #7b8795; font-size: 0.48rem; font-weight: 620; font-variant-numeric: tabular-nums; }
+
+.sectionChoice + .sectionChoice { border-top: 1px solid rgba(49, 111, 177, 0.08); }
+
+.sectionChoiceSelected {
+  border-top-color: transparent !important;
+  background: #eaf4ff;
+  color: #2e5f96;
+  font-weight: 630;
+}
+
+.sectionChoiceSelected strong {
+  margin-left: auto;
+  color: #2f73bb;
+  font-size: 0.48rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.buyerAgentMessage {
+  justify-self: end;
+  width: min(92%, 17rem);
+  padding: 0.62rem 0.7rem;
+  border-radius: 11px 11px 4px 11px;
+  background: #eaf4ff;
+  box-shadow: inset 0 0 0 1px rgba(47, 115, 187, 0.13);
+}
+
+.buyerAgentMessage span {
+  color: #4778aa;
+  font-size: 0.43rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.buyerAgentMessage p {
+  margin: 0.22rem 0 0;
+  color: #2e4e70;
+  font-size: 0.56rem;
+  font-weight: 540;
+  line-height: 1.42;
+}
+
+.gatewayDemo .chatBody { gap: 0.48rem; }
+.gatewayDemo .buyerAgentMessage { padding: 0.52rem 0.62rem; }
+.gatewayDemo .responseSurface { gap: 0.28rem; padding: 0.62rem; }
+.gatewayDemo .responseSurface blockquote { margin-top: 0.08rem; line-height: 1.4; }
+
+.responseHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.responseHeading > div { display: grid; gap: 0.2rem; }
+.responseHeading strong { color: #272c33; font-size: 0.62rem; font-weight: 650; }
+.responseHeading > span { color: #2f73bb; font-size: 0.55rem; font-weight: 680; font-variant-numeric: tabular-nums; }
+.responseSurface blockquote { margin: 0.18rem 0 0; color: #505966; font-family: Georgia, serif; font-size: 0.56rem; line-height: 1.48; }
+.responseSurface > small { color: #8190a1; font-size: 0.46rem; font-variant-numeric: tabular-nums; }
+
+.approvalSurface {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.58rem;
+}
+
+.approvalSurface > div { display: grid; gap: 0.15rem; }
+.approvalSurface > div > strong { color: #272c33; font-size: 0.6rem; font-weight: 650; }
+.approvalSurface > div > small { color: #718095; font-size: 0.48rem; font-variant-numeric: tabular-nums; }
+
+.confirmIcon {
+  display: grid;
+  width: 1.55rem;
+  height: 1.55rem;
+  place-items: center;
+  border-radius: 50%;
+  background: #e5f2ff;
+  color: #3178c3;
+}
+
+.answerText { color: #414b58 !important; font-size: 0.59rem !important; line-height: 1.55 !important; }
 .chatComposer { display: flex; align-items: center; justify-content: space-between; margin-top: 0.6rem; padding: 0.42rem 0.42rem 0.42rem 0.58rem; border-radius: 7px; background: #fff; box-shadow: 0 0 0 1px rgba(15,23,42,.06); color: #a0a19c; font-size: .54rem; }
 .sendButton { display: grid; width: 1.35rem; height: 1.35rem; place-items: center; border-radius: 5px; background: #dedee1; color: #696a72; }
 
@@ -474,7 +596,7 @@
   }
 
   .step:last-child { grid-column: 1 / -1; }
-  .demo { flex-basis: 13rem; height: 13rem; }
+  .demo { flex-basis: 12.25rem; height: 12.25rem; }
 
   .comparisonCard {
     min-height: 0;

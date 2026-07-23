@@ -13,18 +13,18 @@ import {
   type AgentStep,
 } from "./use-rubicon-agent";
 
-const exampleQueries = [
-  "Find research on AGI timelines",
-  "Compare arguments about AI scaling",
-  "Look for analysis of AI agent reliability",
-  "Find the strongest writing on AI infrastructure",
-];
-
 const accessLabels: Record<AgentArticleHit["state"], string> = {
   found: "Match",
   reviewing: "Reviewing",
   listed: "Ready",
 };
+
+const exampleQueries = [
+  "What are the biggest limitations to reaching AGI?",
+  "Which stablecoin is best for machine-to-machine payments?",
+  "Can decentralized AI compete with centralized models?",
+  "What makes AI agents reliable in production?",
+] as const;
 
 function StepRow({ step }: { step: AgentStep }) {
   return (
@@ -214,12 +214,12 @@ export function RubiconAgentChat() {
 
   const spring = reduceMotion
     ? { duration: 0 }
-    : ({ type: "spring", bounce: 0, duration: 0.4 } as const);
+    : ({ type: "spring", bounce: 0, duration: 0.28 } as const);
 
   return (
     <>
       <div ref={anchorRef} className="agent-chat-anchor">
-        <AnimatePresence>
+        <AnimatePresence initial={false}>
           {open && (
             <motion.section
               className="agent-chat-panel dashboard-theme"
@@ -233,9 +233,7 @@ export function RubiconAgentChat() {
               transition={spring}
             >
               <header className="agent-chat-header">
-                <span className="agent-chat-header-title">
-                  {/* <strong>Research</strong> */}
-                </span>
+                <span className="agent-chat-header-title"><strong>Try the workflow</strong></span>
                 <button type="button" onClick={closeChat} aria-label="Close research workflow">
                   <X size={15} aria-hidden="true" />
                 </button>
@@ -331,7 +329,7 @@ export function RubiconAgentChat() {
           )}
         </AnimatePresence>
 
-        <AnimatePresence>
+        <AnimatePresence initial={false}>
           {!open && (
             <motion.button
               ref={launcherRef}

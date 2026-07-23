@@ -82,6 +82,10 @@ Only for `transform`, `opacity`, `filter` — properties the GPU can composite. 
 
 Interactive elements should prefer a 44×44px hit area for touch or mobile contexts. In dense desktop interfaces, use at least 40×40px. Extend with a pseudo-element if the visible element is smaller. Never let hit areas of two elements overlap.
 
+### 17. Keep Internal Catalog Data Internal
+
+Do not surface internal registry, catalog, endpoint, fixture, or seed-record titles in user-facing prompts, suggested queries, empty states, or onboarding copy unless the user explicitly supplied or selected that title. Dynamic content should express the user's research intent in plain language, not reveal implementation data or assume the user knows which records exist. Prefer distinct, domain-specific questions such as “What are the biggest limitations to reaching AGI?”, “Which stablecoin is best for machine-to-machine payments?”, or “Can decentralized AI compete with centralized models?” over abstract placeholders or generated templates like “What is the central argument in ‘{title}’?”.
+
 ## Common Mistakes
 
 | Mistake | Fix |
@@ -96,6 +100,7 @@ Interactive elements should prefer a 44×44px hit area for touch or mobile conte
 | `transition: all` on elements | Specify exact properties |
 | First-frame animation stutter | Add `will-change: transform` (sparingly) |
 | Tiny hit areas on small controls | Extend with a pseudo-element to 44×44px for touch/mobile, or at least 40×40px in dense desktop UI |
+| Dynamic catalog titles shown in suggested prompts | Use generic, intent-led questions; keep registry and fixture titles out of user-facing copy |
 
 ## Review Output Format
 
@@ -139,6 +144,7 @@ Rows should cite the specific file and the specific property that changed when i
 - [ ] No `transition: all` — only specific properties
 - [ ] `will-change` only on transform/opacity/filter, never `all`
 - [ ] Interactive elements have 44×44px hit areas for touch/mobile, or at least 40×40px in dense desktop UI
+- [ ] User-facing prompts do not expose internal catalog, registry, endpoint, fixture, or seed-record titles
 
 ## Reference Files
 

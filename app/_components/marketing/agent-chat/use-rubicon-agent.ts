@@ -69,6 +69,10 @@ const MAX_CANDIDATES = 12;
 const MAX_SELECTIONS = 3;
 const MAX_HISTORY_EXCHANGES = 3;
 
+function isTestArticle(article: AgentCatalogArticle) {
+  return article.title.trim().toLowerCase() === "test for rubicon";
+}
+
 /** Estimated cost of paying to read the whole article, as a display string. */
 export function fullReadCost(article: AgentCatalogArticle): string {
   return formatUsdNumber((article.pricePer1kUsd / 1000) * article.totalWords);
@@ -297,7 +301,8 @@ export function useRubiconAgent() {
         if (!catalogRes.ok) {
           throw new AgentFailure(await readErrorMessage(catalogRes, "Couldn't reach the Rubicon directory."));
         }
-        const { articles: catalog } = (await catalogRes.json()) as { articles: AgentCatalogArticle[] };
+        const { articles: rawCatalog } = (await catalogRes.json()) as { articles: AgentCatalogArticle[] };
+        const catalog = (rawCatalog ?? []).filter((article) => !isTestArticle(article));
         relabelStep("search", `Searching ${catalog.length} listed article${catalog.length === 1 ? "" : "s"}`);
 
         if (catalog.length === 0) {

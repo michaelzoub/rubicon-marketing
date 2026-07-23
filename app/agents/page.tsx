@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import { AnalyticsPageView, PageEngagementTracker } from "../_components/analytics-links";
-import { AgentComparison, AgentWorkflow } from "../_components/marketing/agent-workflow";
+import { AgentsPaidReadingSection } from "../_components/marketing/agents-paid-reading-section";
+import { DevelopersSdkSection } from "../_components/marketing/developers-sdk-section";
 import { SiteFooter } from "../_components/marketing/site-footer";
 import { SiteHeader } from "../_components/site-header";
 
 export const metadata: Metadata = {
   title: "For agents · Rubicon",
-  description: "Discover useful human writing, select the right passage before purchase, and unlock only the evidence an agent needs.",
+  description: "Add paid reading to your agent with Rubicon skills, capped wallets, and the agent SDK.",
 };
 
 export default function AgentsPage() {
@@ -15,8 +16,8 @@ export default function AgentsPage() {
       <SiteHeader />
       <AnalyticsPageView page="agents" audience="agent" />
       <PageEngagementTracker page="agents" />
-      <AgentWorkflow pageLead />
-      <AgentComparison />
+      <AgentsPaidReadingSection />
+      <DevelopersSdkSection />
       <SiteFooter />
     </div>
   );
