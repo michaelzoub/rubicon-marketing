@@ -3,6 +3,7 @@
   isolation: isolate;
   overflow: hidden;
   padding: clamp(0.75rem, 2.4vw, 1.8rem);
+  padding-bottom: clamp(0.75rem, 2.4vw, 1.8rem);
   border-radius: clamp(18px, 2.2vw, 28px);
   background-color: #27313a;
   background-image:
@@ -85,14 +86,14 @@
 }
 
 .body {
-  min-height: 25rem;
+  min-height: 0;
 }
 
 .reader {
   display: flex;
   min-width: 0;
   flex-direction: column;
-  padding: 0 clamp(1.4rem, 5vw, 4.2rem) clamp(1.35rem, 3vw, 2rem);
+  padding: 0 clamp(1.4rem, 5vw, 4.2rem) 1rem;
 }
 
 .passageFrame {
@@ -188,7 +189,7 @@
   .viewer { border-radius: 6px; }
   .header { align-items: flex-start; padding: 1.1rem 1rem; }
   .body { min-height: 0; }
-  .reader { padding: 0 1rem 1.1rem; }
+  .reader { padding: 0 1rem 0.8rem; }
   .passageFrame { padding: 1.05rem; border-radius: 10px; }
   .footer { padding-top: 0.8rem; }
 }

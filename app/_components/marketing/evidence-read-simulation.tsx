@@ -9,8 +9,7 @@ const WORDS_PER_TICK = 1;
 const WORD_INTERVAL_MS = 92;
 
 const PASSAGE = [
-  "Credit spreads can remain calm even as refinancing risk accumulates beneath them. The signal is not today’s default rate; it is the volume of debt that must be replaced at materially higher coupons over the next eighteen months.",
-  "For weaker issuers, that repricing lands before earnings have time to recover. Liquidity gets consumed first, covenants tighten next, and solvency becomes visible only after the market has already moved.",
+  "Agents read only the passage they need. Each word unlocks as a tiny payment settles, and the writer earns instantly.",
 ] as const;
 
 const PASSAGE_WORDS = PASSAGE.map((paragraph) => paragraph.split(" "));
@@ -69,7 +68,7 @@ export function EvidenceReadSimulation() {
     <div ref={rootRef} className={styles.panel} aria-label="Rubicon evidence viewer showing a selected article section unlocking">
       <div className={styles.viewer}>
         <div className={styles.liveBar}>
-          <span>Live reading</span>
+          <span>Example read</span>
           <span className={styles.liveState}><i aria-hidden="true" />{stateLabel}</span>
         </div>
         <header className={styles.header}>

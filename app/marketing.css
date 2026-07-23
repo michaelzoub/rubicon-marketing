@@ -147,7 +147,7 @@
   display: grid;
   grid-auto-flow: row;
   grid-template-columns: minmax(0, 1fr);
-  gap: clamp(1.75rem, 3vw, 2.5rem);
+  gap: clamp(8rem, 24vh, 15rem);
   padding-top: 0;
 }
 
@@ -171,7 +171,7 @@
   .landing-page .landing-hero-content { padding-block: 5.25rem 3rem; }
   .landing-page .landing-hero-copy { max-width: 49rem; }
   .landing-page .landing-hero-title { max-width: 20ch; font-size: clamp(2.5rem, 5.8vw, 3.35rem); }
-  .landing-page .landing-hero-layout { gap: 2rem; }
+  .landing-page .landing-hero-layout { gap: clamp(4rem, 12vh, 8rem); }
 }
 
 @media (max-width: 640px) {
