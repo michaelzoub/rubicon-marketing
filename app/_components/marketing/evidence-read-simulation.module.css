@@ -16,7 +16,8 @@
 
 .viewer {
   overflow: hidden;
-  max-width: 67rem;
+  width: min(100%, 84rem);
+  max-width: none;
   margin-inline: auto;
   border-radius: clamp(13px, 1.5vw, 20px);
   background: #fff;
@@ -97,6 +98,8 @@
 }
 
 .passageFrame {
+  position: relative;
+  overflow: hidden;
   width: 100%;
   padding: clamp(1.1rem, 2.25vw, 1.55rem);
   border: 0;
@@ -107,6 +110,19 @@
   box-shadow:
     inset 0 0 0 1px rgba(49, 111, 177, 0.09),
     0 10px 26px -24px rgba(49, 111, 177, 0.38);
+}
+
+.passageFrame::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: #4c91d5;
+  content: "";
+  transform: scaleX(var(--read-progress, 0));
+  transform-origin: left center;
+  transition: transform 92ms linear;
 }
 
 .passage {
@@ -120,7 +136,7 @@
   margin: 0;
   color: #262a31;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(1rem, 1.45vw, 1.22rem);
+  font-size: clamp(1.06rem, 1.55vw, 1.3rem);
   line-height: 1.58;
   text-align: left;
   text-wrap: pretty;
@@ -147,13 +163,20 @@
 }
 
 .wordCurrent {
-  margin-inline: -0.08em;
-  padding: 0.08em;
+  margin-inline: -0.02em;
+  padding: 0.05em 0.04em;
   background: #dceeff;
   box-shadow: 0 0 0 1px rgba(47, 125, 246, 0.18), 0 4px 12px -8px rgba(47, 125, 246, 0.75);
   color: #174f85;
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
+}
+
+.lockedContext {
+  color: rgba(54, 59, 68, 0.2) !important;
+  opacity: 0.64;
+  filter: blur(2.4px);
+  user-select: none;
 }
 
 .screenReaderStatus {
@@ -195,6 +218,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .passageFrame::after,
   .passageFrame,
   .passage span {
     transition: none;

@@ -12,6 +12,7 @@ import {
   type AgentRun,
   type AgentStep,
 } from "./use-rubicon-agent";
+import { motionDuration, motionEase } from "../motion";
 
 const accessLabels: Record<AgentArticleHit["state"], string> = {
   found: "Match",
@@ -75,9 +76,9 @@ function AgentRunView({ run, onRetry }: { run: AgentRun; onRetry: (query: string
   return (
     <motion.div
       className="agent-chat-run"
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.2, ease: "easeOut" }}
+      initial={{ opacity: 0.7, transform: "translate3d(0, 6px, 0)" }}
+      animate={{ opacity: 1, transform: "translate3d(0, 0px, 0)" }}
+      transition={{ duration: motionDuration.fast, ease: motionEase.out }}
     >
       {running && (
         <div className="agent-chat-presence" role="status" aria-live="polite">
@@ -212,9 +213,9 @@ export function RubiconAgentChat() {
     window.requestAnimationFrame(() => inputRef.current?.focus());
   }, [busy, reset]);
 
-  const spring = reduceMotion
+  const panelTransition = reduceMotion
     ? { duration: 0 }
-    : ({ type: "spring", bounce: 0, duration: 0.28 } as const);
+    : ({ duration: motionDuration.state, ease: motionEase.out } as const);
 
   return (
     <>
@@ -227,10 +228,10 @@ export function RubiconAgentChat() {
               aria-label="Rubicon research workflow"
               aria-modal="false"
               id="rubicon-agent-chat"
-              initial={reduceMotion ? false : { opacity: 0, y: 16, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 12, scale: 0.98 }}
-              transition={spring}
+              initial={reduceMotion ? false : { opacity: 0, transform: "translate3d(0, 12px, 0) scale(0.985)" }}
+              animate={{ opacity: 1, transform: "translate3d(0, 0px, 0) scale(1)" }}
+              exit={{ opacity: 0, transform: "translate3d(0, 8px, 0) scale(0.99)" }}
+              transition={panelTransition}
             >
               <header className="agent-chat-header">
                 <span className="agent-chat-header-title"><strong>Try the workflow</strong></span>
@@ -339,10 +340,10 @@ export function RubiconAgentChat() {
               aria-controls="rubicon-agent-chat"
               aria-expanded={false}
               onClick={toggleChat}
-              initial={reduceMotion ? false : { opacity: 0, y: 8, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={reduceMotion ? undefined : { opacity: 0, y: 5, scale: 0.98 }}
-              transition={spring}
+              initial={false}
+              animate={{ opacity: 1, transform: "translate3d(0, 0px, 0) scale(1)" }}
+              exit={reduceMotion ? undefined : { opacity: 0, transform: "translate3d(0, 5px, 0) scale(0.98)" }}
+              transition={panelTransition}
             >
               <span className="agent-chat-launcher-orb" aria-hidden="true"><i /></span>
               <span>Try the workflow</span>

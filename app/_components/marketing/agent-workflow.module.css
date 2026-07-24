@@ -81,7 +81,6 @@
   border-radius: 18px;
   background: #fff;
   box-shadow:
-    0 0 0 1px rgba(15, 23, 42, 0.07),
     0 2px 4px rgba(15, 23, 42, 0.025),
     0 12px 30px -24px rgba(15, 23, 42, 0.16);
   transition-property: transform, box-shadow;
@@ -96,7 +95,6 @@
 
 .step:hover {
   box-shadow:
-    0 0 0 1px rgba(15, 23, 42, 0.105),
     0 3px 7px rgba(15, 23, 42, 0.035),
     0 22px 42px -28px rgba(15, 23, 42, 0.25);
 }
@@ -111,7 +109,7 @@
   padding: 0.85rem;
   border-radius: 10px;
   background: #f5f7fa;
-  box-shadow: inset 0 0 0 1px rgba(49, 111, 177, 0.07);
+  background-image: linear-gradient(145deg, rgba(255,255,255,.4), transparent 72%);
   color: #242522;
 }
 
@@ -291,6 +289,7 @@
 .evidenceResponse {
   gap: 0.3rem;
   padding-block: 0.82rem;
+  margin-block: auto;
 }
 
 .responseSurface > strong {
@@ -347,15 +346,12 @@
   padding: 0.62rem 0.7rem;
   border-radius: 11px 11px 4px 11px;
   background: #eaf4ff;
-  box-shadow: inset 0 0 0 1px rgba(47, 115, 187, 0.13);
+  box-shadow: none;
 }
 
-.buyerAgentMessage span {
-  color: #4778aa;
-  font-size: 0.43rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+.buyerAgentMessage .label {
+  border-radius: 5px;
+  background: rgba(64, 133, 205, 0.1);
 }
 
 .buyerAgentMessage p {
@@ -367,7 +363,7 @@
 }
 
 .gatewayDemo .chatBody { gap: 0.48rem; }
-.gatewayDemo .buyerAgentMessage { padding: 0.52rem 0.62rem; }
+.gatewayDemo .buyerAgentMessage { padding: 0.44rem 0.54rem; }
 .gatewayDemo .responseSurface { gap: 0.28rem; padding: 0.62rem; }
 .gatewayDemo .responseSurface blockquote { margin-top: 0.08rem; line-height: 1.4; }
 
@@ -378,31 +374,27 @@
   gap: 0.75rem;
 }
 
-.responseHeading > div { display: grid; gap: 0.2rem; }
+.responseHeading > div { display: grid; align-items: start; gap: 0.2rem; }
 .responseHeading strong { color: #272c33; font-size: 0.62rem; font-weight: 650; }
 .responseHeading > span { color: #2f73bb; font-size: 0.55rem; font-weight: 680; font-variant-numeric: tabular-nums; }
 .responseSurface blockquote { margin: 0.18rem 0 0; color: #505966; font-family: Georgia, serif; font-size: 0.56rem; line-height: 1.48; }
 .responseSurface > small { color: #8190a1; font-size: 0.46rem; font-variant-numeric: tabular-nums; }
 
-.approvalSurface {
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
-  gap: 0.58rem;
+.evidenceResponse .label {
+  border-radius: 5px;
+  background: rgba(64, 133, 205, 0.12);
 }
+
+.approvalSurface { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0.5rem; }
 
 .approvalSurface > div { display: grid; gap: 0.15rem; }
 .approvalSurface > div > strong { color: #272c33; font-size: 0.6rem; font-weight: 650; }
 .approvalSurface > div > small { color: #718095; font-size: 0.48rem; font-variant-numeric: tabular-nums; }
 
-.confirmIcon {
-  display: grid;
-  width: 1.55rem;
-  height: 1.55rem;
-  place-items: center;
-  border-radius: 50%;
-  background: #e5f2ff;
-  color: #3178c3;
-}
+.approvalHeading { display: flex; align-items: center; gap: 0.28rem; }
+.approvalMark { display: grid; width: 0.82rem; height: 0.82rem; place-items: center; border-radius: 3px; background: #2f73bb; color: #fff; box-shadow: 0 3px 8px -5px rgba(47, 115, 187, .72); }
+
+.evidenceDemo .chatBody { align-content: center; }
 
 .answerText { color: #414b58 !important; font-size: 0.59rem !important; line-height: 1.55 !important; }
 .chatComposer { display: flex; align-items: center; justify-content: space-between; margin-top: 0.6rem; padding: 0.42rem 0.42rem 0.42rem 0.58rem; border-radius: 7px; background: #fff; box-shadow: 0 0 0 1px rgba(15,23,42,.06); color: #a0a19c; font-size: .54rem; }
@@ -456,7 +448,7 @@
   gap: 0;
   overflow: hidden;
   border-radius: 18px;
-  box-shadow: 0 22px 50px -42px rgba(15, 23, 42, .7);
+  box-shadow: 0 0 0 1px rgba(15, 23, 42, .08), 0 22px 50px -42px rgba(15, 23, 42, .7);
 }
 
 .comparisonSeparator {

@@ -1,5 +1,6 @@
 "use client";
 
+import { useInView } from "framer-motion";
 import { useLayoutEffect, useRef, useState } from "react";
 import { CreatorPublishFlow } from "./creator-publish-flow";
 import { MacWindowFrame } from "./mac-window-frame";
@@ -9,6 +10,7 @@ const PUBLISH_DEMO_HEIGHT = 720;
 
 function ScaledPublishFlow() {
   const hostRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(hostRef, { once: true, amount: 0.22, margin: "0px 0px -8%" });
   const [layout, setLayout] = useState({
     scale: 0,
     width: PUBLISH_DEMO_WIDTH,
@@ -44,7 +46,7 @@ function ScaledPublishFlow() {
           transform: `scale(${layout.scale})`,
         }}
       >
-        <CreatorPublishFlow />
+        <CreatorPublishFlow active={inView} />
       </div>
     </div>
   );

@@ -16,9 +16,10 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { DashboardFrame } from "../../dashboard/_components/shell";
 import { Card, PageHeader } from "../../dashboard/_components/ui";
+import { motionDuration, motionEase, motionStagger } from "./motion";
 
 /**
- * A self-driving, looping simulation of the real "New article" publishing
+ * A self-driving simulation of the real "New article" publishing
  * wizard — rendered inside the actual dashboard chrome (DashboardFrame) and
  * reusing the dashboard's own building blocks and styles. It mirrors
  * app/dashboard/articles/new/page.tsx step for step (Add article → Review
@@ -64,7 +65,8 @@ export function CreatorPublishFlow({
   compact = false,
   onAction,
   startAtStep = 0,
-  once = false,
+  once = true,
+  active = true,
 }: {
   compact?: boolean;
   onAction?: (step: number) => void;
@@ -74,11 +76,13 @@ export function CreatorPublishFlow({
   /** Play the flow a single time and hold on the final "Published" frame,
    *  instead of looping (the demo scene owns its own looping). */
   once?: boolean;
+  /** Hold on the established first frame until the composition is in view. */
+  active?: boolean;
 }) {
   return (
     <div className="creator-publish-flow" data-compact={compact || undefined} aria-hidden="true" tabIndex={-1}>
       <DashboardFrame identity="@writer" activePath="/dashboard/articles">
-        <PublishWizard compact={compact} onAction={onAction} startAtStep={startAtStep} once={once} />
+        <PublishWizard compact={compact} onAction={onAction} startAtStep={startAtStep} once={once} active={active} />
       </DashboardFrame>
     </div>
   );
@@ -87,14 +91,14 @@ export function CreatorPublishFlow({
 /** The virtual-time offset at which each wizard step begins. */
 const STEP_START = [0, T.s1, T.s2, T.s3] as const;
 
-function PublishWizard({ compact, onAction, startAtStep = 0, once = false }: { compact: boolean; onAction?: (step: number) => void; startAtStep?: number; once?: boolean }) {
+function PublishWizard({ compact, onAction, startAtStep = 0, once = true, active = true }: { compact: boolean; onAction?: (step: number) => void; startAtStep?: number; once?: boolean; active?: boolean }) {
   const reduce = useReducedMotion();
   // Begin the timeline at the requested step so any earlier steps never render.
   const startT = STEP_START[Math.max(0, Math.min(startAtStep, STEP_START.length - 1))];
   const [t, setT] = useState(reduce ? T.published + 1200 : startT);
 
   useEffect(() => {
-    if (reduce) return;
+    if (reduce || !active) return;
     let raf = 0;
     const start = performance.now();
     // Play only the remaining span, keeping the same per-step pace as the full run.
@@ -123,7 +127,7 @@ function PublishWizard({ compact, onAction, startAtStep = 0, once = false }: { c
       running = false;
       cancelAnimationFrame(raf);
     };
-  }, [compact, reduce, startT, once]);
+  }, [active, compact, reduce, startT, once]);
 
   const step = t < T.s1 ? 0 : t < T.s2 ? 1 : t < T.s3 ? 2 : t < T.published ? 3 : 4;
   const lastActionStep = useRef(-1);
@@ -146,10 +150,10 @@ function PublishWizard({ compact, onAction, startAtStep = 0, once = false }: { c
         <motion.div
           key={step}
           className="cpf-step"
-          initial={{ opacity: 0, transform: "translateY(14px)" }}
-          animate={{ opacity: 1, transform: "translateY(0)" }}
-          exit={{ opacity: 0, transform: "translateY(-10px)", transition: { duration: 0.22 } }}
-          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+          initial={{ opacity: 0.74, transform: "translate3d(0, 10px, 0)" }}
+          animate={{ opacity: 1, transform: "translate3d(0, 0px, 0)" }}
+          exit={{ opacity: 0, transform: "translate3d(0, -8px, 0)", transition: { duration: motionDuration.fast, ease: motionEase.exit } }}
+          transition={{ duration: motionDuration.reveal, ease: motionEase.out }}
         >
           {step === 0 && <StepAddArticle t={t} />}
           {step === 1 && <StepReviewSections t={t} />}
@@ -301,9 +305,9 @@ function StepReviewSections({ t }: { t: number }) {
         {SECTIONS.map(([title, words], index) => (
           <motion.li
             key={title}
-            initial={{ opacity: 0, y: 10 }}
-            animate={local > index * 220 + 120 ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
-            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            initial={{ opacity: 0.74, transform: "translate3d(0, 8px, 0)" }}
+            animate={local > index * motionStagger.item * 1000 + 80 ? { opacity: 1, transform: "translate3d(0, 0px, 0)" } : { opacity: 0.74, transform: "translate3d(0, 8px, 0)" }}
+            transition={{ duration: motionDuration.state, ease: motionEase.out }}
             className="grid gap-3 rounded-lg bg-[var(--surface-muted)] p-4 sm:grid-cols-[auto_1fr] sm:items-center"
           >
             <div className="flex flex-col text-[var(--muted)]">
@@ -404,15 +408,15 @@ function StepPublished() {
     <Card className="p-10">
       <motion.div
         className="flex flex-col items-center text-center"
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ type: "spring", stiffness: 180, damping: 18 }}
+        initial={{ opacity: 0.72, transform: "scale(0.98)" }}
+        animate={{ opacity: 1, transform: "scale(1)" }}
+        transition={{ duration: motionDuration.reveal, ease: motionEase.out }}
       >
         <motion.span
           className="grid h-14 w-14 place-items-center rounded-full bg-[#e8f6ef] text-[#165c3e]"
-          initial={{ scale: 0.6 }}
-          animate={{ scale: 1 }}
-          transition={{ type: "spring", stiffness: 260, damping: 16 }}
+          initial={{ opacity: 0.5, transform: "scale(0.92)" }}
+          animate={{ opacity: 1, transform: "scale(1)" }}
+          transition={{ duration: motionDuration.state, ease: motionEase.out }}
         >
           <Check size={28} aria-hidden="true" />
         </motion.span>

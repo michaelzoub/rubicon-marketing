@@ -1,8 +1,14 @@
 import { TrendingUp } from "lucide-react";
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, XAxis, YAxis } from "recharts";
 import { AgentSurface, ProcessRow, PromptBubble, SurfaceLabel } from "../agent-ui";
 import styles from "../agent-use-cases.module.css";
 
-const points = [["20", "154"], ["66", "139"], ["112", "122"], ["158", "132"], ["204", "105"], ["250", "113"], ["296", "84"], ["342", "68"], ["388", "76"], ["434", "47"], ["480", "32"]] as const;
+const scoreData = [
+  { run: "01", score: 0.61 }, { run: "02", score: 0.64 }, { run: "03", score: 0.68 },
+  { run: "04", score: 0.66 }, { run: "05", score: 0.71 }, { run: "06", score: 0.70 },
+  { run: "07", score: 0.75 }, { run: "08", score: 0.77 }, { run: "09", score: 0.76 },
+  { run: "10", score: 0.79 }, { run: "11", score: 0.80 },
+];
 
 export function OptimizationPreview() {
   return (
@@ -14,17 +20,16 @@ export function OptimizationPreview() {
           <SurfaceLabel>Score</SurfaceLabel>
           <b>0.61 → 0.80</b>
         </div>
-        <div className={styles.performanceChart}>
-          <svg viewBox="0 0 500 190" preserveAspectRatio="none" role="img" aria-label="Performance rises unevenly from 0.61 to 0.80 across ten strategies, including three backtracks">
-            <line className={styles.gridLine} x1="20" y1="32" x2="480" y2="32" />
-            <line className={styles.gridLine} x1="20" y1="75" x2="480" y2="75" />
-            <line className={styles.gridLine} x1="20" y1="118" x2="480" y2="118" />
-            <line className={styles.targetLine} x1="20" y1="58" x2="480" y2="58" />
-            <path className={styles.performanceArea} d="M20 154 L66 139 L112 122 L158 132 L204 105 L250 113 L296 84 L342 68 L388 76 L434 47 L480 32 V180 H20 Z" />
-            <path className={styles.performanceLine} d="M20 154 L66 139 L112 122 L158 132 L204 105 L250 113 L296 84 L342 68 L388 76 L434 47 L480 32" />
-            {points.map(([cx, cy]) => <circle key={cx} className={styles.performancePoint} cx={cx} cy={cy} r="3.5" />)}
-          </svg>
-          <div className={styles.chartXaxis}><span>Baseline</span><span>Strategy 10</span></div>
+        <div className={styles.performanceChart} role="img" aria-label="Performance rises unevenly from 0.61 to 0.80 across ten strategies, including three backtracks">
+          <ResponsiveContainer width="100%" height="100%">
+            <AreaChart data={scoreData} margin={{ top: 10, right: 8, bottom: 0, left: -20 }}>
+              <defs><linearGradient id="optimization-area" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#2f73bb" stopOpacity=".2"/><stop offset="1" stopColor="#2f73bb" stopOpacity="0"/></linearGradient></defs>
+              <CartesianGrid vertical stroke="rgba(47, 115, 187, 0.1)" strokeDasharray="2 5" />
+              <XAxis dataKey="run" axisLine={false} tickLine={false} tick={false} />
+              <YAxis hide domain={[0.58, 0.82]} />
+              <Area type="stepAfter" dataKey="score" stroke="#2f73bb" strokeWidth={2.25} fill="url(#optimization-area)" dot={false} activeDot={false} isAnimationActive={false} />
+            </AreaChart>
+          </ResponsiveContainer>
         </div>
       </AgentSurface>
     </div>

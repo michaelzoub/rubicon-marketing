@@ -4,7 +4,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { DashboardAppPreview } from "./dashboard-app-preview";
-import { ease } from "./motion";
+import { heroArtwork, heroGroup, heroItem } from "./motion";
 import { APP_URL } from "../analytics-links";
 import { trackMarketingCtaClicked } from "../analytics/events";
 
@@ -20,12 +20,11 @@ export function CreatorsHero() {
     >
       <motion.div
         className="container creators-hero-inner"
-        initial={reduceMotion ? false : { opacity: 0, y: 14 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.2 }}
-        transition={reduceMotion ? { duration: 0.16 } : { duration: 0.52, ease }}
+        variants={heroGroup}
+        initial={reduceMotion ? false : "initial"}
+        animate="enter"
       >
-        <div className="creators-hero-copy">
+        <motion.div className="creators-hero-copy" variants={heroItem}>
           <h1 id="creators-hero-heading" className="creators-hero-title">
             <span className="landing-section-title-emphasis">Creators</span>{" "}
             <span className="landing-section-title-muted">deserve credit and compensation</span>
@@ -51,9 +50,9 @@ export function CreatorsHero() {
               Start publishing <ArrowRight size={16} aria-hidden="true" />
             </Link>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="creators-hero-visual">
+        <motion.div className="creators-hero-visual" variants={heroArtwork}>
           <DashboardAppPreview
             className="creators-hero-dashboard-panel"
             backgroundImage="/painting4.png"
@@ -63,7 +62,7 @@ export function CreatorsHero() {
             analyticsPage="creators"
             analyticsSection="creator_hero"
           />
-        </div>
+        </motion.div>
       </motion.div>
     </section>
   );

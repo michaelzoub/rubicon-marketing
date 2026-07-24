@@ -43,19 +43,23 @@
 .surface {
   min-width: 0;
   border-radius: 11px;
-  background: #fbfdff;
+  background: linear-gradient(145deg, #ffffff 0%, #f4f9ff 100%);
   box-shadow:
-    0 0 0 1px rgba(49, 111, 177, 0.12),
     0 1px 2px -1px rgba(15, 23, 42, 0.08),
     0 8px 18px -16px rgba(45, 102, 164, 0.34);
 }
 
 .label {
-  display: block;
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  padding: 0.17rem 0.36rem;
+  border-radius: 5px;
+  background: rgba(64, 133, 205, 0.1);
   color: #55779e;
   font-size: 0.43rem;
   font-weight: 700;
-  letter-spacing: 0.075em;
+  letter-spacing: 0.045em;
   line-height: 1.35;
   text-transform: uppercase;
 }

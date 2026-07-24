@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useInView, useReducedMotion } from "framer-motion";
 import { BookOpen, Github, MousePointer2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -10,7 +10,7 @@ import {
   trackMarketingCtaClicked,
   trackVisualOnce,
 } from "../analytics/events";
-import { fade } from "./motion";
+import { fade, motionEase } from "./motion";
 
 const githubUrl = "https://github.com/michaelzoub/rubicon";
 
@@ -18,7 +18,7 @@ const INSTALL_CMD = "npm install @rubicon-caliga/agent-sdk";
 const RUN_CMD = "node find-clause.mjs";
 
 /**
- * Looping demo for the SDK section: a fake cursor copies the install command,
+ * Once-only demo for the SDK section: a fake cursor copies the install command,
  * pastes it into the terminal, npm installs the SDK, then a capped agent read
  * streams paid words Claude-style until the agent has its answer and closes
  * the stream early.
@@ -52,7 +52,7 @@ const PHASE_MS: Record<Phase, number> = {
   receipt: 4200,
 };
 
-const EASE = [0.16, 1, 0.3, 1] as const;
+const EASE = motionEase.out;
 
 /** The paid excerpt the agent streams word by word before stopping. */
 const STREAM_WORDS =
@@ -129,7 +129,7 @@ function SdkTerminalDemo({
                 className="agents-onboarding-cmd-text"
                 initial={reduce ? false : { opacity: 0, backgroundColor: "rgba(110,165,255,0.28)" }}
                 animate={{ opacity: 1, backgroundColor: "rgba(110,165,255,0)" }}
-                transition={{ opacity: { duration: 0.12 }, backgroundColor: { duration: 0.9, ease: "easeOut" } }}
+                transition={{ opacity: { duration: 0.12 }, backgroundColor: { duration: 0.9, ease: EASE } }}
               >
                 {INSTALL_CMD}
               </motion.div>
@@ -218,7 +218,7 @@ function SdkTerminalDemo({
                     key={`${cycle}-${i}`}
                     initial={reduce ? false : { opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ duration: 0.22, ease: "easeOut" }}
+                    transition={{ duration: 0.22, ease: EASE }}
                   >
                     {word}{" "}
                   </motion.span>
@@ -292,7 +292,7 @@ function SdkTerminalDemo({
 export function DevelopersSdkSection() {
   const reduce = useReducedMotion() ?? false;
   const [stageIndex, setStageIndex] = useState(0);
-  const [cycle, setCycle] = useState(0);
+  const [cycle] = useState(0);
   const [wordCount, setWordCount] = useState(0);
   const [cursor, setCursor] = useState<CursorPoint | null>(null);
   const [realCopied, setRealCopied] = useState(false);
@@ -300,6 +300,7 @@ export function DevelopersSdkSection() {
   const stageRef = useRef<HTMLDivElement>(null);
   const installPillRef = useRef<HTMLButtonElement>(null);
   const promptLineRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(stageRef, { once: true, amount: 0.22, margin: "0px 0px -8%" });
 
   // Fire one `marketing_visual_interacted` per session when the SDK demo animates.
   useEffect(() => {
@@ -317,18 +318,12 @@ export function DevelopersSdkSection() {
   const atLeast = (p: Phase) => stage >= PHASES.indexOf(p);
 
   useEffect(() => {
-    if (reduce) return;
+    if (reduce || !inView || stageIndex >= PHASES.length - 1) return;
     const timeout = window.setTimeout(() => {
-      if (stageIndex >= PHASES.length - 1) {
-        setStageIndex(0);
-        setWordCount(0);
-        setCycle((c) => c + 1);
-      } else {
-        setStageIndex((i) => i + 1);
-      }
+      setStageIndex((i) => Math.min(i + 1, PHASES.length - 1));
     }, PHASE_MS[PHASES[stageIndex]]);
     return () => window.clearTimeout(timeout);
-  }, [stageIndex, reduce]);
+  }, [stageIndex, reduce, inView]);
 
   // Claude-style word streaming during the stream phase.
   useEffect(() => {
@@ -488,12 +483,12 @@ export function DevelopersSdkSection() {
               className="agents-onboarding-cursor"
               aria-hidden="true"
               initial={false}
-              animate={{ x: cursor.x, y: cursor.y, opacity: cursorVisible ? 1 : 0, scale: isClicking ? 0.82 : 1 }}
+              animate={{ x: cursor.x, y: cursor.y, opacity: cursorVisible ? 1 : 0, scale: isClicking ? 0.96 : 1 }}
               transition={{
-                x: { duration: 0.95, ease: EASE },
-                y: { duration: 0.95, ease: EASE },
-                opacity: { duration: 0.45, ease: "easeOut" },
-                scale: { duration: 0.18, ease: "easeOut" },
+                x: { duration: 0.68, ease: motionEase.move },
+                y: { duration: 0.68, ease: motionEase.move },
+                opacity: { duration: 0.18, ease: EASE },
+                scale: { duration: 0.14, ease: EASE },
               }}
             >
               <MousePointer2 size={20} fill="currentColor" />
@@ -502,10 +497,10 @@ export function DevelopersSdkSection() {
                   <motion.span
                     key={phase}
                     className="agents-onboarding-cursor-ring"
-                    initial={{ opacity: 0.9, scale: 0.55 }}
-                    animate={{ opacity: 0, scale: 1.65 }}
+                    initial={{ opacity: 0.72, scale: 0.82 }}
+                    animate={{ opacity: 0, scale: 1.28 }}
                     exit={{ opacity: 0 }}
-                    transition={{ duration: 0.65, ease: "easeOut" }}
+                    transition={{ duration: 0.28, ease: EASE }}
                   />
                 )}
               </AnimatePresence>

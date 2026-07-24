@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, type ComponentType } from "react";
-import { LandingReveal } from "./motion";
 
 type DashboardPreviewComponent = ComponentType;
 
@@ -34,7 +33,7 @@ export function LazyDashboardShowcase() {
       aria-labelledby="writer-dashboard-heading"
       data-analytics-section="creator_dashboard_preview"
     >
-      <LandingReveal className="container landing-dashboard-showcase-inner">
+      <div className="container landing-dashboard-showcase-inner">
         <div className="landing-copy-stack landing-dashboard-showcase-header">
           <p className="landing-section-eyebrow">For writers</p>
           <h2 id="writer-dashboard-heading" className="landing-section-title">
@@ -45,10 +44,15 @@ export function LazyDashboardShowcase() {
             </span>
           </h2>
         </div>
-        <div className="landing-dashboard-showcase-column">
-          {DashboardPreview ? <DashboardPreview /> : <div className="landing-dashboard-preview-placeholder" aria-hidden="true" />}
+        <div className={`landing-dashboard-showcase-column${DashboardPreview ? " is-loaded" : ""}`}>
+          <div className="landing-dashboard-preview-placeholder" aria-hidden="true" />
+          {DashboardPreview ? (
+            <div className="landing-dashboard-preview-loaded">
+              <DashboardPreview />
+            </div>
+          ) : null}
         </div>
-      </LandingReveal>
+      </div>
     </section>
   );
 }

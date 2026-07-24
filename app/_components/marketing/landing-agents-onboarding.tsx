@@ -1,15 +1,16 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useInView, useReducedMotion } from "framer-motion";
 import { Check, Copy, Link2, MousePointer2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { trackClick } from "../analytics-links";
 import { trackVisualOnce } from "../analytics/events";
 import { setupSkillPrompt } from "./agent-skill-setup";
 import { SuccessCelebration } from "./success-celebration";
+import { motionEase } from "./motion";
 
 /**
- * Looping onboarding animation for the landing "For agents" section:
+ * Once-only onboarding sequence for the landing "For agents" section:
  * a fake cursor copies the setup prompt from the panel on the right, pastes it
  * into the terminal on the left, then the agent analyzes the prompt, fetches
  * articles, and prints a summary with the cost receipt. Both cards sit on a
@@ -40,7 +41,7 @@ const PHASE_MS: Record<Phase, number> = {
   output: 6200,
 };
 
-const EASE = [0.16, 1, 0.3, 1] as const;
+const EASE = motionEase.out;
 
 const FETCH_LINES = [
   { id: "01", method: "GET", path: "/search?q=available+articles", status: "200", note: "3 results", tone: "ok", delay: 0.1 },
@@ -57,7 +58,7 @@ interface CursorPoint {
 export function LandingAgentsOnboarding() {
   const reduce = useReducedMotion();
   const [stageIndex, setStageIndex] = useState(0);
-  const [cycle, setCycle] = useState(0);
+  const [cycle] = useState(0);
   const [cursor, setCursor] = useState<CursorPoint | null>(null);
   const [realCopied, setRealCopied] = useState(false);
   const [celebrationKey, setCelebrationKey] = useState(0);
@@ -66,6 +67,7 @@ export function LandingAgentsOnboarding() {
   const copyButtonRef = useRef<HTMLButtonElement>(null);
   const promptLineRef = useRef<HTMLDivElement>(null);
   const terminalBodyRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(stageRef, { once: true, amount: 0.24, margin: "0px 0px -8%" });
 
   // With reduced motion, skip the choreography and show the finished run.
   const stage = reduce ? PHASES.length - 1 : stageIndex;
@@ -73,17 +75,12 @@ export function LandingAgentsOnboarding() {
   const atLeast = (p: Phase) => stage >= PHASES.indexOf(p);
 
   useEffect(() => {
-    if (reduce) return;
+    if (reduce || !inView || stageIndex >= PHASES.length - 1) return;
     const timeout = window.setTimeout(() => {
-      if (stageIndex >= PHASES.length - 1) {
-        setStageIndex(0);
-        setCycle((c) => c + 1);
-      } else {
-        setStageIndex((i) => i + 1);
-      }
+      setStageIndex((i) => Math.min(i + 1, PHASES.length - 1));
     }, PHASE_MS[PHASES[stageIndex]]);
     return () => window.clearTimeout(timeout);
-  }, [stageIndex, reduce]);
+  }, [stageIndex, reduce, inView]);
 
   // Fire one `marketing_visual_interacted` per session when this animation plays.
   useEffect(() => {
@@ -173,7 +170,7 @@ export function LandingAgentsOnboarding() {
                       className="agents-onboarding-cmd-text"
                       initial={reduce ? false : { opacity: 0, backgroundColor: "rgba(110,165,255,0.28)" }}
                       animate={{ opacity: 1, backgroundColor: "rgba(110,165,255,0)" }}
-                      transition={{ opacity: { duration: 0.12 }, backgroundColor: { duration: 0.9, ease: "easeOut" } }}
+                      transition={{ opacity: { duration: 0.12 }, backgroundColor: { duration: 0.9, ease: EASE } }}
                     >
                       {setupSkillPrompt}
                     </motion.div>
@@ -314,12 +311,12 @@ export function LandingAgentsOnboarding() {
           className="agents-onboarding-cursor"
           aria-hidden="true"
           initial={false}
-          animate={{ x: cursor.x, y: cursor.y, opacity: cursorVisible ? 1 : 0, scale: isClicking ? 0.82 : 1 }}
+          animate={{ x: cursor.x, y: cursor.y, opacity: cursorVisible ? 1 : 0, scale: isClicking ? 0.96 : 1 }}
           transition={{
-            x: { duration: 0.95, ease: EASE },
-            y: { duration: 0.95, ease: EASE },
-            opacity: { duration: 0.45, ease: "easeOut" },
-            scale: { duration: 0.18, ease: "easeOut" },
+            x: { duration: 0.68, ease: motionEase.move },
+            y: { duration: 0.68, ease: motionEase.move },
+            opacity: { duration: 0.18, ease: EASE },
+            scale: { duration: 0.14, ease: EASE },
           }}
         >
           <MousePointer2 size={20} fill="currentColor" />
@@ -328,10 +325,10 @@ export function LandingAgentsOnboarding() {
               <motion.span
                 key={phase}
                 className="agents-onboarding-cursor-ring"
-                initial={{ opacity: 0.9, scale: 0.55 }}
-                animate={{ opacity: 0, scale: 1.65 }}
+                initial={{ opacity: 0.72, scale: 0.82 }}
+                animate={{ opacity: 0, scale: 1.28 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.65, ease: "easeOut" }}
+                transition={{ duration: 0.28, ease: EASE }}
               />
             )}
           </AnimatePresence>

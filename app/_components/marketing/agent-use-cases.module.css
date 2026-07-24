@@ -1,11 +1,11 @@
 .section { border-top: 1px solid rgba(15, 23, 42, .08); padding-block: clamp(4.5rem, 8vw, 7rem); background: #fafafa; }
 .inner { display: grid; gap: clamp(2rem, 4vw, 3.25rem); }
-.headingBlock { max-width: 48rem; }
-.heading { max-width: 19ch; margin: .55rem 0 0; color: #18181b; font-size: clamp(2rem, 3.8vw, 3.25rem); font-weight: 500; letter-spacing: -.04em; line-height: 1.06; text-wrap: balance; }
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(.9rem, 1.5vw, 1.2rem); }
 .card { min-width: 0; overflow: hidden; border-radius: 20px; background: #fff; box-shadow: 0 0 0 1px rgba(15,23,42,.065), 0 1px 2px -1px rgba(15,23,42,.06), 0 18px 36px -30px rgba(15,23,42,.22); transition: transform 220ms cubic-bezier(.16,1,.3,1), box-shadow 220ms cubic-bezier(.16,1,.3,1); }
-.card:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px rgba(15,23,42,.09), 0 2px 5px -2px rgba(15,23,42,.08), 0 24px 46px -32px rgba(15,23,42,.3); }
-.preview { position: relative; height: 19rem; margin: .5rem .5rem 0; overflow: hidden; border-radius: 12px; background: #f3f6fa; box-shadow: inset 0 0 0 1px rgba(49,111,177,.065); color: #27272a; }
+@media (hover: hover) and (pointer: fine) {
+  .card:hover { transform: translateY(-2px); box-shadow: 0 0 0 1px rgba(15,23,42,.09), 0 2px 5px -2px rgba(15,23,42,.08), 0 24px 46px -32px rgba(15,23,42,.3); }
+}
+.preview { position: relative; height: 19rem; margin: .5rem .5rem 0; overflow: hidden; border-radius: 12px; background: #f3f6fa; color: #27272a; }
 .cardBody { padding: 1.05rem 1.25rem 1.2rem; }
 .cardBody h3 { margin: 0; color: #18181b; font-size: 1.05rem; font-weight: 630; letter-spacing: -.025em; line-height: 1.3; text-wrap: balance; }
 
@@ -22,7 +22,7 @@
 .optimizationPreview { padding: 1rem; background: #f5f5f4; }
 .optimizationHeader { display: flex; align-items: flex-start; justify-content: space-between; color: #858790; font-size: .48rem; }
 .optimizationHeader > div { display: grid; gap: .14rem; }.optimizationHeader > div span { letter-spacing: .07em; }.optimizationHeader strong { color: #414249; font-family: var(--font-mono), monospace; font-size: .55rem; font-weight: 620; }.optimizationHeader > b { color: #303136; font-size: .85rem; font-variant-numeric: tabular-nums; }.optimizationHeader > b small { display: block; margin-top: .12rem; color: #858790; font-size: .4rem; font-weight: 500; }
-.performanceChart { margin-top: .7rem; }.chartLegend { display: flex; justify-content: space-between; margin: 0 .35rem -.1rem; color: #858790; font-size: .38rem; }.performanceChart svg { display: block; width: 100%; height: 11rem; overflow: visible; }.gridLine { stroke: rgba(15,23,42,.08); stroke-width: 1; }.targetLine { stroke: #a0a1a8; stroke-dasharray: 3 3; stroke-width: 1; }.performanceArea { fill: rgba(61,62,68,.075); }.performanceLine { fill: none; stroke: #3f4046; stroke-width: 2.25; stroke-linejoin: round; }.performancePoint { fill: #f5f5f4; stroke: #3f4046; stroke-width: 1.7; }.breakthroughLabel { fill: #5f6068; font-size: 8px; font-family: Arial, sans-serif; }.chartXaxis { display: flex; justify-content: space-between; margin: -.2rem .4rem 0; color: #9698a0; font-size: .38rem; }
+.performanceChart { position: relative; height: 12.25rem; margin-top: .7rem; padding: .2rem .15rem 0; overflow: hidden; border-radius: 8px; background: linear-gradient(145deg, rgba(235, 245, 255, .72), rgba(255, 255, 255, .12)); }.chartLegend { display: flex; justify-content: space-between; margin: 0 .35rem -.1rem; color: #858790; font-size: .38rem; }.performanceChart svg { display: block; width: 100%; height: 100%; overflow: hidden; }.gridLine { stroke: rgba(15,23,42,.075); stroke-width: 1; vector-effect: non-scaling-stroke; }.chartVerticalGuide, .marketChartGuide { stroke: rgba(47, 115, 187, .13); stroke-dasharray: 2 6; stroke-width: 1; vector-effect: non-scaling-stroke; }.targetLine { stroke: rgba(47, 115, 187, .48); stroke-dasharray: 3 4; stroke-width: 1; vector-effect: non-scaling-stroke; }.performanceArea { fill: url(#optimization-area); }.performanceLine { fill: none; stroke: #2f73bb; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; filter: drop-shadow(0 3px 3px rgba(47,115,187,.16)); }.performancePoint, .performancePointFinal, .breakthroughLabel { display: none; }.chartXaxis { display: none; }
 .evalResult { display: flex; align-items: center; gap: .3rem; margin-top: .58rem; padding: .42rem .5rem; border-radius: 5px; background: #dedee0; color: #4f5058; font-size: .44rem; }.evalResult strong { color: #34353b; font-weight: 700; }.evalResult b { margin-left: auto; color: #303136; font-size: .58rem; font-variant-numeric: tabular-nums; }
 
 /* Distinct perspectives */
@@ -60,13 +60,13 @@
 .useCaseResult .sourceTrail { margin-top: 0.05rem; }
 .useCaseResult .sourceTrail span { color: #4e7198; font-size: 0.44rem; text-decoration-color: rgba(47, 115, 187, 0.24); }
 .researchPreview { gap: 0.82rem; }
-.researchResult { box-shadow: 0 0 0 1px rgba(49, 111, 177, 0.16), 0 10px 24px -19px rgba(45, 102, 164, 0.42); }
+.researchResult { box-shadow: 0 10px 24px -19px rgba(45, 102, 164, 0.42); }
 
 .optimizationResult { gap: 0.1rem; padding: 0.62rem 0.65rem 0.56rem; }
 .resultHeading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-inline: 0.1rem; }
 .resultHeading > b { color: #2f73bb; font-size: 0.68rem; font-weight: 650; font-variant-numeric: tabular-nums; }
 .optimizationResult .performanceChart { margin-top: 0.05rem; }
-.optimizationResult .performanceChart svg { height: 9.35rem; }
+.optimizationResult .performanceChart { height: 12.25rem; }
 .optimizationResult .performanceArea { fill: rgba(69, 128, 190, 0.1); }
 .optimizationResult .performanceLine { stroke: #3f7fbe; }
 .optimizationResult .performancePoint { fill: #fbfdff; stroke: #3f7fbe; }
@@ -85,16 +85,18 @@
 .marketsPreview { gap: 0.5rem; padding: 0.8rem; }
 .marketResult { gap: 0.42rem; padding: 0.62rem; }
 .marketSource { display: flex; align-items: center; gap: 0.55rem; }
-.marketSource > div { display: grid; gap: 0.14rem; }
+.marketSource > div { display: grid; gap: 0.1rem; }
 .marketSource strong { color: #3f4853; font-size: 0.52rem; font-weight: 620; }
+.marketSource small { color: #8794a3; font-size: 0.4rem; }
 .marketTakeaway { display: grid; gap: 0.18rem; padding-top: 0.38rem; border-top: 1px solid rgba(49, 111, 177, 0.09); }
+.marketTakeawayLabel { color: #6f8398; font-size: 0.4rem; font-weight: 650; letter-spacing: 0.045em; text-transform: uppercase; }
 .marketTakeaway > strong { color: #2f3d37; font-family: Georgia, serif; font-size: 0.59rem; font-weight: 550; line-height: 1.35; }
 .marketTakeaway > p { margin: 0; color: #5a6b62; font-size: 0.48rem; }
-.marketResult .signalPanel { padding: 0.42rem 0.52rem 0.34rem; border-radius: 8px; background: #f5fbf7; box-shadow: inset 0 0 0 1px rgba(67, 143, 104, 0.12); }
+.marketResult .signalPanel { padding: 0.42rem 0.52rem 0.34rem; border-radius: 8px; background: linear-gradient(145deg, #f7fdf9, #eff9f3); box-shadow: 0 8px 16px -16px rgba(52, 124, 83, .36); }
 .marketResult .signalLabel span { color: #60806e; }
 .marketResult .signalLabel strong { color: #39795a; font-size: 0.52rem; }
-.marketResult .signalPanel svg { height: 3rem; margin-top: 0.14rem; }
-.marketResult .chartAxis { color: #789083; }
+.marketChart { width: 100%; height: 4.45rem; min-width: 0; margin-top: 0.12rem; }
+.marketChart :global(.recharts-surface) { overflow: visible; }
 
 @media (max-width: 760px) { .section { padding-block: 4rem; }.grid { grid-template-columns: 1fr; }.preview { height: 19.5rem; }.cardBody { padding: 1rem 1.15rem 1.15rem; } }
 @media (max-width: 430px) { .chatStatus { display: none; }.angleStack { transform: scale(.96); transform-origin: top left; width: 105%; }.marketBody { grid-template-columns: 1fr 1.1fr; }.marketContext span:nth-last-child(-n+2) { display: none; } }

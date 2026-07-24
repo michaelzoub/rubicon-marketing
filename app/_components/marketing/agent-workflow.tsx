@@ -49,7 +49,7 @@ function GatewayDemo() {
     <div className={`${styles.demo} ${styles.gatewayDemo}`} aria-hidden="true">
       <div className={styles.chatBody}>
         <div className={styles.buyerAgentMessage}>
-          <span>Buyer agent</span>
+          <SurfaceLabel>Buyer agent</SurfaceLabel>
           <p>Which passage explains the timing gap?</p>
         </div>
         <ProcessRow>Buyer agent → Gateway agent</ProcessRow>
@@ -73,12 +73,12 @@ function ApproveDemo() {
         <PromptBubble>Approve {session.price}. Stay under {session.budget}.</PromptBubble>
         <ProcessRow icon={<LockKeyhole size={11} />}>Checking spend policy</ProcessRow>
         <AgentSurface className={`${styles.responseSurface} ${styles.approvalSurface}`}>
-          <span className={styles.confirmIcon}><Check size={12} /></span>
           <div>
-            <SurfaceLabel>Approved</SurfaceLabel>
+            <div className={styles.approvalHeading}><SurfaceLabel>Approved</SurfaceLabel></div>
             <strong>{session.price} authorized</strong>
             <small>$1.86 remaining</small>
           </div>
+          <span className={styles.approvalMark}><Check size={9} /></span>
         </AgentSurface>
       </div>
     </div>
@@ -87,9 +87,9 @@ function ApproveDemo() {
 
 function ResultDemo() {
   return (
-    <div className={styles.demo} aria-hidden="true">
+    <div className={`${styles.demo} ${styles.evidenceDemo}`} aria-hidden="true">
       <div className={styles.chatBody}>
-        <AgentSurface className={`${styles.responseSurface} ${styles.evidenceResponse}`}>
+          <AgentSurface className={`${styles.responseSurface} ${styles.evidenceResponse}`}>
           <SurfaceLabel>Evidence unlocked</SurfaceLabel>
           <strong>Grounded answer</strong>
           <p className={styles.answerText}>Instant settlement can create a liquidity gap when obligations arrive before cash. The risk is timing, not solvency.</p>
@@ -145,6 +145,7 @@ export function AgentComparison() {
     <section className={`landing-section-block ${styles.comparisonSection}`} aria-labelledby="agent-comparison-heading" data-analytics-section="agent_comparison">
       <div className={`container ${styles.comparisonInner}`}>
         <div className="landing-copy-stack">
+          <p className="landing-section-eyebrow">With and without Rubicon</p>
           <h2 id="agent-comparison-heading" className="landing-section-title"><span className="landing-section-title-emphasis">Rubicon expands what your existing agent can read.</span></h2>
           <p className="landing-section-lead">Rubicon adds varied human writing to an agent’s source pool, including expert analysis that may live behind a paywall.</p>
         </div>

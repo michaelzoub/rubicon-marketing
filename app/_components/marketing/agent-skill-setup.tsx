@@ -7,7 +7,7 @@ import { trackCopyActionCompleted } from "../analytics/events";
 import { SuccessCelebration } from "./success-celebration";
 
 const skillUrl = "https://www.rubiconpay.xyz/skill.md";
-export const setupSkillPrompt = `Set up the Rubicon skill from ${skillUrl}. Help me fund my buyer wallet, then find and summarize the first available article. Spend no more than $0.01.`;
+export const setupSkillPrompt = `Set up the Rubicon skill from ${skillUrl}. Help me fund my buyer wallet, then answer this question using paid evidence: What are the biggest limitations to reaching AGI? Spend no more than $0.01.`;
 
 export function AgentSkillSetup({
   className,
@@ -51,7 +51,7 @@ export function AgentSkillSetup({
           </div>
           <p className="developers-skill-panel-copy">
             Paste this into Codex or another agent. It installs the Rubicon skill, funds a buyer wallet, and runs a
-            capped first read.
+            capped research read.
           </p>
           {isLanding && (
             <div className="relative w-fit"><button

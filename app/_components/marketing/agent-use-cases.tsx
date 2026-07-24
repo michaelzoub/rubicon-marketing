@@ -15,9 +15,11 @@ export function AgentUseCases() {
   return (
     <section className={`landing-section-block ${styles.section}`} aria-labelledby="agent-use-cases-heading" data-analytics-section="agent_use_cases">
       <div className={`container ${styles.inner}`}>
-        <div className={styles.headingBlock}>
+        <div className="landing-copy-stack">
           <p className="landing-section-eyebrow">Better inputs, better outputs</p>
-          <h2 id="agent-use-cases-heading" className={styles.heading}>Give agents better material to reason from.</h2>
+          <h2 id="agent-use-cases-heading" className="landing-section-title">
+            <span className="landing-section-title-emphasis">Give agents better material to reason from.</span>
+          </h2>
         </div>
         <div className={styles.grid}>
           {useCases.map(({ title, Preview }) => <article className={styles.card} key={title}><Preview /><div className={styles.cardBody}><h3>{title}</h3></div></article>)}

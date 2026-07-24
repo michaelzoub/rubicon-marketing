@@ -5544,7 +5544,6 @@ a {
 }
 .landing-hero::after,
 .landing-dashboard-showcase::after { display: none; }
-.landing-hero-content { padding-top: 7rem; padding-bottom: 4rem; }
 
 /* Hero: clean copy on the left, a crisp rounded painting on the right. No fades. */
 .landing-hero-art-wrap {
@@ -5668,7 +5667,7 @@ a {
 .site-footer { border-top-color: rgba(20, 22, 28, 0.06); background: #f5f5f6; color: #16181d; }
 
 @media (min-width: 980px) {
-  .landing-hero-layout { grid-template-columns: minmax(0,.86fr) minmax(540px,1.14fr); }
+  /* Hero layout is controlled by marketing.css — stacked copy above preview. */
 }
 @media (max-width: 979px) {
   .landing-hero { min-height: auto; }
@@ -6154,6 +6153,29 @@ a {
 @media (max-width: 1023px) {
   .dashboard-canvas { background-attachment: scroll; }
 }
+
+/* Shared Rubicon app control layer. Keep landing CTAs and header actions on
+   the same primitive as the app repository buttons. */
+:where(.button, .site-nav-cta) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: 32px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0.38rem 0.7rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition: transform 140ms var(--ease-out), background-color 140ms ease, color 140ms ease, border-color 140ms ease, opacity 140ms ease;
+}
+
+:where(.button, .site-nav-cta):active { transform: scale(0.97); }
+:where(.button-primary, .site-nav-cta--creator) { background: #18181b; color: #fff; }
+:where(.button-primary, .site-nav-cta--creator):hover { background: #2a2a2e; }
+:where(.button-secondary, .site-nav-cta--sales) { background: #fff; color: #18181b; }
+:where(.button-secondary, .site-nav-cta--sales):hover { background: #ececee; }
 
 @media (prefers-color-scheme: light) {
   .landing-page { --surface-muted: #fafafa; --hovered: #f7f7f7; --line: rgba(18,18,22,.07); }

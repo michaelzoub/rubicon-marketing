@@ -1,6 +1,7 @@
 ﻿/* Route-scoped marketing corrections. Keep dashboard styling in globals.css untouched. */
 
 .landing-page {
+  --landing-content-width: min(1320px, 80vw);
   --landing-bg: #fff;
   --landing-ink: #18181b;
   --landing-muted: #656b78;
@@ -8,45 +9,76 @@
   --landing-radius: 14px;
   --landing-radius-sm: 10px;
   --landing-shadow: 0 0 0 1px rgba(18, 18, 22, 0.08), 0 8px 24px -18px rgba(18, 18, 22, 0.24);
+  --motion-press: 140ms;
+  --motion-fast: 180ms;
+  --motion-state: 280ms;
+  --motion-reveal: 480ms;
+  --motion-ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --motion-ease-move: cubic-bezier(0.65, 0, 0.35, 1);
   background: #fff;
+  overflow-x: clip;
 }
 
-/* Shared marketing controls. Keep every CTA on the same tactile, compact system. */
-.landing-page .button {
+/* One fluid measure for the header, hero, and every landing section. The
+   clamp grows with the viewport without letting the page feel cropped. */
+.landing-page .container,
+.landing-page .site-header-inner {
+  width: var(--landing-content-width);
+  max-width: none;
+  margin-inline: auto;
+}
+
+/* Shared marketing controls. Every CTA reuses the rubicon-app button system
+   verbatim so hero and header buttons are visually identical. */
+.landing-page .button,
+.landing-page .site-nav-cta {
   display: inline-flex;
-  min-height: 40px;
   align-items: center;
   justify-content: center;
-  gap: 0.45rem;
-  border-radius: var(--landing-radius-sm);
-  padding: 0.55rem 0.9rem;
-  font-size: 0.84rem;
+  gap: 0.4rem;
+  min-height: 32px;
+  border: 0;
+  border-radius: 8px;
+  padding: 0.38rem 0.7rem;
+  font-size: 0.875rem;
   font-weight: 600;
-  line-height: 1;
-  transition-property: transform, background-color, color, border-color, box-shadow;
-  transition-duration: 160ms;
-  transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+  letter-spacing: -0.01em;
+  transition:
+    transform 140ms var(--ease-out),
+    background-color 140ms ease,
+    color 140ms ease,
+    border-color 140ms ease,
+    opacity 140ms ease;
+  will-change: transform;
 }
 
-.landing-page .button:active { transform: scale(0.96); }
-.landing-page .button:focus-visible { outline: 2px solid rgba(47, 125, 246, 0.55); outline-offset: 3px; }
-.landing-page .button-primary {
-  border: 1px solid #141417;
-  background: linear-gradient(180deg, #2e2e34 0%, #17171a 100%);
-  color: #fff;
-  box-shadow: 0 0 0 1px #141417, inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 1px 2px rgba(18, 18, 22, 0.2);
+.landing-page .button:active,
+.landing-page .site-nav-cta:active { transform: scale(0.97); }
+.landing-page .button:focus-visible,
+.landing-page .site-nav-cta:focus-visible { outline: 2px solid rgba(47, 125, 246, 0.55); outline-offset: 3px; }
+
+/* Primary: solid dark — used by hero "See how it works" and header "List an article". */
+.landing-page .button-primary,
+.landing-page .site-nav-cta--creator {
+  background: #18181b;
+  color: #ffffff;
 }
-.landing-page .button-primary:hover {
-  background: linear-gradient(180deg, #3a3a41 0%, #232327 100%);
-  box-shadow: 0 0 0 1px #141417, inset 0 1px 0 rgba(255, 255, 255, 0.16), 0 2px 6px -1px rgba(18, 18, 22, 0.28);
+.landing-page .button-primary:hover,
+.landing-page .site-nav-cta--creator:hover {
+  background: #2a2a2e;
 }
-.landing-page .button-secondary {
-  border: 1px solid rgba(18, 18, 22, 0.1);
-  background: #fff;
-  color: var(--landing-ink);
-  box-shadow: 0 1px 2px rgba(18, 18, 22, 0.05);
+
+/* Secondary: light bordered — used by hero "List your writing" and header "Book a demo". */
+.landing-page .button-secondary,
+.landing-page .site-nav-cta--sales {
+  border: 1px solid rgba(24, 24, 27, 0.12);
+  background: #ffffff;
+  color: #18181b;
 }
-.landing-page .button-secondary:hover { background: #fafafa; box-shadow: var(--landing-shadow); }
+.landing-page .button-secondary:hover,
+.landing-page .site-nav-cta--sales:hover {
+  background: #ececee;
+}
 
 .landing-page .landing-section-block {
   background: #fff;
@@ -54,23 +86,34 @@
 
 .landing-page .site-header,
 .landing-page .site-header.site-header--scrolled {
-  background: #fff;
-  border-bottom-color: rgba(15, 23, 42, 0.08);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  background: rgba(255, 255, 255, 0.72);
+  border-bottom: 0;
+  backdrop-filter: blur(16px) saturate(1.1);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
   box-shadow: none;
 }
 
 .landing-page .site-header {
   transition:
-    background-color 320ms var(--ease-soft),
-    border-color 320ms var(--ease-soft),
-    transform 280ms var(--ease-soft);
+    background-color 280ms var(--ease-soft),
+    backdrop-filter 280ms var(--ease-soft);
 }
 
+/* Always visible when scrolling — no hide-on-scroll. */
 .landing-page .site-header.site-header--hidden {
-  transform: translateY(-100%);
-  pointer-events: none;
+  transform: none;
+  pointer-events: auto;
+}
+
+/* Shift nav links closer to the logo. */
+@media (min-width: 1024px) {
+  .landing-page .site-header-inner,
+  .landing-page .site-header--scrolled .site-header-inner {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+  .landing-page .site-header-logo { justify-self: start; }
+  .landing-page .site-header-links { justify-self: center; padding-left: 0; transform: translateX(-0.45rem); }
+  .landing-page .site-header-actions { justify-self: end; margin-left: 0; }
 }
 
 .landing-page .site-header-links .site-nav-link {
@@ -78,10 +121,58 @@
   font-size: 0.875rem;
   font-weight: 500;
   line-height: 1;
+  transition: color 280ms var(--ease-soft), opacity 280ms var(--ease-soft);
 }
 
 .landing-page .site-header-links .site-nav-link:hover {
   color: #8b919a;
+}
+
+/* Header CTAs share the unified button system defined above. */
+
+/* Keep header CTAs consistent on mobile. */
+@media (max-width: 520px) {
+  .landing-page .site-nav-cta {
+    min-height: 30px;
+    padding: 0.28rem 0.6rem;
+    font-size: 0.78rem;
+    height: auto;
+  }
+  .landing-page .site-nav-cta--sales { display: none; }
+}
+
+.landing-page .site-header-logo {
+  transition: opacity 280ms var(--ease-soft);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .landing-page .site-header-logo:hover { opacity: 0.76; }
+}
+
+/* Dark theme: translucent dark header with blur. */
+.dark .landing-page .site-header,
+.dark .landing-page .site-header.site-header--scrolled {
+  background: rgba(8, 9, 12, 0.72);
+  border-bottom: 0;
+  backdrop-filter: blur(16px) saturate(1.1);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+}
+.dark .landing-page .site-nav-cta--sales {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.05);
+  color: #dfe4ec;
+}
+.dark .landing-page .site-nav-cta--sales:hover { background: rgba(255, 255, 255, 0.1); color: #fff; }
+.dark .landing-page .site-header-links .site-nav-link { color: #aab2c0; }
+.dark .landing-page .site-header-links .site-nav-link:hover { color: #fff; }
+
+/* Dark theme: secondary buttons get dark surfaces. */
+.dark .landing-page .button-secondary,
+.dark .landing-page .site-nav-cta--sales {
+  border-color: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.04);
+  color: #e7ebf2;
+  box-shadow: none;
 }
 
 .landing-page .site-header-links .site-nav-link.site-nav-link--active,
@@ -97,7 +188,7 @@
 
 .landing-page .landing-hero-content {
   align-items: center;
-  padding-block: clamp(3.75rem, 6vh, 4.75rem) clamp(2.5rem, 4vh, 3.5rem);
+  padding-block: clamp(4.5rem, 8vh, 7rem) clamp(2rem, 4vh, 3rem);
 }
 
 .landing-page .landing-hero-copy {
@@ -106,17 +197,43 @@
 }
 
 .landing-page .landing-hero > .landing-hero-content > .container {
-  width: min(1180px, calc(100% - 2 * var(--landing-gutter, clamp(24px, 5vw, 48px))));
+  width: var(--landing-content-width);
+}
+
+.landing-page > :where(section, div) > .container,
+.landing-page .landing-section-block > .container {
+  width: var(--landing-content-width);
+}
+
+@media (max-width: 760px) {
+  .landing-page {
+    --landing-content-width: calc(100% - 2 * 24px);
+  }
 }
 
 .landing-page .landing-hero-title {
-  max-width: 21ch;
+  max-width: 22ch;
   color: #18181b;
-  font-size: clamp(2.5rem, 3.45vw, 3.5rem);
+  font-size: clamp(2.25rem, 4vw, 3.5rem);
   font-weight: 500;
   line-height: 1.04;
   letter-spacing: -0.045em;
   text-wrap: balance;
+}
+
+.landing-page .landing-hero-title-line,
+.landing-page .landing-hero-title-line-mask {
+  display: block;
+}
+
+.landing-page .landing-hero-title-line-mask { overflow: clip; }
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not(.landing-hero-motion-complete):not(.landing-hero-motion-running) .landing-page [data-hero-headline],
+  html:not(.landing-hero-motion-complete):not(.landing-hero-motion-running) .landing-page [data-hero-lead],
+  html:not(.landing-hero-motion-complete):not(.landing-hero-motion-running) .landing-page [data-hero-actions] {
+    opacity: 0;
+  }
 }
 
 .landing-page .landing-hero-lead {
@@ -147,12 +264,15 @@
   display: grid;
   grid-auto-flow: row;
   grid-template-columns: minmax(0, 1fr);
-  gap: clamp(8rem, 24vh, 15rem);
+  gap: clamp(3.5rem, 7vw, 7rem);
   padding-top: 0;
+  overflow-x: clip;
 }
 
 .landing-page .landing-hero-preview {
   width: 100%;
+  max-width: 100%;
+  overflow: clip;
 }
 
 .landing-page .landing-hero-actions {
@@ -160,32 +280,35 @@
 }
 
 .landing-page .landing-hero-actions .button {
-  min-height: 40px;
+  min-height: 34px;
 }
+
+/* No hover animations on hero button icons. */
 
 .agents-page .landing-section-block:first-of-type {
   padding-top: clamp(5.5rem, 9vw, 7rem);
 }
 
 @media (max-width: 979px) {
-  .landing-page .landing-hero-content { padding-block: 5.25rem 3rem; }
+  .landing-page .landing-hero-content { padding-block: 4.5rem 2.5rem; }
   .landing-page .landing-hero-copy { max-width: 49rem; }
-  .landing-page .landing-hero-title { max-width: 20ch; font-size: clamp(2.5rem, 5.8vw, 3.35rem); }
-  .landing-page .landing-hero-layout { gap: clamp(4rem, 12vh, 8rem); }
+  .landing-page .landing-hero-title { max-width: 20ch; font-size: clamp(2.25rem, 5vw, 3rem); }
+  .landing-page .landing-hero-layout { gap: clamp(2.75rem, 7vw, 4.5rem); }
 }
 
 @media (max-width: 640px) {
-  .landing-page .landing-hero-content { padding-block: 4.75rem 2.5rem; }
+  .landing-page .landing-hero-content { padding-block: 4.25rem 2rem; }
   .landing-page .landing-hero-copy { gap: 1rem; }
-  .landing-page .landing-hero-title { max-width: 20ch; font-size: clamp(2.15rem, 9.5vw, 2.65rem); line-height: 1.04; }
+  .landing-page .landing-hero-title { max-width: 20ch; font-size: clamp(2rem, 8vw, 2.5rem); line-height: 1.04; }
   .landing-page .landing-hero-lead { font-size: 1rem; line-height: 1.65; }
-  .landing-page .landing-hero-layout { gap: 2.25rem; }
+  .landing-page .landing-hero-layout { gap: 1.75rem; }
   .landing-page .landing-hero-actions { gap: 0.65rem; }
-  .landing-page .landing-hero-actions .button { width: 100%; min-height: 44px; padding-inline: 0.85rem; }
+  .landing-page .landing-hero-actions .button { width: 100%; min-height: 38px; padding-inline: 0.85rem; }
   .landing-page .landing-hero-actions { flex-direction: column; align-items: stretch; }
 }
 
 .landing-page .landing-dashboard-preview-placeholder {
+  grid-area: 1 / 1;
   min-height: clamp(19rem, 45vw, 30rem);
   border: 1px solid rgba(15, 23, 42, 0.1);
   border-radius: clamp(14px, 1.6vw, 22px);
@@ -193,6 +316,26 @@
     linear-gradient(90deg, rgba(15, 23, 42, 0.025) 25%, rgba(15, 23, 42, 0.055) 38%, rgba(15, 23, 42, 0.025) 63%),
     #f5f5f6;
   background-size: 220% 100%;
+  opacity: 1;
+  transition: opacity var(--motion-fast) var(--motion-ease-out);
+}
+
+.landing-page .landing-dashboard-showcase-column {
+  display: grid;
+}
+
+.landing-page .landing-dashboard-preview-loaded {
+  grid-area: 1 / 1;
+  min-width: 0;
+  opacity: 0;
+  transition: opacity var(--motion-state) var(--motion-ease-out);
+}
+
+.landing-page .landing-dashboard-showcase-column.is-loaded .landing-dashboard-preview-placeholder { opacity: 0; }
+.landing-page .landing-dashboard-showcase-column.is-loaded .landing-dashboard-preview-loaded { opacity: 1; }
+
+@starting-style {
+  .landing-page .landing-dashboard-showcase-column.is-loaded .landing-dashboard-preview-loaded { opacity: 0; }
 }
 
 .landing-page .landing-section-title {
@@ -2935,4 +3078,40 @@
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.055),
     0 5px 14px -11px rgba(15, 23, 42, 0.72);
+}
+
+/* Final motion policy: ambient decoration stays still. Motion is reserved for
+   workflow progress, streaming output, and direct interaction feedback. */
+.landing-page .agent-chat-launcher-orb,
+.landing-page .agent-chat-orb,
+.landing-page .agent-chat-orb::before,
+.landing-page .agent-chat-orb::after,
+.landing-page .agent-chat-orb i,
+.landing-page .agent-chat-orb b,
+.landing-page .agent-chat-step--active,
+.landing-page .agent-chat-step-pulse {
+  animation: none;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .landing-page .button:hover { transform: none; }
+  .landing-page .agent-chat-examples button:hover,
+  .landing-page .agent-chat-new-task:hover { transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  .landing-page .button,
+  .landing-page .site-nav-cta,
+  .landing-page .site-header,
+  .landing-page .landing-dashboard-preview-placeholder,
+  .landing-page .landing-dashboard-preview-loaded {
+    transition-duration: 0.01ms;
+  }
+
+  .landing-page .button:active,
+  .landing-page .site-nav-cta:active,
+  .landing-page .agent-chat-launcher:active,
+  .landing-page .agent-chat-examples button:active { transform: none; }
 }
