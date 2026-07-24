@@ -229,9 +229,10 @@
 .landing-page .landing-hero-title-line-mask { overflow: clip; }
 
 @media (prefers-reduced-motion: no-preference) {
-  html:not(.landing-hero-motion-complete):not(.landing-hero-motion-running) .landing-page [data-hero-headline],
-  html:not(.landing-hero-motion-complete):not(.landing-hero-motion-running) .landing-page [data-hero-lead],
-  html:not(.landing-hero-motion-complete):not(.landing-hero-motion-running) .landing-page [data-hero-actions] {
+html:not(.landing-hero-motion-complete):not(.landing-hero-motion-running) .landing-page [data-hero-headline],
+html:not(.landing-hero-motion-complete):not(.landing-hero-motion-running) .landing-page [data-hero-lead],
+html:not(.landing-hero-motion-complete):not(.landing-hero-motion-running) .landing-page [data-hero-actions],
+html:not(.landing-hero-motion-complete):not(.landing-hero-motion-running) .landing-page [data-hero-preview] {
     opacity: 0;
   }
 }

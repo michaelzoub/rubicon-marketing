@@ -1,4 +1,4 @@
-import { Check, LockKeyhole, Search, X } from "lucide-react";
+import { Check, LockKeyhole, Search } from "lucide-react";
 import { AgentSurface, ProcessRow, PromptBubble, SurfaceLabel } from "./agent-ui";
 import styles from "./agent-workflow.module.css";
 
@@ -134,41 +134,6 @@ export function AgentWorkflow({ pageLead = false }: { pageLead?: boolean }) {
               </div>
             </article>
           ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-export function AgentComparison() {
-  return (
-    <section className={`landing-section-block ${styles.comparisonSection}`} aria-labelledby="agent-comparison-heading" data-analytics-section="agent_comparison">
-      <div className={`container ${styles.comparisonInner}`}>
-        <div className="landing-copy-stack">
-          <p className="landing-section-eyebrow">With and without Rubicon</p>
-          <h2 id="agent-comparison-heading" className="landing-section-title"><span className="landing-section-title-emphasis">Rubicon expands what your existing agent can read.</span></h2>
-          <p className="landing-section-lead">Rubicon adds varied human writing to an agent’s source pool, including expert analysis that may live behind a paywall.</p>
-        </div>
-        <div className={styles.comparisonGrid}>
-          <article className={`${styles.comparisonCard} ${styles.comparisonCardWithout}`}>
-            <span className={styles.comparisonLabel}>Public web only</span>
-            <h3>Without Rubicon</h3>
-            <ul>
-              <li><X size={15} aria-hidden="true" />Limited to freely indexed sources</li>
-              <li><X size={15} aria-hidden="true" />Repeated underlying claims</li>
-              <li><X size={15} aria-hidden="true" />Useful analysis remains unavailable</li>
-            </ul>
-          </article>
-          <div className={styles.comparisonSeparator} aria-hidden="true"><span>VS</span></div>
-          <article className={`${styles.comparisonCard} ${styles.comparisonCardWith}`}>
-            <span className={styles.comparisonLabel}>Paid source layer</span>
-            <h3>With Rubicon</h3>
-            <ul>
-              <li><Check size={15} aria-hidden="true" />Broader human-written sources</li>
-              <li><Check size={15} aria-hidden="true" />Inspect before choosing</li>
-              <li><Check size={15} aria-hidden="true" />Purchase relevant evidence only</li>
-            </ul>
-          </article>
         </div>
       </div>
     </section>

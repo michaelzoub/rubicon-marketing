@@ -20,6 +20,9 @@ export function AgentUseCases() {
           <h2 id="agent-use-cases-heading" className="landing-section-title">
             <span className="landing-section-title-emphasis">Give agents better material to reason from.</span>
           </h2>
+          <p className={styles.lead}>
+            Rubicon is currently focused on high-quality tech, finance, and economic writing.
+          </p>
         </div>
         <div className={styles.grid}>
           {useCases.map(({ title, Preview }) => <article className={styles.card} key={title}><Preview /><div className={styles.cardBody}><h3>{title}</h3></div></article>)}

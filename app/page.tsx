@@ -7,12 +7,12 @@ import { APP_URL, AnalyticsPageView, PageEngagementTracker } from "./_components
 import { trackMarketingCtaClicked } from "./_components/analytics/events";
 import { SiteFooter } from "./_components/marketing/site-footer";
 import { SiteHeader } from "./_components/site-header";
-import { AgentComparison, AgentWorkflow } from "./_components/marketing/agent-workflow";
+import { AgentWorkflow } from "./_components/marketing/agent-workflow";
 import { AgentUseCases } from "./_components/marketing/agent-use-cases";
 import { EvidenceReadSimulation } from "./_components/marketing/evidence-read-simulation";
 import { LazyDashboardShowcase } from "./_components/marketing/lazy-dashboard-showcase";
 // import { RubiconAgentChat } from "./_components/marketing/agent-chat/agent-chat";
-import { gsap, SplitText } from "./_components/marketing/motion";
+import { gsap } from "./_components/marketing/motion";
 
 function Hero() {
   return (
@@ -23,8 +23,8 @@ function Hero() {
             <span className="landing-hero-title-emphasis">Give agents better material to reason from.</span>
           </h1>
           <p className="landing-hero-lead" data-hero-lead>
-            Rubicon helps agents discover high-quality human writing, identify the passage relevant to their task, and
-            pay only to unlock that evidence.
+            Rubicon helps agents discover high-quality tech, finance, and economic writing, identify the passage
+            relevant to their task, and pay only to unlock that evidence.
           </p>
           <div className="landing-hero-cta" data-hero-actions>
             <div className="landing-hero-actions">
@@ -69,7 +69,7 @@ function Hero() {
             </div>
           </div>
         </div>
-        <div className="landing-hero-preview">
+        <div className="landing-hero-preview" data-hero-preview>
           <EvidenceReadSimulation />
         </div>
       </div>
@@ -113,8 +113,9 @@ export default function Home() {
     const headline = root.querySelector<HTMLElement>("[data-hero-headline]");
     const lead = root.querySelector<HTMLElement>("[data-hero-lead]");
     const actions = root.querySelector<HTMLElement>("[data-hero-actions]");
+    const preview = root.querySelector<HTMLElement>("[data-hero-preview]");
 
-    if (!headline || !lead || !actions) {
+    if (!headline || !lead || !actions || !preview) {
       heroIntroDone = true;
       showStatic();
       return;
@@ -124,9 +125,6 @@ export default function Home() {
 
     const media = gsap.matchMedia();
     let cancelled = false;
-    let elapsed = 0;
-    let split: ReturnType<typeof SplitText.create> | null = null;
-
     media.add(
       {
         allowMotion: "(prefers-reduced-motion: no-preference)",
@@ -139,71 +137,60 @@ export default function Home() {
         };
 
         if (reduceMotion || heroIntroDone) {
-          gsap.set([headline, lead, actions], { clearProps: "all" });
+          gsap.set([headline, lead, actions, preview], { clearProps: "all" });
           heroIntroDone = true;
           showStatic();
           return;
         }
 
-        split = SplitText.create(headline, {
-          type: "lines,chars",
-          mask: "lines",
-          autoSplit: true,
-          linesClass: "landing-hero-title-line",
-          onSplit(self) {
-            if (cancelled || heroIntroDone) return;
+        if (cancelled || heroIntroDone) return;
 
-            const animatedTargets = [headline, ...self.chars, lead, actions];
-            const timeline = gsap.timeline({
-              defaults: { ease: "power4.out" },
-              onUpdate: () => {
-                elapsed = timeline.totalTime();
-              },
-              onComplete: () => {
-                heroIntroDone = true;
-                showStatic();
-                gsap.set(animatedTargets, {
-                  clearProps: "willChange,transform,opacity,visibility",
-                });
-              },
+        const animatedTargets = [headline, lead, actions, preview];
+        const timeline = gsap.timeline({
+          defaults: { ease: "power4.out" },
+          onComplete: () => {
+            heroIntroDone = true;
+            showStatic();
+            gsap.set(animatedTargets, {
+              clearProps: "willChange,transform,opacity,visibility,filter,clipPath",
             });
-
-            gsap.set(animatedTargets, { willChange: "transform,opacity" });
-
-            timeline
-              .fromTo(
-                self.chars,
-                { yPercent: -105 },
-                { yPercent: 0, duration: 0.55, stagger: 0.01 },
-                0,
-              )
-              .fromTo(
-                lead,
-                { autoAlpha: 0, y: -10 },
-                { autoAlpha: 1, y: 0, duration: 0.5 },
-                0.22,
-              )
-              .fromTo(
-                actions,
-                { autoAlpha: 0, y: -10 },
-                { autoAlpha: 1, y: 0, duration: 0.5 },
-                0.34,
-              );
-
-            if (elapsed > 0) timeline.totalTime(elapsed);
-
-            gsap.set(headline, { autoAlpha: 1 });
-            html.classList.add(HERO_MOTION_RUNNING);
-
-            return timeline;
           },
         });
+
+        gsap.set(animatedTargets, { willChange: "transform,opacity,filter" });
+
+        timeline
+          .fromTo(
+            headline,
+            { autoAlpha: 0, y: 28, filter: "blur(10px)" },
+            { autoAlpha: 1, y: 0, filter: "blur(0px)", duration: 0.9 },
+            0.08,
+          )
+          .fromTo(
+            lead,
+            { autoAlpha: 0, y: 18, filter: "blur(6px)" },
+            { autoAlpha: 1, y: 0, filter: "blur(0px)", duration: 0.7 },
+            0.48,
+          )
+          .fromTo(
+            actions,
+            { autoAlpha: 0, y: 14 },
+            { autoAlpha: 1, y: 0, duration: 0.62 },
+            0.68,
+          )
+          .fromTo(
+            preview,
+            { autoAlpha: 0, y: 30, scale: 0.975, filter: "blur(8px)" },
+            { autoAlpha: 1, y: 0, scale: 1, filter: "blur(0px)", duration: 1.05 },
+            0.28,
+          );
+
+        html.classList.add(HERO_MOTION_RUNNING);
       },
     );
 
     return () => {
       cancelled = true;
-      split?.revert();
       media.revert();
       showStatic();
     };
@@ -223,7 +210,6 @@ export default function Home() {
         <AgentWorkflow />
         <LazyDashboardShowcase />
         <AgentUseCases />
-        <AgentComparison />
         {/* <RubiconAgentChat /> */}
       </div>
       <SiteFooter />
